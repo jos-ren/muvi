@@ -36,7 +36,7 @@ export default function Home() {
       .then((res) => res.json())
       .then((json) => setList(json))
       .catch((err) => console.error("error:" + err));
-    // console.log("fetched", list);
+    console.log("fetched", list);
   }, []);
 
   return (
