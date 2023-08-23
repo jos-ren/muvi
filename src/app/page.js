@@ -4,10 +4,12 @@ import styles from "./page.module.css";
 import { useState, useEffect } from "react";
 // import Autocomplete from "react-autocomplete";
 
-// search a movie
-// display a list of results
-// add the ones you wish to add to your list
-// optionally rate them?
+
+// option to rate movies in your list
+// component for displaying movies: one for list another more of a grid...
+// have different options: watchlist, watched, (maybe tabs at top to switch between?)
+// toggle for list / grid view
+// tabs for different media categories: tv, movies, anime
 
 export default function Home() {
   const [name, setName] = useState("");
@@ -102,7 +104,7 @@ export default function Home() {
                   localStorage.setItem("movies", JSON.stringify(movies.filter((a) => a.id !== movie.id)));
                 }}
               >
-                Delete
+                Remove
               </button>
             </div>
           </li>
@@ -113,8 +115,28 @@ export default function Home() {
       <h2>Current Top 20 Movies</h2>
       {list.results ? (
         <ol>
-          {list.results.map((o, i) => (
-            <li key={i}>{o.title}</li>
+          {list.results.map((result) => (
+            <li key={result.id}>
+              <div
+                key={result.id}
+                style={{
+                  display: "flex",
+                  width: "500px",
+                  justifyContent: "space-between",
+                  paddingBottom: "5px",
+                }}>
+                <Image height="50" width="50" quality="100" src={"https://image.tmdb.org/t/p/original/" + result.poster_path} alt={result.title} />
+                {result.title}
+                <button
+                  onClick={() => {
+                    setMovies([...movies, { id: result.id, name: result.title }]);
+                    localStorage.setItem("movies", JSON.stringify([...movies, { id: result.id, name: result.title }]));
+                  }}
+                >
+                  Add to List
+                </button>
+              </div>
+            </li>
           ))}
         </ol>
       ) : (
