@@ -13,7 +13,7 @@ export default function Home() {
   const [name, setName] = useState("");
   const [movies, setMovies] = useState([]);
   const [number, setNumber] = useState(0);
-  console.log(process.env.NEXT_PUBLIC_TMDB_API_KEY)
+  // console.log(process.env.NEXT_PUBLIC_TMDB_API_KEY)
 
   useEffect(() => {
     const localMovies = JSON.parse(localStorage.getItem("movies"));
@@ -32,17 +32,14 @@ export default function Home() {
       <p>movie data is stored in local storage</p>
       <input value={name} onChange={(e) => setName(e.target.value)} />
       <button
-        onClick={() => {
-
-
+        onClick={() => {         
+          setMovies([...movies, { id: number, name: name }]);
+          localStorage.setItem("movies", JSON.stringify([...movies, { id: number, name: name }]));
           
-          // setMovies([...movies, { id: number, name: name }]);
-          // localStorage.setItem("movies", JSON.stringify([...movies, { id: number, name: name }]));
-          
-          // // add 1 to global id
-          // let newNum = number + 1
-          // setNumber(newNum);
-          // localStorage.setItem("number", JSON.stringify(newNum));
+          // add 1 to global id
+          let newNum = number + 1
+          setNumber(newNum);
+          localStorage.setItem("number", JSON.stringify(newNum));
         }}
       >
         Add Movie
