@@ -32,7 +32,7 @@ export default function Home() {
     }
 
     // fetch top movies
-    fetch("https://api.themoviedb.org/3/discover/movie?include_adult=true&include_video=false&language=en-US&page=1&sort_by=popularity.desc", options)
+    fetch("https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc", options)
       .then((res) => res.json())
       .then((json) => setList(json))
       .catch((err) => console.error("error:" + err));
@@ -45,11 +45,11 @@ export default function Home() {
       <input value={name} onChange={(e) => setName(e.target.value)} />
       <button
         onClick={() => {
-          fetch("https://api.themoviedb.org/3/search/multi?&language=en-US&query=" + name + "&page=1&include_adult=true", options)
+          fetch("https://api.themoviedb.org/3/search/multi?&language=en-US&query=" + name + "&page=1&include_adult=false", options)
             .then((res) => res.json())
             .then((json) => setSearch(json))
             .catch((err) => console.error("error:" + err));
-          console.log(search.results)
+          // console.log(search.results)
         }}
       >
         Search Movies
