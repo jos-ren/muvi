@@ -36,7 +36,6 @@ export default function Home() {
       .then((res) => res.json())
       .then((json) => setList(json))
       .catch((err) => console.error("error:" + err));
-    console.log("fetched", list);
   }, []);
 
   return (
@@ -49,38 +48,36 @@ export default function Home() {
             .then((res) => res.json())
             .then((json) => setSearch(json))
             .catch((err) => console.error("error:" + err));
-          // console.log(search.results)
         }}
       >
         Search Movies
       </button>
       {search.results ? (
-        <ul>
-          {search.results.map((result) => (
-            // only show movies in search
-            result.media_type === "movie" ?
-              <li key={result.id}>
-                <div style={{
-                  display: "flex",
-                  width: "500px",
-                  justifyContent: "space-between",
-                  paddingBottom: "5px",
-                }}>
-                  {result.title}
-                  <button
-                    onClick={() => {
-                      setMovies([...movies, { id: result.id, name: result.title }]);
-                      localStorage.setItem("movies", JSON.stringify([...movies, { id: result.id, name: result.title }]));
-                    }}
-                  >
-                    Add to List
-                  </button>
-                </div>
-              </li>
-              : <></>
-          ))
+        <div>
+          {/* only show movies with images in search results */}
+          {search.results.map((result) => result.media_type === "movie" && result.poster_path ?
+            <div
+              key={result.id}
+              style={{
+                display: "flex",
+                width: "500px",
+                justifyContent: "space-between",
+                paddingBottom: "5px",
+              }}>
+              <Image height="50" width="50" quality="100" src={"https://image.tmdb.org/t/p/original/" + result.poster_path} alt={result.title} />
+              {result.title}
+              <button
+                onClick={() => {
+                  setMovies([...movies, { id: result.id, name: result.title }]);
+                  localStorage.setItem("movies", JSON.stringify([...movies, { id: result.id, name: result.title }]));
+                }}
+              >
+                Add to List
+              </button>
+            </div> : (<div key={result.id}></div>)
+          )
           }
-        </ul>
+        </div>
       ) : (
         <></>
       )}
