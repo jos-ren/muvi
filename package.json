@@ -13,7 +13,6 @@
     "eslint-config-next": "13.4.16",
     "next": "13.4.16",
     "react": "18.2.0",
-    "react-autocomplete": "^1.8.1",
     "react-dom": "18.2.0"
   }
 }
