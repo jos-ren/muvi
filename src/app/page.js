@@ -1,15 +1,102 @@
 "use client";
 import Image from "next/image";
-import styles from "./page.module.css";
-import { useState, useEffect } from "react";
-// import Autocomplete from "react-autocomplete";
+import { useState, useEffect, useRef } from "react";
+import { Button, Table, Tag } from 'antd';
+import { StarTwoTone } from '@ant-design/icons';
 
 
 // option to rate movies in your list
 // component for displaying movies: one for list another more of a grid...
-// have different options: watchlist, watched, (maybe tabs at top to switch between?)
 // toggle for list / grid view
-// tabs for different media categories: tv, movies, anime
+// add skeleton while data loads
+// have different options: watchlist, watched, (maybe tabs at top to switch between?)
+// list column with (watched, to watch, favs)
+
+const onChange = (pagination, filters, sorter, extra) => {
+  console.log('params', pagination, filters, sorter, extra);
+};
+const ImageLoader = ({ src, width, quality }) => {
+  return `${src}?w=${width}&q=${quality || 75}`
+}
+
+const movieColumns = [
+  {
+    title: 'Poster',
+    dataIndex: 'poster',
+    key: 'poster',
+    render: (poster, title) => <Image
+      loader={ImageLoader}
+      src={poster}
+      width={50}
+      height={75}
+      style={{ objectFit: "cover" }}
+      alt={title}
+    />,
+  },
+  {
+    title: 'Title',
+    dataIndex: 'title',
+    key: 'title',
+  },
+  {
+    title: 'Audience Rating',
+    dataIndex: 'audience_rating',
+    key: 'audience_rating',
+    sorter: (a, b) => a.audience_rating - b.audience_rating,
+    // render: (audience_rating) => <Rate disabled defaultValue={audience_rating} count={10}/>
+    render: (audience_rating) => <>
+      <StarTwoTone twoToneColor="#fadb14" />
+      <> </>
+      {Number.parseFloat(audience_rating).toFixed(1)}
+    </>
+  },
+  {
+    title: 'Release Date',
+    dataIndex: 'release_date',
+    key: 'release_date',
+    sorter: (a, b) => new Date(b.release_date) - new Date(a.release_date),
+    render: (release_date) => {
+      const date = new Date(release_date)
+      return <>{date.toLocaleDateString('en-US', { dateStyle: "medium", })}</>
+    },
+  },
+  {
+    title: 'Type',
+    dataIndex: 'media_type',
+    filters: [
+      {
+        text: 'Movie',
+        value: 'movie',
+      },
+      {
+        text: 'TV',
+        value: 'tv',
+      },
+      {
+        text: 'Anime',
+        value: 'anime',
+      },
+    ],
+    onFilter: (value, record) => record.media_type.indexOf(value) === 0,
+    // render: (media_type) => media_type.charAt(0).toUpperCase() + media_type.slice(1)
+    render: (media_type) => {
+      let color = "green"
+      if (media_type === "anime") {
+        color = "geekblue"
+      } else if (media_type === "tv") {
+        color = "green"
+      } else {
+        color = "volcano"
+      }
+      return (
+        <Tag color={color}>
+          {media_type.toUpperCase()}
+        </Tag>
+      )
+    }
+  },
+];
+
 
 export default function Home() {
   const [name, setName] = useState("");
@@ -33,11 +120,11 @@ export default function Home() {
       setMovies(localMovies);
     }
 
-    // fetch top movies
-    fetch("https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc", options)
-      .then((res) => res.json())
-      .then((json) => setList(json))
-      .catch((err) => console.error("error:" + err));
+    // // fetch top movies
+    // fetch("https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc", options)
+    //   .then((res) => res.json())
+    //   .then((json) => setList(json))
+    //   .catch((err) => console.error("error:" + err));
   }, []);
 
   return (
@@ -57,26 +144,32 @@ export default function Home() {
       {search.results ? (
         <div>
           {/* only show movies with images in search results */}
-          {search.results.map((result) => result.media_type === "movie" && result.poster_path ?
+          {search.results.map((o) => o.media_type !== "people" && o.poster_path ?
             <div
-              key={result.id}
+              key={o.id}
               style={{
                 display: "flex",
                 width: "500px",
                 justifyContent: "space-between",
                 paddingBottom: "5px",
               }}>
-              <Image height="50" width="50" quality="100" src={"https://image.tmdb.org/t/p/original/" + result.poster_path} alt={result.title} />
-              {result.title}
+              <Image height="100" width="66" quality="100" src={"https://image.tmdb.org/t/p/original/" + o.poster_path} alt={o.title} />
+              {o.media_type === "movie" ? o.title : o.name}
               <button
                 onClick={() => {
-                  setMovies([...movies, { id: result.id, name: result.title }]);
-                  localStorage.setItem("movies", JSON.stringify([...movies, { id: result.id, name: result.title }]));
+                  // make anime type if og lang is japanese
+                  let type = o.original_language === "ja" ? "anime" : o.media_type;
+                  // if tv or movie some fields will be different (title, release date)
+                  let release = o.media_type === "movie" ? o.release_date : o.first_air_date;
+                  let title = o.media_type === "movie" ? o.title : o.name;
+
+                  setMovies([...movies, { id: o.id, title: title, poster: "https://image.tmdb.org/t/p/original/" + o.poster_path, audience_rating: o.vote_average, release_date: release, media_type: type }]);
+                  localStorage.setItem("movies", JSON.stringify([...movies, { id: o.id, title: title, poster: "https://image.tmdb.org/t/p/original/" + o.poster_path, audience_rating: o.vote_average, release_date: release, media_type: type }]));
                 }}
               >
                 Add to List
               </button>
-            </div> : (<div key={result.id}></div>)
+            </div> : (<div key={o.id}></div>)
           )
           }
         </div>
@@ -85,6 +178,13 @@ export default function Home() {
       )}
 
       <h2>My Movies List</h2>
+      <Table
+        columns={movieColumns}
+        dataSource={movies}
+        onChange={onChange}
+        pagination={{ position: ["bottomCenter"] }}
+      />
+
       <ul>
         {movies.map((movie) => (
           <li key={movie.id}>
@@ -96,10 +196,10 @@ export default function Home() {
                 paddingBottom: "5px",
               }}
             >
-              {movie.name}{" "}
+              {movie.title}{" "}
               <button
                 onClick={() => {
-                  // console.log(movie.id)
+                  console.log(movies)
                   setMovies(movies.filter((a) => a.id !== movie.id));
                   localStorage.setItem("movies", JSON.stringify(movies.filter((a) => a.id !== movie.id)));
                 }}
@@ -110,38 +210,6 @@ export default function Home() {
           </li>
         ))}
       </ul>
-
-      <br />
-      <h2>Current Top 20 Movies</h2>
-      {list.results ? (
-        <ol>
-          {list.results.map((result) => (
-            <li key={result.id}>
-              <div
-                key={result.id}
-                style={{
-                  display: "flex",
-                  width: "500px",
-                  justifyContent: "space-between",
-                  paddingBottom: "5px",
-                }}>
-                <Image height="50" width="50" quality="100" src={"https://image.tmdb.org/t/p/original/" + result.poster_path} alt={result.title} />
-                {result.title}
-                <button
-                  onClick={() => {
-                    setMovies([...movies, { id: result.id, name: result.title }]);
-                    localStorage.setItem("movies", JSON.stringify([...movies, { id: result.id, name: result.title }]));
-                  }}
-                >
-                  Add to List
-                </button>
-              </div>
-            </li>
-          ))}
-        </ol>
-      ) : (
-        <></>
-      )}
     </>
   );
 }
