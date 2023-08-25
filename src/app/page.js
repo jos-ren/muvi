@@ -12,6 +12,10 @@ import { StarTwoTone } from '@ant-design/icons';
 // have different options: watchlist, watched, (maybe tabs at top to switch between?)
 // list column with (watched, to watch, favs)
 
+// add to my list button with added once clicked
+// prevent from adding an already added
+// tv show what episode you are on
+
 const onChange = (pagination, filters, sorter, extra) => {
   console.log('params', pagination, filters, sorter, extra);
 };
@@ -23,7 +27,6 @@ const movieColumns = [
   {
     title: 'Poster',
     dataIndex: 'poster',
-    key: 'poster',
     render: (poster, title) => <Image
       loader={ImageLoader}
       src={poster}
@@ -36,12 +39,10 @@ const movieColumns = [
   {
     title: 'Title',
     dataIndex: 'title',
-    key: 'title',
   },
   {
     title: 'Audience Rating',
     dataIndex: 'audience_rating',
-    key: 'audience_rating',
     sorter: (a, b) => a.audience_rating - b.audience_rating,
     // render: (audience_rating) => <Rate disabled defaultValue={audience_rating} count={10}/>
     render: (audience_rating) => <>
@@ -53,7 +54,6 @@ const movieColumns = [
   {
     title: 'Release Date',
     dataIndex: 'release_date',
-    key: 'release_date',
     sorter: (a, b) => new Date(b.release_date) - new Date(a.release_date),
     render: (release_date) => {
       const date = new Date(release_date)
@@ -101,8 +101,8 @@ const movieColumns = [
 export default function Home() {
   const [name, setName] = useState("");
   const [movies, setMovies] = useState([]);
-  const [list, setList] = useState([]);
   const [search, setSearch] = useState([]);
+  const [selected, setSelected] = useState([]);
   const fetch = require("node-fetch");
 
   // const url = "https://api.themoviedb.org/3/find/tt14998742?external_source=imdb_id";
@@ -126,6 +126,13 @@ export default function Home() {
     //   .then((json) => setList(json))
     //   .catch((err) => console.error("error:" + err));
   }, []);
+
+  const rowSelection = {
+    onChange: (selectedRowKeys, selectedRows) => {
+      console.log(`selectedRowKeys: ${selectedRowKeys}`, 'selectedRows: ', selectedRows);
+      setSelected(selectedRowKeys)
+    }
+  };
 
   return (
     <>
@@ -157,14 +164,14 @@ export default function Home() {
               {o.media_type === "movie" ? o.title : o.name}
               <button
                 onClick={() => {
-                  // make anime type if og lang is japanese
+                  // make anime type if original lang is japanese
                   let type = o.original_language === "ja" ? "anime" : o.media_type;
                   // if tv or movie some fields will be different (title, release date)
                   let release = o.media_type === "movie" ? o.release_date : o.first_air_date;
                   let title = o.media_type === "movie" ? o.title : o.name;
 
-                  setMovies([...movies, { id: o.id, title: title, poster: "https://image.tmdb.org/t/p/original/" + o.poster_path, audience_rating: o.vote_average, release_date: release, media_type: type }]);
-                  localStorage.setItem("movies", JSON.stringify([...movies, { id: o.id, title: title, poster: "https://image.tmdb.org/t/p/original/" + o.poster_path, audience_rating: o.vote_average, release_date: release, media_type: type }]));
+                  setMovies([...movies, { key: o.id, title: title, poster: "https://image.tmdb.org/t/p/original/" + o.poster_path, audience_rating: o.vote_average, release_date: release, media_type: type }]);
+                  localStorage.setItem("movies", JSON.stringify([...movies, { key: o.id, title: title, poster: "https://image.tmdb.org/t/p/original/" + o.poster_path, audience_rating: o.vote_average, release_date: release, media_type: type }]));
                 }}
               >
                 Add to List
@@ -178,38 +185,25 @@ export default function Home() {
       )}
 
       <h2>My Movies List</h2>
+
+      <button
+        // disabled={!showRemove}
+        // remove all selected items
+        onClick={() => {
+          setMovies(movies.filter(item => !selected.includes(item.key)));
+          localStorage.setItem("movies", JSON.stringify(movies.filter(item => !selected.includes(item.key))));
+        }}
+      >
+        Remove Selected
+      </button >
       <Table
+        style={{ border: '1px dotted grey' }}
         columns={movieColumns}
         dataSource={movies}
-        onChange={onChange}
+        // onChange={onChange}
         pagination={{ position: ["bottomCenter"] }}
+        rowSelection={rowSelection}
       />
-
-      <ul>
-        {movies.map((movie) => (
-          <li key={movie.id}>
-            <div
-              style={{
-                display: "flex",
-                width: "500px",
-                justifyContent: "space-between",
-                paddingBottom: "5px",
-              }}
-            >
-              {movie.title}{" "}
-              <button
-                onClick={() => {
-                  console.log(movies)
-                  setMovies(movies.filter((a) => a.id !== movie.id));
-                  localStorage.setItem("movies", JSON.stringify(movies.filter((a) => a.id !== movie.id)));
-                }}
-              >
-                Remove
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
     </>
   );
 }
