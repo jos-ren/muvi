@@ -18,6 +18,7 @@ const { Header, Content, Footer } = Layout;
 // tv show what episode you are on
 // top tab bar
 // search title
+// suycces message when adding movies
 
 const onChange = (pagination, filters, sorter, extra) => {
   console.log('params', pagination, filters, sorter, extra);
@@ -98,14 +99,14 @@ const movieColumns = [
       )
     }
   },
-  {
-    title: 'Status',
-    dataIndex: 'status',
-  },
-  {
-    title: 'Current Progress',
-    dataIndex: 'current_progress',
-  }
+  // {
+  //   title: 'Status',
+  //   dataIndex: 'status',
+  // },
+  // {
+  //   title: 'Current Progress',
+  //   dataIndex: 'current_progress',
+  // }
 ];
 
 export default function Home() {
@@ -131,7 +132,6 @@ export default function Home() {
   };
 
   const onSearch = (value) => {
-    console.log("test", value)
     fetch("https://api.themoviedb.org/3/search/multi?&language=en-US&query=" + value + "&page=1&include_adult=false", options)
       .then((res) => res.json())
       .then((json) => setSearch(json))
@@ -162,7 +162,7 @@ export default function Home() {
 
   const rowSelection = {
     onChange: (selectedRowKeys, selectedRows) => {
-      console.log(`selectedRowKeys: ${selectedRowKeys}`, 'selectedRows: ', selectedRows);
+      // console.log(`selectedRowKeys: ${selectedRowKeys}`, 'selectedRows: ', selectedRows);
       setSelected(selectedRowKeys)
     }
   };
@@ -181,19 +181,20 @@ export default function Home() {
 
       {search.results ? (
 
-        <div>
+        <div style={{ 
+          // display: "flex", flexWrap: 'wrap', gap: '20px'
+          display: "grid",
+          gridTemplateColumns: "repeat(5, 1fr)",
+          // gridTemplateRows: "repeat(2, 1fr)",
+          gridColumnGap: "10px",
+          gridRowGap: "10px",
+          margin: "20px 0px"
+         }}>
           {/* only show movies with posters && not an actor in search results */}
           {search.results.map((o) => o.media_type !== "people" && o.poster_path ?
-            <div
-              key={o.id}
-              style={{
-                display: "flex",
-                width: "500px",
-                justifyContent: "space-between",
-                paddingBottom: "5px",
-              }}>
-              <Image height="100" width="66" quality="100" src={"https://image.tmdb.org/t/p/original/" + o.poster_path} alt={o.title} />
-              {o.media_type === "movie" ? o.title : o.name}
+            <div style={{ border: "1px solid red", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+              <Image height="200" width="125" quality="100" src={"https://image.tmdb.org/t/p/original/" + o.poster_path} alt={o.title} />
+              <div >{o.media_type === "movie" ? o.title : o.name}</div>
               <button
                 onClick={() => {
                   // make anime type if original lang is japanese
@@ -208,19 +209,46 @@ export default function Home() {
               >
                 Add to List
               </button>
-            </div> : (<div key={o.id}></div>)
-          )
-          }
-        </div>
+            </div>
+
+
+            // <div
+            //   key={o.id}
+            //   style={{
+            //     display: "flex",
+            //     width: "500px",
+            //     justifyContent: "space-between",
+            //     paddingBottom: "5px",
+            //   }}>
+            //   <Image height="100" width="66" quality="100" src={"https://image.tmdb.org/t/p/original/" + o.poster_path} alt={o.title} />
+            //   {o.media_type === "movie" ? o.title : o.name}
+            //   <button
+            //     onClick={() => {
+            //       // make anime type if original lang is japanese
+            //       let type = o.original_language === "ja" ? "anime" : o.media_type;
+            //       // if tv or movie some fields will be different (title, release date)
+            //       let release = o.media_type === "movie" ? o.release_date : o.first_air_date;
+            //       let title = o.media_type === "movie" ? o.title : o.name;
+
+            //       setMovies([...movies, { key: o.id, title: title, poster: "https://image.tmdb.org/t/p/original/" + o.poster_path, audience_rating: o.vote_average, release_date: release, media_type: type }]);
+            //       localStorage.setItem("movies", JSON.stringify([...movies, { key: o.id, title: title, poster: "https://image.tmdb.org/t/p/original/" + o.poster_path, audience_rating: o.vote_average, release_date: release, media_type: type }]));
+            //     }}
+            //   >
+            //     Add to List
+            //   </button>
+            // </div>
+            : (<div key={o.id}></div>))}
+        </div >
       ) : (
         <></>
-      )}
+      )
+      }
 
       <h2>My Movies List</h2>
 
       <Table
-        // style={{ border: '1px solid #ede9e8', borderRadius: "6px" }}
-        bordered
+        style={{ border: '1px solid #ede9e8', borderRadius: "6px" }}
+        // bordered
         columns={movieColumns}
         dataSource={movies}
         // onChange={onChange}
