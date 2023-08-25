@@ -1,9 +1,10 @@
 "use client";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
-import { Button, Table, Tag } from 'antd';
+import { Layout, Menu, Card, Table, theme, message, Input, Button, Space, Rate, Tag } from 'antd';
+const { Search } = Input;
 import { StarTwoTone } from '@ant-design/icons';
-
+const { Header, Content, Footer } = Layout;
 
 // option to rate movies in your list
 // component for displaying movies: one for list another more of a grid...
@@ -15,6 +16,8 @@ import { StarTwoTone } from '@ant-design/icons';
 // add to my list button with added once clicked
 // prevent from adding an already added
 // tv show what episode you are on
+// top tab bar
+// search title
 
 const onChange = (pagination, filters, sorter, extra) => {
   console.log('params', pagination, filters, sorter, extra);
@@ -95,17 +98,30 @@ const movieColumns = [
       )
     }
   },
+  {
+    title: 'Status',
+    dataIndex: 'status',
+  },
+  {
+    title: 'Current Progress',
+    dataIndex: 'current_progress',
+  }
 ];
 
-
 export default function Home() {
-  const [name, setName] = useState("");
+  const fetch = require("node-fetch");
   const [movies, setMovies] = useState([]);
   const [search, setSearch] = useState([]);
   const [selected, setSelected] = useState([]);
-  const fetch = require("node-fetch");
+  const [messageApi, contextHolder] = message.useMessage();
 
-  // const url = "https://api.themoviedb.org/3/find/tt14998742?external_source=imdb_id";
+  const success = (num) => {
+    messageApi.open({
+      type: 'success',
+      content: 'Successfully Removed ' + num + ' Movies',
+    });
+  };
+
   const options = {
     method: "GET",
     headers: {
@@ -113,6 +129,23 @@ export default function Home() {
       Authorization: "Bearer " + process.env.NEXT_PUBLIC_TMDB_ACCESS_TOKEN,
     },
   };
+
+  const onSearch = (value) => {
+    console.log("test", value)
+    fetch("https://api.themoviedb.org/3/search/multi?&language=en-US&query=" + value + "&page=1&include_adult=false", options)
+      .then((res) => res.json())
+      .then((json) => setSearch(json))
+      .catch((err) => console.error("error:" + err));
+  };
+
+  const onRemove = () => {
+    setMovies(movies.filter(item => !selected.includes(item.key)));
+    localStorage.setItem("movies", JSON.stringify(movies.filter(item => !selected.includes(item.key))));
+    success(selected.length);
+  };
+
+  // const url = "https://api.themoviedb.org/3/find/tt14998742?external_source=imdb_id";
+
 
   useEffect(() => {
     const localMovies = JSON.parse(localStorage.getItem("movies"));
@@ -136,21 +169,20 @@ export default function Home() {
 
   return (
     <>
+      {contextHolder}
       <h1>Search</h1>
-      <input value={name} onChange={(e) => setName(e.target.value)} />
-      <button
-        onClick={() => {
-          fetch("https://api.themoviedb.org/3/search/multi?&language=en-US&query=" + name + "&page=1&include_adult=false", options)
-            .then((res) => res.json())
-            .then((json) => setSearch(json))
-            .catch((err) => console.error("error:" + err));
-        }}
-      >
-        Search Movies
-      </button>
+      <Search
+        size="large"
+        placeholder="movie name"
+        allowClear
+        enterButton="Search"
+        onSearch={onSearch}
+      />
+
       {search.results ? (
+
         <div>
-          {/* only show movies with images in search results */}
+          {/* only show movies with posters && not an actor in search results */}
           {search.results.map((o) => o.media_type !== "people" && o.poster_path ?
             <div
               key={o.id}
@@ -186,24 +218,24 @@ export default function Home() {
 
       <h2>My Movies List</h2>
 
-      <button
-        // disabled={!showRemove}
-        // remove all selected items
-        onClick={() => {
-          setMovies(movies.filter(item => !selected.includes(item.key)));
-          localStorage.setItem("movies", JSON.stringify(movies.filter(item => !selected.includes(item.key))));
-        }}
-      >
-        Remove Selected
-      </button >
       <Table
-        style={{ border: '1px dotted grey' }}
+        // style={{ border: '1px solid #ede9e8', borderRadius: "6px" }}
+        bordered
         columns={movieColumns}
         dataSource={movies}
         // onChange={onChange}
-        pagination={{ position: ["bottomCenter"] }}
+        pagination={{ position: ["bottomCenter"], showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100] }}
         rowSelection={rowSelection}
+        tableLayout={"auto"}
       />
+      <br />
+      <Button
+        type="primary"
+        danger
+        onClick={onRemove}
+      >
+        Remove Selected
+      </Button>
     </>
   );
 }
