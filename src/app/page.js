@@ -1,24 +1,24 @@
 "use client";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
-import { Layout, Menu, Card, Table, theme, message, Input, Button, Space, Rate, Tag } from 'antd';
+import { Layout, Table, message, Input, Button, Tag, Carousel } from 'antd';
 const { Search } = Input;
-import { StarTwoTone } from '@ant-design/icons';
+import { StarTwoTone, HeartOutlined, PlusOutlined } from '@ant-design/icons';
 const { Header, Content, Footer } = Layout;
 
 // option to rate movies in your list
-// component for displaying movies: one for list another more of a grid...
 // toggle for list / grid view
-// add skeleton while data loads
-// have different options: watchlist, watched, (maybe tabs at top to switch between?)
-// list column with (watched, to watch, favs)
-
-// add to my list button with added once clicked
+// tab for (watched, to watch, favs)
+// *add* movie button which changes to *added* once clicked
 // prevent from adding an already added
 // tv show what episode you are on
 // top tab bar
-// search title
+// search titles from my movies
 // suycces message when adding movies
+// add breakpoints for grid 
+// skeleton for grid when searching
+
+
 
 const onChange = (pagination, filters, sorter, extra) => {
   console.log('params', pagination, filters, sorter, extra);
@@ -114,12 +114,16 @@ export default function Home() {
   const [movies, setMovies] = useState([]);
   const [search, setSearch] = useState([]);
   const [selected, setSelected] = useState([]);
+  const [showClear, setShowClear] = useState(true);
+  const [popularMovies, setPopularMovies] = useState([]);
   const [messageApi, contextHolder] = message.useMessage();
 
-  const success = (num) => {
+  console.log(popularMovies)
+
+  const onSuccess = (message) => {
     messageApi.open({
       type: 'success',
-      content: 'Successfully Removed ' + num + ' Movies',
+      content: message,
     });
   };
 
@@ -136,16 +140,31 @@ export default function Home() {
       .then((res) => res.json())
       .then((json) => setSearch(json))
       .catch((err) => console.error("error:" + err));
+    setShowClear(false)
+  };
+
+  const clearSearch = () => {
+    setSearch([])
+    setShowClear(true)
+    // onSuccess('Cleared Search Results');
   };
 
   const onRemove = () => {
     setMovies(movies.filter(item => !selected.includes(item.key)));
     localStorage.setItem("movies", JSON.stringify(movies.filter(item => !selected.includes(item.key))));
-    success(selected.length);
+    onSuccess('Successfully Removed ' + selected.length + ' Movies');
   };
 
   // const url = "https://api.themoviedb.org/3/find/tt14998742?external_source=imdb_id";
 
+  const contentStyle = {
+    margin: 0,
+    height: '160px',
+    color: '#fff',
+    lineHeight: '160px',
+    textAlign: 'center',
+    background: '#364d79',
+  };
 
   useEffect(() => {
     const localMovies = JSON.parse(localStorage.getItem("movies"));
@@ -153,11 +172,11 @@ export default function Home() {
       setMovies(localMovies);
     }
 
-    // // fetch top movies
-    // fetch("https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc", options)
-    //   .then((res) => res.json())
-    //   .then((json) => setList(json))
-    //   .catch((err) => console.error("error:" + err));
+    // fetch top movies
+    fetch("https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc", options)
+      .then((res) => res.json())
+      .then((json) => setPopularMovies(json))
+      .catch((err) => console.error("error:" + err));
   }, []);
 
   const rowSelection = {
@@ -170,18 +189,42 @@ export default function Home() {
   return (
     <>
       {contextHolder}
+      {popularMovies.results ? <Carousel 
+      // autoplay
+      >
+        {popularMovies.results.map((o) =>
+          <div style={{position:"relative", objectFit: 'cover'}}>
+            {/* <Image quality="100" 
+            // fill={true} 
+            height={200}
+            width={900}
+            style={{objectFit:"cover"}}
+            src={"https://image.tmdb.org/t/p/original" + o.backdrop_path} alt={o.title} /> */}
+            <h3 style={contentStyle}>{o.title}</h3>
+          </div>
+        )}
+      </Carousel> : <></>}
       <h1>Search</h1>
-      <Search
-        size="large"
-        placeholder="movie name"
-        allowClear
-        enterButton="Search"
-        onSearch={onSearch}
-      />
+      <div style={{ display: "flex", alignItems: "center" }}>
+        <Search
+          size="large"
+          placeholder="movie name"
+          enterButton="Search"
+          onSearch={onSearch}
+        />
+        <Button
+          type="link"
+          onClick={clearSearch}
+          style={{ marginLeft: "10px", height: "40px" }}
+          disabled={showClear}
+        >
+          Clear Results
+        </Button>
+      </div>
 
       {search.results ? (
 
-        <div style={{ 
+        <div style={{
           // display: "flex", flexWrap: 'wrap', gap: '20px'
           display: "grid",
           gridTemplateColumns: "repeat(5, 1fr)",
@@ -189,62 +232,51 @@ export default function Home() {
           gridColumnGap: "10px",
           gridRowGap: "10px",
           margin: "20px 0px"
-         }}>
+        }}>
           {/* only show movies with posters && not an actor in search results */}
           {search.results.map((o) => o.media_type !== "people" && o.poster_path ?
             <div style={{ border: "1px solid red", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
               <Image height="200" width="125" quality="100" src={"https://image.tmdb.org/t/p/original/" + o.poster_path} alt={o.title} />
               <div >{o.media_type === "movie" ? o.title : o.name}</div>
-              <button
-                onClick={() => {
-                  // make anime type if original lang is japanese
-                  let type = o.original_language === "ja" ? "anime" : o.media_type;
-                  // if tv or movie some fields will be different (title, release date)
-                  let release = o.media_type === "movie" ? o.release_date : o.first_air_date;
-                  let title = o.media_type === "movie" ? o.title : o.name;
+              <div>
+                <Button type="default"
+                  onClick={() => {
+                    // make anime type if original lang is japanese
+                    let type = o.original_language === "ja" ? "anime" : o.media_type;
+                    // if tv or movie some fields will be different (title, release date)
+                    let release = o.media_type === "movie" ? o.release_date : o.first_air_date;
+                    let title = o.media_type === "movie" ? o.title : o.name;
 
-                  setMovies([...movies, { key: o.id, title: title, poster: "https://image.tmdb.org/t/p/original/" + o.poster_path, audience_rating: o.vote_average, release_date: release, media_type: type }]);
-                  localStorage.setItem("movies", JSON.stringify([...movies, { key: o.id, title: title, poster: "https://image.tmdb.org/t/p/original/" + o.poster_path, audience_rating: o.vote_average, release_date: release, media_type: type }]));
-                }}
-              >
-                Add to List
-              </button>
+                    setMovies([...movies, { key: o.id, title: title, poster: "https://image.tmdb.org/t/p/original/" + o.poster_path, audience_rating: o.vote_average, release_date: release, media_type: type }]);
+                    localStorage.setItem("movies", JSON.stringify([...movies, { key: o.id, title: title, poster: "https://image.tmdb.org/t/p/original/" + o.poster_path, audience_rating: o.vote_average, release_date: release, media_type: type }]));
+                    onSuccess('Added ' + title + ' to My Movies');
+                  }}
+                >Add to List</Button>
+                <Button type="default" shape="circle" icon={<HeartOutlined />} />
+                {/* <Button type="primary" shape="circle" icon={<HeartOutlined />} /> */}
+              </div>
             </div>
-
-
-            // <div
-            //   key={o.id}
-            //   style={{
-            //     display: "flex",
-            //     width: "500px",
-            //     justifyContent: "space-between",
-            //     paddingBottom: "5px",
-            //   }}>
-            //   <Image height="100" width="66" quality="100" src={"https://image.tmdb.org/t/p/original/" + o.poster_path} alt={o.title} />
-            //   {o.media_type === "movie" ? o.title : o.name}
-            //   <button
-            //     onClick={() => {
-            //       // make anime type if original lang is japanese
-            //       let type = o.original_language === "ja" ? "anime" : o.media_type;
-            //       // if tv or movie some fields will be different (title, release date)
-            //       let release = o.media_type === "movie" ? o.release_date : o.first_air_date;
-            //       let title = o.media_type === "movie" ? o.title : o.name;
-
-            //       setMovies([...movies, { key: o.id, title: title, poster: "https://image.tmdb.org/t/p/original/" + o.poster_path, audience_rating: o.vote_average, release_date: release, media_type: type }]);
-            //       localStorage.setItem("movies", JSON.stringify([...movies, { key: o.id, title: title, poster: "https://image.tmdb.org/t/p/original/" + o.poster_path, audience_rating: o.vote_average, release_date: release, media_type: type }]));
-            //     }}
-            //   >
-            //     Add to List
-            //   </button>
-            // </div>
-            : (<div key={o.id}></div>))}
+            : <div key={o.id}></div>)}
         </div >
       ) : (
         <></>
       )
       }
+      <br />
+      <br />
+      <br />
 
-      <h2>My Movies List</h2>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <h2>My Movies List</h2>
+        <Button
+          type="primary"
+          danger
+          onClick={onRemove}
+        // disabled
+        >
+          Remove Selected
+        </Button>
+      </div>
 
       <Table
         style={{ border: '1px solid #ede9e8', borderRadius: "6px" }}
@@ -256,14 +288,6 @@ export default function Home() {
         rowSelection={rowSelection}
         tableLayout={"auto"}
       />
-      <br />
-      <Button
-        type="primary"
-        danger
-        onClick={onRemove}
-      >
-        Remove Selected
-      </Button>
     </>
   );
 }
