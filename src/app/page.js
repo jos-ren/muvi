@@ -21,6 +21,7 @@ import { FaRegBookmark } from "react-icons/fa6";
 
 // a section which tells you when a tracked show's new season will come out
 // turn major stuff into components
+// genre column
 
 
 
@@ -32,6 +33,156 @@ const onChange = (key) => {
 };
 const ImageLoader = ({ src, width, quality }) => {
   return `${src}?w=${width}&q=${quality || 75}`
+}
+
+const tvGenres = {
+  "genres": [
+    {
+      "id": 10759,
+      "name": "Action & Adventure"
+    },
+    {
+      "id": 16,
+      "name": "Animation"
+    },
+    {
+      "id": 35,
+      "name": "Comedy"
+    },
+    {
+      "id": 80,
+      "name": "Crime"
+    },
+    {
+      "id": 99,
+      "name": "Documentary"
+    },
+    {
+      "id": 18,
+      "name": "Drama"
+    },
+    {
+      "id": 10751,
+      "name": "Family"
+    },
+    {
+      "id": 10762,
+      "name": "Kids"
+    },
+    {
+      "id": 9648,
+      "name": "Mystery"
+    },
+    {
+      "id": 10763,
+      "name": "News"
+    },
+    {
+      "id": 10764,
+      "name": "Reality"
+    },
+    {
+      "id": 10765,
+      "name": "Sci-Fi & Fantasy"
+    },
+    {
+      "id": 10766,
+      "name": "Soap"
+    },
+    {
+      "id": 10767,
+      "name": "Talk"
+    },
+    {
+      "id": 10768,
+      "name": "War & Politics"
+    },
+    {
+      "id": 37,
+      "name": "Western"
+    }
+  ]
+}
+
+const movieGenres = {
+  "genres": [
+    {
+      "id": 28,
+      "name": "Action"
+    },
+    {
+      "id": 12,
+      "name": "Adventure"
+    },
+    {
+      "id": 16,
+      "name": "Animation"
+    },
+    {
+      "id": 35,
+      "name": "Comedy"
+    },
+    {
+      "id": 80,
+      "name": "Crime"
+    },
+    {
+      "id": 99,
+      "name": "Documentary"
+    },
+    {
+      "id": 18,
+      "name": "Drama"
+    },
+    {
+      "id": 10751,
+      "name": "Family"
+    },
+    {
+      "id": 14,
+      "name": "Fantasy"
+    },
+    {
+      "id": 36,
+      "name": "History"
+    },
+    {
+      "id": 27,
+      "name": "Horror"
+    },
+    {
+      "id": 10402,
+      "name": "Music"
+    },
+    {
+      "id": 9648,
+      "name": "Mystery"
+    },
+    {
+      "id": 10749,
+      "name": "Romance"
+    },
+    {
+      "id": 878,
+      "name": "Science Fiction"
+    },
+    {
+      "id": 10770,
+      "name": "TV Movie"
+    },
+    {
+      "id": 53,
+      "name": "Thriller"
+    },
+    {
+      "id": 10752,
+      "name": "War"
+    },
+    {
+      "id": 37,
+      "name": "Western"
+    }
+  ]
 }
 
 const movieColumns = [
@@ -91,7 +242,7 @@ const movieColumns = [
     onFilter: (value, record) => record.media_type.indexOf(value) === 0,
     // render: (media_type) => media_type.charAt(0).toUpperCase() + media_type.slice(1)
     render: (media_type) => {
-      let color = "green"
+      let color = ""
       if (media_type === "anime") {
         color = "geekblue"
       } else if (media_type === "tv") {
@@ -106,6 +257,26 @@ const movieColumns = [
       )
     }
   },
+
+// instead of checking what genre is everytime, set the genres when adding to your local storage
+
+  // {
+  //   title: 'Genres',
+  //   dataIndex: 'genres',
+  //   render: (genres) => {
+  //     let test = []
+  //     genres.map((i) => {
+  //       movieGenres["genres"].forEach(myFunction)
+  //       function myFunction(i2) {
+  //         if (i === i2.id) {
+  //           console.log(i2)
+  //           test = i2.name
+  //         }
+  //       }
+  //     })
+  //     return <div>{test}</div>
+  //   },
+  // },
   // {
   //   title: 'Status',
   //   dataIndex: 'status',
@@ -129,6 +300,8 @@ export default function Home() {
   const [disableRemove, setDisableRemove] = useState(true);
   const [popularMovies, setPopularMovies] = useState([]);
   const [messageApi, contextHolder] = message.useMessage();
+
+  // console.log(popularMovies)
 
   const onSuccess = (message) => {
     messageApi.open({
@@ -197,6 +370,8 @@ export default function Home() {
       selectedRows.length !== 0 ? setDisableRemove(false) : setDisableRemove(true)
     }
   };
+
+
 
   const tabItems = [
     {
@@ -306,8 +481,8 @@ export default function Home() {
                     let release = o.media_type === "movie" ? o.release_date : o.first_air_date;
                     let title = o.media_type === "movie" ? o.title : o.name;
 
-                    setMovies([...movies, { key: o.id, title: title, poster: "https://image.tmdb.org/t/p/original/" + o.poster_path, audience_rating: o.vote_average, release_date: release, media_type: type }]);
-                    localStorage.setItem("movies", JSON.stringify([...movies, { key: o.id, title: title, poster: "https://image.tmdb.org/t/p/original/" + o.poster_path, audience_rating: o.vote_average, release_date: release, media_type: type }]));
+                    setMovies([...movies, { key: o.id, title: title, poster: "https://image.tmdb.org/t/p/original/" + o.poster_path, audience_rating: o.vote_average, release_date: release, media_type: type, genres: o.genre_ids }]);
+                    localStorage.setItem("movies", JSON.stringify([...movies, { key: o.id, title: title, poster: "https://image.tmdb.org/t/p/original/" + o.poster_path, audience_rating: o.vote_average, release_date: release, media_type: type, genres: o.genre_ids }]));
                     onSuccess('Added ' + title + ' to My Movies');
                   }}
                 >Add to List</Button>
