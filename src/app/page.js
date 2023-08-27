@@ -1,10 +1,11 @@
 "use client";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
-import { Layout, Table, message, Input, Button, Tag, Carousel } from 'antd';
+import { Layout, Table, message, Input, Button, Tag, Carousel, Tabs } from 'antd';
 const { Search } = Input;
-import { StarTwoTone, HeartOutlined, PlusOutlined } from '@ant-design/icons';
+import { StarTwoTone, HeartOutlined, PlusOutlined, CheckOutlined, EyeOutlined } from '@ant-design/icons';
 const { Header, Content, Footer } = Layout;
+import { FaRegBookmark } from "react-icons/fa6";
 
 // option to rate movies in your list
 // toggle for list / grid view
@@ -18,10 +19,16 @@ const { Header, Content, Footer } = Layout;
 // add breakpoints for grid 
 // skeleton for grid when searching
 
+// a section which tells you when a tracked show's new season will come out
+// turn major stuff into components
 
 
-const onChange = (pagination, filters, sorter, extra) => {
-  console.log('params', pagination, filters, sorter, extra);
+
+// const onChange = (pagination, filters, sorter, extra) => {
+//   console.log('params', pagination, filters, sorter, extra);
+// };
+const onChange = (key) => {
+  console.log(key);
 };
 const ImageLoader = ({ src, width, quality }) => {
   return `${src}?w=${width}&q=${quality || 75}`
@@ -61,7 +68,7 @@ const movieColumns = [
     sorter: (a, b) => new Date(b.release_date) - new Date(a.release_date),
     render: (release_date) => {
       const date = new Date(release_date)
-      return <>{date.toLocaleDateString('en-US', { dateStyle: "medium", })}</>
+      return <div>{date.toLocaleDateString('en-US', { dateStyle: "medium", })}</div>
     },
   },
   {
@@ -109,16 +116,19 @@ const movieColumns = [
   // }
 ];
 
+
+
+
+
 export default function Home() {
   const fetch = require("node-fetch");
   const [movies, setMovies] = useState([]);
   const [search, setSearch] = useState([]);
   const [selected, setSelected] = useState([]);
-  const [showClear, setShowClear] = useState(true);
+  const [disableClear, setDisableClear] = useState(true);
+  const [disableRemove, setDisableRemove] = useState(true);
   const [popularMovies, setPopularMovies] = useState([]);
   const [messageApi, contextHolder] = message.useMessage();
-
-  console.log(popularMovies)
 
   const onSuccess = (message) => {
     messageApi.open({
@@ -127,25 +137,17 @@ export default function Home() {
     });
   };
 
-  const options = {
-    method: "GET",
-    headers: {
-      accept: "application/json",
-      Authorization: "Bearer " + process.env.NEXT_PUBLIC_TMDB_ACCESS_TOKEN,
-    },
-  };
-
   const onSearch = (value) => {
     fetch("https://api.themoviedb.org/3/search/multi?&language=en-US&query=" + value + "&page=1&include_adult=false", options)
       .then((res) => res.json())
       .then((json) => setSearch(json))
       .catch((err) => console.error("error:" + err));
-    setShowClear(false)
+    setDisableClear(false)
   };
 
   const clearSearch = () => {
     setSearch([])
-    setShowClear(true)
+    setDisableClear(true)
     // onSuccess('Cleared Search Results');
   };
 
@@ -153,6 +155,7 @@ export default function Home() {
     setMovies(movies.filter(item => !selected.includes(item.key)));
     localStorage.setItem("movies", JSON.stringify(movies.filter(item => !selected.includes(item.key))));
     onSuccess('Successfully Removed ' + selected.length + ' Movies');
+    setDisableRemove(true)
   };
 
   // const url = "https://api.themoviedb.org/3/find/tt14998742?external_source=imdb_id";
@@ -164,6 +167,14 @@ export default function Home() {
     lineHeight: '160px',
     textAlign: 'center',
     background: '#364d79',
+  };
+
+  const options = {
+    method: "GET",
+    headers: {
+      accept: "application/json",
+      Authorization: "Bearer " + process.env.NEXT_PUBLIC_TMDB_ACCESS_TOKEN,
+    },
   };
 
   useEffect(() => {
@@ -181,29 +192,76 @@ export default function Home() {
 
   const rowSelection = {
     onChange: (selectedRowKeys, selectedRows) => {
-      // console.log(`selectedRowKeys: ${selectedRowKeys}`, 'selectedRows: ', selectedRows);
+      console.log(`selectedRowKeys: ${selectedRowKeys}`, 'selectedRows: ', selectedRows);
       setSelected(selectedRowKeys)
+      selectedRows.length !== 0 ? setDisableRemove(false) : setDisableRemove(true)
     }
   };
+
+  const tabItems = [
+    {
+      key: '1',
+      label: (
+        <span style={{ display: "flex", alignItems: "center" }}>
+          <EyeOutlined style={{ marginRight: "7px" }} />
+          {/* <CheckOutlined  style={{marginRight:"7px"}}/>   */}
+          <div>Seen</div>
+        </span>
+      ),
+      children: <>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <h2>My Movies List</h2>
+          <Button
+            type="primary"
+            danger
+            onClick={onRemove}
+            disabled={disableRemove}
+          >
+            Remove Selected
+          </Button>
+        </div>
+        <Table
+          style={{ border: '1px solid #ede9e8', borderRadius: "6px" }}
+          // bordered
+          // onChange={onChange}
+          columns={movieColumns}
+          dataSource={movies}
+          pagination={{ position: ["bottomCenter"], showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100] }}
+          rowSelection={rowSelection}
+          tableLayout={"auto"}
+        />
+      </>,
+    },
+    {
+      key: '2',
+      label: (
+        <span style={{ display: "flex", alignItems: "center" }}>
+          <FaRegBookmark />
+          <div style={{ marginLeft: "6px" }}>Watchlist</div>
+        </span>
+      ),
+      children: 'Content of Tab Pane 2',
+    },
+  ];
 
   return (
     <>
       {contextHolder}
-      {popularMovies.results ? <Carousel 
+      {/* {popularMovies.results ? <Carousel 
       // autoplay
       >
         {popularMovies.results.map((o) =>
           <div style={{position:"relative", objectFit: 'cover'}}>
-            {/* <Image quality="100" 
+            <Image quality="100" 
             // fill={true} 
             height={200}
             width={900}
             style={{objectFit:"cover"}}
-            src={"https://image.tmdb.org/t/p/original" + o.backdrop_path} alt={o.title} /> */}
+            src={"https://image.tmdb.org/t/p/original" + o.backdrop_path} alt={o.title} />
             <h3 style={contentStyle}>{o.title}</h3>
           </div>
         )}
-      </Carousel> : <></>}
+      </Carousel> : <></>} */}
       <h1>Search</h1>
       <div style={{ display: "flex", alignItems: "center" }}>
         <Search
@@ -216,14 +274,13 @@ export default function Home() {
           type="link"
           onClick={clearSearch}
           style={{ marginLeft: "10px", height: "40px" }}
-          disabled={showClear}
+          disabled={disableClear}
         >
           Clear Results
         </Button>
       </div>
 
-      {search.results ? (
-
+      {search.results ?
         <div style={{
           // display: "flex", flexWrap: 'wrap', gap: '20px'
           display: "grid",
@@ -233,10 +290,12 @@ export default function Home() {
           gridRowGap: "10px",
           margin: "20px 0px"
         }}>
-          {/* only show movies with posters && not an actor in search results */}
           {search.results.map((o) => o.media_type !== "people" && o.poster_path ?
-            <div style={{ border: "1px solid red", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-              <Image height="200" width="125" quality="100" src={"https://image.tmdb.org/t/p/original/" + o.poster_path} alt={o.title} />
+            // only show movies with posters && not an actor in search results
+            <div
+              key={o.id}
+              style={{ border: "1px solid red", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+              <Image height="200" width="125" quality="100" src={"https://image.tmdb.org/t/p/original/" + o.poster_path} alt={o.id} />
               <div >{o.media_type === "movie" ? o.title : o.name}</div>
               <div>
                 <Button type="default"
@@ -252,42 +311,16 @@ export default function Home() {
                     onSuccess('Added ' + title + ' to My Movies');
                   }}
                 >Add to List</Button>
-                <Button type="default" shape="circle" icon={<HeartOutlined />} />
-                {/* <Button type="primary" shape="circle" icon={<HeartOutlined />} /> */}
+                {/* <Button type="default" shape="circle" icon={<HeartOutlined />} /> */}
               </div>
             </div>
-            : <div key={o.id}></div>)}
-        </div >
-      ) : (
-        <></>
-      )
-      }
+            : null)}
+        </div> : null}
       <br />
       <br />
       <br />
 
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <h2>My Movies List</h2>
-        <Button
-          type="primary"
-          danger
-          onClick={onRemove}
-        // disabled
-        >
-          Remove Selected
-        </Button>
-      </div>
-
-      <Table
-        style={{ border: '1px solid #ede9e8', borderRadius: "6px" }}
-        // bordered
-        columns={movieColumns}
-        dataSource={movies}
-        // onChange={onChange}
-        pagination={{ position: ["bottomCenter"], showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100] }}
-        rowSelection={rowSelection}
-        tableLayout={"auto"}
-      />
+      <Tabs defaultActiveKey="1" items={tabItems} onChange={onChange} size={"large"} centered />
     </>
   );
 }
