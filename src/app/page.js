@@ -1,9 +1,9 @@
 "use client";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
-import { Layout, Table, message, Input, Button, Tag, Carousel, Tabs } from 'antd';
+import { Layout, Table, message, Input, Button, Tag, Carousel, Tabs, InputNumber } from 'antd';
 const { Search } = Input;
-import { StarTwoTone, HeartOutlined, PlusOutlined, CheckOutlined, EyeOutlined } from '@ant-design/icons';
+import { StarTwoTone, StarOutlined, DeleteOutlined, PlusOutlined, CheckOutlined, EyeOutlined } from '@ant-design/icons';
 const { Header, Content, Footer } = Layout;
 import { FaRegBookmark } from "react-icons/fa6";
 
@@ -18,7 +18,7 @@ import { FaRegBookmark } from "react-icons/fa6";
 // suycces message when adding movies
 // add breakpoints for grid 
 // skeleton for grid when searching
-
+// hide poster button
 // a section which tells you when a tracked show's new season will come out
 // turn major stuff into components
 // genre column
@@ -185,112 +185,6 @@ const movieGenres = {
   ]
 }
 
-const movieColumns = [
-  {
-    title: 'Poster',
-    dataIndex: 'poster',
-    render: (poster, title) => <Image
-      loader={ImageLoader}
-      src={poster}
-      width={50}
-      height={75}
-      style={{ objectFit: "cover" }}
-      alt={title}
-    />,
-  },
-  {
-    title: 'Title',
-    dataIndex: 'title',
-  },
-  {
-    title: 'Audience Rating',
-    dataIndex: 'audience_rating',
-    sorter: (a, b) => a.audience_rating - b.audience_rating,
-    // render: (audience_rating) => <Rate disabled defaultValue={audience_rating} count={10}/>
-    render: (audience_rating) => <>
-      <StarTwoTone twoToneColor="#fadb14" />
-      <> </>
-      {Number.parseFloat(audience_rating).toFixed(1)}
-    </>
-  },
-  {
-    title: 'Release Date',
-    dataIndex: 'release_date',
-    sorter: (a, b) => new Date(b.release_date) - new Date(a.release_date),
-    render: (release_date) => {
-      const date = new Date(release_date)
-      return <div>{date.toLocaleDateString('en-US', { dateStyle: "medium", })}</div>
-    },
-  },
-  {
-    title: 'Type',
-    dataIndex: 'media_type',
-    filters: [
-      {
-        text: 'Movie',
-        value: 'movie',
-      },
-      {
-        text: 'TV',
-        value: 'tv',
-      },
-      {
-        text: 'Anime',
-        value: 'anime',
-      },
-    ],
-    onFilter: (value, record) => record.media_type.indexOf(value) === 0,
-    // render: (media_type) => media_type.charAt(0).toUpperCase() + media_type.slice(1)
-    render: (media_type) => {
-      let color = ""
-      if (media_type === "anime") {
-        color = "geekblue"
-      } else if (media_type === "tv") {
-        color = "green"
-      } else {
-        color = "volcano"
-      }
-      return (
-        <Tag color={color}>
-          {media_type.toUpperCase()}
-        </Tag>
-      )
-    }
-  },
-
-// instead of checking what genre is everytime, set the genres when adding to your local storage
-
-  // {
-  //   title: 'Genres',
-  //   dataIndex: 'genres',
-  //   render: (genres) => {
-  //     let test = []
-  //     genres.map((i) => {
-  //       movieGenres["genres"].forEach(myFunction)
-  //       function myFunction(i2) {
-  //         if (i === i2.id) {
-  //           console.log(i2)
-  //           test = i2.name
-  //         }
-  //       }
-  //     })
-  //     return <div>{test}</div>
-  //   },
-  // },
-  // {
-  //   title: 'Status',
-  //   dataIndex: 'status',
-  // },
-  // {
-  //   title: 'Current Progress',
-  //   dataIndex: 'current_progress',
-  // }
-];
-
-
-
-
-
 export default function Home() {
   const fetch = require("node-fetch");
   const [movies, setMovies] = useState([]);
@@ -302,6 +196,136 @@ export default function Home() {
   const [messageApi, contextHolder] = message.useMessage();
 
   // console.log(popularMovies)
+
+  const movieColumns = [
+    {
+      title: 'Poster',
+      dataIndex: 'poster',
+      render: (poster, title) => <Image
+        loader={ImageLoader}
+        src={poster}
+        width={50}
+        height={75}
+        style={{ objectFit: "cover" }}
+        alt={title}
+      />,
+    },
+    {
+      title: 'Title',
+      dataIndex: 'title',
+    },
+    {
+      title: 'Audience Rating',
+      dataIndex: 'audience_rating',
+      sorter: (a, b) => a.audience_rating - b.audience_rating,
+      // render: (audience_rating) => <Rate disabled defaultValue={audience_rating} count={10}/>
+      render: (audience_rating) => <>
+        <StarTwoTone twoToneColor="#fadb14" />
+        <> </>
+        {Number.parseFloat(audience_rating).toFixed(1)}
+      </>
+    },
+    {
+      title: 'Release Date',
+      dataIndex: 'release_date',
+      sorter: (a, b) => new Date(b.release_date) - new Date(a.release_date),
+      render: (release_date) => {
+        const date = new Date(release_date)
+        return <div>{date.toLocaleDateString('en-US', { dateStyle: "medium", })}</div>
+      },
+    },
+    {
+      title: 'Type',
+      dataIndex: 'media_type',
+      filters: [
+        {
+          text: 'Movie',
+          value: 'movie',
+        },
+        {
+          text: 'TV',
+          value: 'tv',
+        },
+        {
+          text: 'Anime',
+          value: 'anime',
+        },
+      ],
+      onFilter: (value, record) => record.media_type.indexOf(value) === 0,
+      // render: (media_type) => media_type.charAt(0).toUpperCase() + media_type.slice(1)
+      render: (media_type) => {
+        let color = ""
+        if (media_type === "anime") {
+          color = "geekblue"
+        } else if (media_type === "tv") {
+          color = "green"
+        } else {
+          color = "volcano"
+        }
+        return (
+          <Tag color={color}>
+            {media_type.toUpperCase()}
+          </Tag>
+        )
+      }
+    },
+    {
+      title: 'Last Watched',
+      render: (data) => {
+        console.log(data.season, "DATA")
+        return data.media_type !== "movie" ? <div>
+          {/* perhaps include an edit buitton to edit this data */}
+          {/* have an option for Completed */}
+          <InputNumber min={1} addonBefore="S" size="small" defaultValue={data.season} onChange={
+            (test) => {
+              console.log(test)
+            }
+          } style={{ maxWidth: "80px" }} controls={false} />
+          <InputNumber min={1} addonBefore="E" size="small" defaultValue={data.episode} onChange={onChange} style={{ maxWidth: "80px" }} controls={false} />
+        </div> : <></>
+      },
+    },
+    {
+      title: 'My Rating',
+      dataIndex: 'my_rating',
+      sorter: (a, b) => a.my_rating - b.my_rating,
+      render: (my_rating) => {
+        return my_rating !== "unrated" ? <>
+          <StarTwoTone twoToneColor="#fadb14" />
+          <> </>
+          {Number.parseFloat(my_rating).toFixed(1)}
+        </> : <StarOutlined />
+      }
+    },
+
+    // instead of checking what genre is everytime, set the genres when adding to your local storage
+
+    // {
+    //   title: 'Genres',
+    //   dataIndex: 'genres',
+    //   render: (genres) => {
+    //     let test = []
+    //     genres.map((i) => {
+    //       movieGenres["genres"].forEach(myFunction)
+    //       function myFunction(i2) {
+    //         if (i === i2.id) {
+    //           console.log(i2)
+    //           test = i2.name
+    //         }
+    //       }
+    //     })
+    //     return <div>{test}</div>
+    //   },
+    // },
+    // {
+    //   title: 'Status',
+    //   dataIndex: 'status',
+    // },
+    // {
+    //   title: 'Current Progress',
+    //   dataIndex: 'current_progress',
+    // }
+  ];
 
   const onSuccess = (message) => {
     messageApi.open({
@@ -386,14 +410,25 @@ export default function Home() {
       children: <>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <h2>My Movies List</h2>
-          <Button
-            type="primary"
-            danger
-            onClick={onRemove}
-            disabled={disableRemove}
-          >
-            Remove Selected
-          </Button>
+          <div>
+            <Button
+              type="primary"
+            // onClick={onRemove}
+            // disabled={disableRemove}
+            >
+              Show Posters
+            </Button>
+            <> </>
+            <Button
+              type="primary"
+              danger
+              onClick={onRemove}
+              disabled={disableRemove}
+              icon={<DeleteOutlined />}
+            >
+              Remove Selected
+            </Button>
+          </div>
         </div>
         <Table
           style={{ border: '1px solid #ede9e8', borderRadius: "6px" }}
@@ -481,8 +516,30 @@ export default function Home() {
                     let release = o.media_type === "movie" ? o.release_date : o.first_air_date;
                     let title = o.media_type === "movie" ? o.title : o.name;
 
-                    setMovies([...movies, { key: o.id, title: title, poster: "https://image.tmdb.org/t/p/original/" + o.poster_path, audience_rating: o.vote_average, release_date: release, media_type: type, genres: o.genre_ids }]);
-                    localStorage.setItem("movies", JSON.stringify([...movies, { key: o.id, title: title, poster: "https://image.tmdb.org/t/p/original/" + o.poster_path, audience_rating: o.vote_average, release_date: release, media_type: type, genres: o.genre_ids }]));
+                    setMovies([...movies, {
+                      key: o.id,
+                      title: title,
+                      poster: "https://image.tmdb.org/t/p/original/" + o.poster_path,
+                      audience_rating: o.vote_average,
+                      release_date: release,
+                      media_type: type,
+                      genres: o.genre_ids,
+                      season: "1",
+                      episode: "1",
+                      my_rating: "unrated"
+                    }]);
+                    localStorage.setItem("movies", JSON.stringify([...movies, {
+                      key: o.id,
+                      title: title,
+                      poster: "https://image.tmdb.org/t/p/original/" + o.poster_path,
+                      audience_rating: o.vote_average,
+                      release_date: release,
+                      media_type: type,
+                      genres: o.genre_ids,
+                      season: "1",
+                      episode: "1",
+                      my_rating: "unrated"
+                    }]));
                     onSuccess('Added ' + title + ' to My Movies');
                   }}
                 >Add to List</Button>
