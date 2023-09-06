@@ -1,11 +1,12 @@
 "use client";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
-import { Layout, Table, message, Input, Button, Tag, Carousel, Tabs, InputNumber } from 'antd';
+import { Layout, Table, message, Input, Button, Tag, Carousel, Tabs, InputNumber, Space } from 'antd';
 const { Search } = Input;
-import { StarTwoTone, StarOutlined, DeleteOutlined, PlusOutlined, CheckOutlined, EyeOutlined } from '@ant-design/icons';
+import { StarTwoTone, StarOutlined, DeleteOutlined, PlusOutlined, CheckOutlined, EyeOutlined, SearchOutlined, CloseOutlined } from '@ant-design/icons';
 const { Header, Content, Footer } = Layout;
 import { FaRegBookmark } from "react-icons/fa6";
+import Highlighter from 'react-highlight-words';
 
 // option to rate movies in your list
 // toggle for list / grid view
@@ -22,6 +23,8 @@ import { FaRegBookmark } from "react-icons/fa6";
 // a section which tells you when a tracked show's new season will come out
 // turn major stuff into components
 // genre column
+// editable cells? (in table component ant design)
+// make title filter inline with column name
 
 
 
@@ -197,22 +200,109 @@ export default function Home() {
 
   // console.log(popularMovies)
 
-  const movieColumns = [
-    {
-      title: 'Poster',
-      dataIndex: 'poster',
-      render: (poster, title) => <Image
-        loader={ImageLoader}
-        src={poster}
-        width={50}
-        height={75}
-        style={{ objectFit: "cover" }}
-        alt={title}
-      />,
+  const [searchText, setSearchText] = useState('');
+  const [searchedColumn, setSearchedColumn] = useState('');
+  const searchInput = useRef(null);
+  const handleSearch = (selectedKeys, confirm, dataIndex) => {
+    confirm();
+    setSearchText(selectedKeys[0]);
+    setSearchedColumn(dataIndex);
+  };
+  const handleReset = (clearFilters) => {
+    clearFilters();
+    setSearchText('');
+  };
+  const getColumnSearchProps = (dataIndex) => ({
+    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters, close }) => (
+      <div
+        style={{
+          padding: 8,
+        }}
+        onKeyDown={(e) => e.stopPropagation()}
+      >
+        <Input
+          ref={searchInput}
+          placeholder={`Search ${dataIndex}`}
+          value={selectedKeys[0]}
+          onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
+          onPressEnter={() => handleSearch(selectedKeys, confirm, dataIndex)}
+          style={{
+            marginBottom: 8,
+            display: 'block',
+          }}
+        />
+        <Space>
+          <Button
+            type="primary"
+            onClick={() => handleSearch(selectedKeys, confirm, dataIndex)}
+            icon={<SearchOutlined />}
+            size="small"
+            style={{
+              width: 95,
+            }}
+          >
+            Filter
+          </Button>
+          <Button
+            onClick={() => clearFilters && handleReset(clearFilters)}
+            size="small"
+            style={{
+              width: 95,
+            }}
+          >
+            Reset
+          </Button>
+        </Space>
+      </div>
+    ),
+    filterIcon: (filtered) => (
+      <SearchOutlined
+        style={{
+          color: filtered ? '#1890ff' : undefined,
+        }}
+      />
+    ),
+    onFilter: (value, record) =>
+      record[dataIndex].toString().toLowerCase().includes(value.toLowerCase()),
+    onFilterDropdownOpenChange: (visible) => {
+      if (visible) {
+        setTimeout(() => searchInput.current?.select(), 100);
+      }
     },
+    render: (text) =>
+      searchedColumn === dataIndex ? (
+        <Highlighter
+          highlightStyle={{
+            backgroundColor: '#ffc069',
+            padding: 0,
+          }}
+          searchWords={[searchText]}
+          autoEscape
+          textToHighlight={text ? text.toString() : ''}
+        />
+      ) : (
+        text
+      ),
+  });
+
+  const movieColumns = [
+    // {
+    //   title: 'Poster',
+    //   dataIndex: 'poster',
+    //   render: (poster, title) => <Image
+    //     loader={ImageLoader}
+    //     src={poster}
+    //     width={50}
+    //     height={75}
+    //     style={{ objectFit: "cover" }}
+    //     alt={title}
+    //   />,
+    // },
     {
       title: 'Title',
       dataIndex: 'title',
+      key: 'title',
+      ...getColumnSearchProps('title'),
     },
     {
       title: 'Audience Rating',
@@ -394,8 +484,6 @@ export default function Home() {
       selectedRows.length !== 0 ? setDisableRemove(false) : setDisableRemove(true)
     }
   };
-
-
 
   const tabItems = [
     {
