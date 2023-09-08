@@ -7,7 +7,7 @@ const Container = styled.div`
 
 `;
 
-const MovieTable = ({ header, onRemove, disableRemove, movieColumns, movies, rowSelection }) => {
+const MovieTable = ({ header, onRemove, disableRemove, movieColumns, movies, rowSelection, onChange }) => {
     return (
         <Container>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -36,7 +36,7 @@ const MovieTable = ({ header, onRemove, disableRemove, movieColumns, movies, row
                 // sortDirections={[descend, ascend]}
                 style={{ border: '1px solid #ede9e8', borderRadius: "6px" }}
                 // bordered
-                // onChange={onChange}
+                onChange={onChange}
                 columns={movieColumns}
                 dataSource={movies}
                 pagination={{ position: ["bottomCenter"], showSizeChanger: true }}

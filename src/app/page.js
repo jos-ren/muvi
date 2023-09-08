@@ -45,6 +45,7 @@ export default function Home() {
   const [disableClear, setDisableClear] = useState(true);
   const [disableRemove, setDisableRemove] = useState(true);
   const [loaded, setLoaded] = useState(true);
+  const [page, setPage] = useState(1);
   const [popularMovies, setPopularMovies] = useState([]);
   const [messageApi, contextHolder] = message.useMessage();
   const [searchText, setSearchText] = useState('');
@@ -376,7 +377,7 @@ export default function Home() {
   const popMovColumns = [
     {
       title: 'Popularity',
-      render:(item, record, index)=>(<>{index+1}</>)
+      render: (item, record, index) => ((index + 1) + ((page - 1) * 10))
     },
     {
       title: 'Poster',
@@ -499,6 +500,7 @@ export default function Home() {
           movieColumns={popMovColumns}
           movies={popularMovies}
           rowSelection={false}
+          onChange={(page) => { setPage(page.current) }}
         />
       </div>,
       // tv shows which have seasons or episodes coming soon
