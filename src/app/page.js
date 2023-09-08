@@ -1,12 +1,13 @@
 "use client";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
-import { Layout, Table, message, Input, Button, Tag, Carousel, Tabs, InputNumber, Space } from 'antd';
+import { Layout, Table, message, Input, Button, Tag, Carousel, Tabs, InputNumber, Space, Tooltip } from 'antd';
 const { Search } = Input;
 import { StarTwoTone, StarOutlined, DeleteOutlined, PlusOutlined, CheckOutlined, EyeOutlined, SearchOutlined, CloseOutlined } from '@ant-design/icons';
 const { Header, Content, Footer } = Layout;
 import { FaRegBookmark } from "react-icons/fa6";
 import Highlighter from 'react-highlight-words';
+import { genreCodes } from "../../public/genres.js"
 
 // option to rate movies in your list
 // toggle for list / grid view
@@ -38,156 +39,6 @@ const ImageLoader = ({ src, width, quality }) => {
   return `${src}?w=${width}&q=${quality || 75}`
 }
 
-const tvGenres = {
-  "genres": [
-    {
-      "id": 10759,
-      "name": "Action & Adventure"
-    },
-    {
-      "id": 16,
-      "name": "Animation"
-    },
-    {
-      "id": 35,
-      "name": "Comedy"
-    },
-    {
-      "id": 80,
-      "name": "Crime"
-    },
-    {
-      "id": 99,
-      "name": "Documentary"
-    },
-    {
-      "id": 18,
-      "name": "Drama"
-    },
-    {
-      "id": 10751,
-      "name": "Family"
-    },
-    {
-      "id": 10762,
-      "name": "Kids"
-    },
-    {
-      "id": 9648,
-      "name": "Mystery"
-    },
-    {
-      "id": 10763,
-      "name": "News"
-    },
-    {
-      "id": 10764,
-      "name": "Reality"
-    },
-    {
-      "id": 10765,
-      "name": "Sci-Fi & Fantasy"
-    },
-    {
-      "id": 10766,
-      "name": "Soap"
-    },
-    {
-      "id": 10767,
-      "name": "Talk"
-    },
-    {
-      "id": 10768,
-      "name": "War & Politics"
-    },
-    {
-      "id": 37,
-      "name": "Western"
-    }
-  ]
-}
-
-const movieGenres = {
-  "genres": [
-    {
-      "id": 28,
-      "name": "Action"
-    },
-    {
-      "id": 12,
-      "name": "Adventure"
-    },
-    {
-      "id": 16,
-      "name": "Animation"
-    },
-    {
-      "id": 35,
-      "name": "Comedy"
-    },
-    {
-      "id": 80,
-      "name": "Crime"
-    },
-    {
-      "id": 99,
-      "name": "Documentary"
-    },
-    {
-      "id": 18,
-      "name": "Drama"
-    },
-    {
-      "id": 10751,
-      "name": "Family"
-    },
-    {
-      "id": 14,
-      "name": "Fantasy"
-    },
-    {
-      "id": 36,
-      "name": "History"
-    },
-    {
-      "id": 27,
-      "name": "Horror"
-    },
-    {
-      "id": 10402,
-      "name": "Music"
-    },
-    {
-      "id": 9648,
-      "name": "Mystery"
-    },
-    {
-      "id": 10749,
-      "name": "Romance"
-    },
-    {
-      "id": 878,
-      "name": "Science Fiction"
-    },
-    {
-      "id": 10770,
-      "name": "TV Movie"
-    },
-    {
-      "id": 53,
-      "name": "Thriller"
-    },
-    {
-      "id": 10752,
-      "name": "War"
-    },
-    {
-      "id": 37,
-      "name": "Western"
-    }
-  ]
-}
-
 export default function Home() {
   const fetch = require("node-fetch");
   const [movies, setMovies] = useState([]);
@@ -198,7 +49,8 @@ export default function Home() {
   const [popularMovies, setPopularMovies] = useState([]);
   const [messageApi, contextHolder] = message.useMessage();
 
-  // console.log(popularMovies)
+  // console.log(tvGenres.genres)
+  console.log(movies)
 
   const [searchText, setSearchText] = useState('');
   const [searchedColumn, setSearchedColumn] = useState('');
@@ -286,18 +138,18 @@ export default function Home() {
   });
 
   const movieColumns = [
-    // {
-    //   title: 'Poster',
-    //   dataIndex: 'poster',
-    //   render: (poster, title) => <Image
-    //     loader={ImageLoader}
-    //     src={poster}
-    //     width={50}
-    //     height={75}
-    //     style={{ objectFit: "cover" }}
-    //     alt={title}
-    //   />,
-    // },
+    {
+      title: 'Poster',
+      dataIndex: 'poster',
+      render: (poster, title) => <Image
+        loader={ImageLoader}
+        src={poster}
+        width={50}
+        height={75}
+        style={{ objectFit: "cover" }}
+        alt={title}
+      />,
+    },
     {
       title: 'Title',
       dataIndex: 'title',
@@ -360,9 +212,9 @@ export default function Home() {
       }
     },
     {
-      title: 'Last Watched',
+      title: 'Progress',
       render: (data) => {
-        console.log(data.season, "DATA")
+        // console.log(data.season, "DATA")
         return data.media_type !== "movie" ? <div>
           {/* perhaps include an edit buitton to edit this data */}
           {/* have an option for Completed */}
@@ -390,31 +242,43 @@ export default function Home() {
 
     // instead of checking what genre is everytime, set the genres when adding to your local storage
 
-    // {
-    //   title: 'Genres',
-    //   dataIndex: 'genres',
-    //   render: (genres) => {
-    //     let test = []
-    //     genres.map((i) => {
-    //       movieGenres["genres"].forEach(myFunction)
-    //       function myFunction(i2) {
-    //         if (i === i2.id) {
-    //           console.log(i2)
-    //           test = i2.name
-    //         }
-    //       }
-    //     })
-    //     return <div>{test}</div>
-    //   },
-    // },
+    {
+      title: 'Genres',
+      dataIndex: 'genres',
+      render: (genres) => {
+        let nameArr = []
+        let emojiArr = []
+
+        genres.map((i) => {
+          genreCodes.forEach(myFunction)
+          function myFunction(i2) {
+            if (i === i2.id) {
+              nameArr.push(i2.name)
+              emojiArr.push(i2.emoji)
+            }
+          }
+        })
+        // console.log(arr, "ARR")
+        // add a tooltip to the emoji
+
+        console.log(nameArr, "TES")
+        return <div style={{display:"flex"}}>
+          {nameArr.map((i, index) =>
+            <div style={{ marginRight:"3px", cursor: "default", border: "1px solid #d9d9d9", width: "22px", display: "flex", alignItems: "center", justifyContent: "center", background: "#fafafa", borderRadius: "5px" }}>
+              <Tooltip title={i}>
+                {emojiArr[index]}
+              </Tooltip>
+            </div>
+          )}
+        </div>
+
+
+      },
+    },
     // {
     //   title: 'Status',
     //   dataIndex: 'status',
     // },
-    // {
-    //   title: 'Current Progress',
-    //   dataIndex: 'current_progress',
-    // }
   ];
 
   const onSuccess = (message) => {
@@ -499,13 +363,13 @@ export default function Home() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <h2>My Movies List</h2>
           <div>
-            <Button
+            {/* <Button
               type="primary"
             // onClick={onRemove}
             // disabled={disableRemove}
             >
               Show Posters
-            </Button>
+            </Button> */}
             <> </>
             <Button
               type="primary"
@@ -524,9 +388,9 @@ export default function Home() {
           // onChange={onChange}
           columns={movieColumns}
           dataSource={movies}
-          pagination={{ position: ["bottomCenter"], showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100] }}
+          pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
           rowSelection={rowSelection}
-          tableLayout={"auto"}
+        // tableLayout={"auto"}
         />
       </>,
     },
