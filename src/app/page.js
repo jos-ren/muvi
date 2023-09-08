@@ -1,10 +1,9 @@
 "use client";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
-import { Layout, Table, message, Input, Button, Tag, Carousel, Tabs, InputNumber, Space, Tooltip } from 'antd';
+import { Layout, Table, message, Input, Button, Tag, Carousel, Tabs, InputNumber, Space, Tooltip, Skeleton } from 'antd';
 const { Search } = Input;
 import { StarTwoTone, StarOutlined, DeleteOutlined, PlusOutlined, CheckOutlined, EyeOutlined, SearchOutlined, CloseOutlined } from '@ant-design/icons';
-const { Header, Content, Footer } = Layout;
 import { FaRegBookmark } from "react-icons/fa6";
 import Highlighter from 'react-highlight-words';
 import { genreCodes } from "../../public/genres.js"
@@ -21,11 +20,14 @@ import { genreCodes } from "../../public/genres.js"
 // add breakpoints for grid 
 // skeleton for grid when searching
 // hide poster button
-// a section which tells you when a tracked show's new season will come out
 // turn major stuff into components
-// genre column
 // editable cells? (in table component ant design)
 // make title filter inline with column name
+// upcoming tab which features new seasons of shows in your lists
+// shopw more button for searched movies... (limit search to 10 initally and show more if clicked)
+// button for move to watchlist and vice versa (beside the remove button)
+// mak emajor things into components (table, etcetera)
+
 
 
 
@@ -35,9 +37,6 @@ import { genreCodes } from "../../public/genres.js"
 const onChange = (key) => {
   console.log(key);
 };
-const ImageLoader = ({ src, width, quality }) => {
-  return `${src}?w=${width}&q=${quality || 75}`
-}
 
 export default function Home() {
   const fetch = require("node-fetch");
@@ -46,11 +45,12 @@ export default function Home() {
   const [selected, setSelected] = useState([]);
   const [disableClear, setDisableClear] = useState(true);
   const [disableRemove, setDisableRemove] = useState(true);
+  const [loaded, setLoaded] = useState(true);
   const [popularMovies, setPopularMovies] = useState([]);
   const [messageApi, contextHolder] = message.useMessage();
 
   // console.log(tvGenres.genres)
-  console.log(movies)
+  // console.log(movies)
 
   const [searchText, setSearchText] = useState('');
   const [searchedColumn, setSearchedColumn] = useState('');
@@ -142,7 +142,6 @@ export default function Home() {
       title: 'Poster',
       dataIndex: 'poster',
       render: (poster, title) => <Image
-        loader={ImageLoader}
         src={poster}
         width={50}
         height={75}
@@ -212,9 +211,46 @@ export default function Home() {
       }
     },
     {
+      title: 'My Rating',
+      dataIndex: 'my_rating',
+      sorter: (a, b) => a.my_rating - b.my_rating,
+      render: (my_rating) => {
+        return my_rating !== "unrated" ? <>
+          <StarTwoTone twoToneColor="#fadb14" />
+          <> </>
+          {Number.parseFloat(my_rating).toFixed(1)}
+        </> : <StarOutlined />
+      }
+    },
+    {
+      title: 'Genres',
+      dataIndex: 'genres',
+      render: (genres) => {
+        let nameArr = []
+        let emojiArr = []
+        genres.map((i) => {
+          genreCodes.forEach(myFunction)
+          function myFunction(i2) {
+            if (i === i2.id) {
+              nameArr.push(i2.name)
+              emojiArr.push(i2.emoji)
+            }
+          }
+        })
+        return <div style={{ display: "flex" }}>
+          {nameArr.map((i, index) =>
+            <div key={index} style={{ marginRight: "3px", cursor: "default", border: "1px solid #d9d9d9", width: "22px", display: "flex", alignItems: "center", justifyContent: "center", background: "#fafafa", borderRadius: "5px" }}>
+              <Tooltip title={i}>
+                {emojiArr[index]}
+              </Tooltip>
+            </div>
+          )}
+        </div>
+      },
+    },
+    {
       title: 'Progress',
       render: (data) => {
-        // console.log(data.season, "DATA")
         return data.media_type !== "movie" ? <div>
           {/* perhaps include an edit buitton to edit this data */}
           {/* have an option for Completed */}
@@ -227,58 +263,6 @@ export default function Home() {
         </div> : <></>
       },
     },
-    {
-      title: 'My Rating',
-      dataIndex: 'my_rating',
-      sorter: (a, b) => a.my_rating - b.my_rating,
-      render: (my_rating) => {
-        return my_rating !== "unrated" ? <>
-          <StarTwoTone twoToneColor="#fadb14" />
-          <> </>
-          {Number.parseFloat(my_rating).toFixed(1)}
-        </> : <StarOutlined />
-      }
-    },
-
-    // instead of checking what genre is everytime, set the genres when adding to your local storage
-
-    {
-      title: 'Genres',
-      dataIndex: 'genres',
-      render: (genres) => {
-        let nameArr = []
-        let emojiArr = []
-
-        genres.map((i) => {
-          genreCodes.forEach(myFunction)
-          function myFunction(i2) {
-            if (i === i2.id) {
-              nameArr.push(i2.name)
-              emojiArr.push(i2.emoji)
-            }
-          }
-        })
-        // console.log(arr, "ARR")
-        // add a tooltip to the emoji
-
-        console.log(nameArr, "TES")
-        return <div style={{display:"flex"}}>
-          {nameArr.map((i, index) =>
-            <div style={{ marginRight:"3px", cursor: "default", border: "1px solid #d9d9d9", width: "22px", display: "flex", alignItems: "center", justifyContent: "center", background: "#fafafa", borderRadius: "5px" }}>
-              <Tooltip title={i}>
-                {emojiArr[index]}
-              </Tooltip>
-            </div>
-          )}
-        </div>
-
-
-      },
-    },
-    // {
-    //   title: 'Status',
-    //   dataIndex: 'status',
-    // },
   ];
 
   const onSuccess = (message) => {
@@ -454,50 +438,50 @@ export default function Home() {
         }}>
           {search.results.map((o) => o.media_type !== "people" && o.poster_path ?
             // only show movies with posters && not an actor in search results
-            <div
-              key={o.id}
-              style={{ border: "1px solid red", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-              <Image height="200" width="125" quality="100" src={"https://image.tmdb.org/t/p/original/" + o.poster_path} alt={o.id} />
-              <div >{o.media_type === "movie" ? o.title : o.name}</div>
-              <div>
-                <Button type="default"
-                  onClick={() => {
-                    // make anime type if original lang is japanese
-                    let type = o.original_language === "ja" ? "anime" : o.media_type;
-                    // if tv or movie some fields will be different (title, release date)
-                    let release = o.media_type === "movie" ? o.release_date : o.first_air_date;
-                    let title = o.media_type === "movie" ? o.title : o.name;
+              <div
+                key={o.id}
+                style={{ border: "1px solid red", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+                <Image height="200" width="125" quality="75" src={"https://image.tmdb.org/t/p/original/" + o.poster_path} alt={o.id} />
+                <div >{o.media_type === "movie" ? o.title : o.name}</div>
+                <div>
+                  <Button type="default"
+                    onClick={() => {
+                      // make anime type if original lang is japanese
+                      let type = o.original_language === "ja" ? "anime" : o.media_type;
+                      // if tv or movie some fields will be different (title, release date)
+                      let release = o.media_type === "movie" ? o.release_date : o.first_air_date;
+                      let title = o.media_type === "movie" ? o.title : o.name;
 
-                    setMovies([...movies, {
-                      key: o.id,
-                      title: title,
-                      poster: "https://image.tmdb.org/t/p/original/" + o.poster_path,
-                      audience_rating: o.vote_average,
-                      release_date: release,
-                      media_type: type,
-                      genres: o.genre_ids,
-                      season: "1",
-                      episode: "1",
-                      my_rating: "unrated"
-                    }]);
-                    localStorage.setItem("movies", JSON.stringify([...movies, {
-                      key: o.id,
-                      title: title,
-                      poster: "https://image.tmdb.org/t/p/original/" + o.poster_path,
-                      audience_rating: o.vote_average,
-                      release_date: release,
-                      media_type: type,
-                      genres: o.genre_ids,
-                      season: "1",
-                      episode: "1",
-                      my_rating: "unrated"
-                    }]));
-                    onSuccess('Added ' + title + ' to My Movies');
-                  }}
-                >Add to List</Button>
-                {/* <Button type="default" shape="circle" icon={<HeartOutlined />} /> */}
+                      setMovies([...movies, {
+                        key: o.id,
+                        title: title,
+                        poster: "https://image.tmdb.org/t/p/original/" + o.poster_path,
+                        audience_rating: o.vote_average,
+                        release_date: release,
+                        media_type: type,
+                        genres: o.genre_ids,
+                        season: "1",
+                        episode: "1",
+                        my_rating: "unrated"
+                      }]);
+                      localStorage.setItem("movies", JSON.stringify([...movies, {
+                        key: o.id,
+                        title: title,
+                        poster: "https://image.tmdb.org/t/p/original/" + o.poster_path,
+                        audience_rating: o.vote_average,
+                        release_date: release,
+                        media_type: type,
+                        genres: o.genre_ids,
+                        season: "1",
+                        episode: "1",
+                        my_rating: "unrated"
+                      }]));
+                      onSuccess('Added ' + title + ' to My Movies');
+                    }}
+                  >Add to List</Button>
+                  {/* <Button type="default" shape="circle" icon={<HeartOutlined />} /> */}
+                </div>
               </div>
-            </div>
             : null)}
         </div> : null}
       <br />
