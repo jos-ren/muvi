@@ -1,12 +1,13 @@
 "use client";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
-import { Layout, Table, message, Input, Button, Tag, Carousel, Tabs, InputNumber, Space, Tooltip, Skeleton } from 'antd';
+import { Layout, message, Input, Button, Tag, Carousel, Tabs, InputNumber, Space, Tooltip, Skeleton, Progress } from 'antd';
 const { Search } = Input;
-import { StarTwoTone, StarOutlined, DeleteOutlined, PlusOutlined, CheckOutlined, EyeOutlined, SearchOutlined, CloseOutlined } from '@ant-design/icons';
+import { StarTwoTone, StarOutlined, EyeOutlined, SearchOutlined, CheckOutlined, RiseOutlined } from '@ant-design/icons';
 import { FaRegBookmark } from "react-icons/fa6";
 import Highlighter from 'react-highlight-words';
 import { genreCodes } from "../../public/genres.js"
+import MovieTable from "../../comps/MovieTable.js"
 
 // option to rate movies in your list
 // toggle for list / grid view
@@ -26,14 +27,12 @@ import { genreCodes } from "../../public/genres.js"
 // upcoming tab which features new seasons of shows in your lists
 // shopw more button for searched movies... (limit search to 10 initally and show more if clicked)
 // button for move to watchlist and vice versa (beside the remove button)
-// mak emajor things into components (table, etcetera)
+// make major things into components (table, etcetera)
+// undo button when removing movies
 
 
 
 
-// const onChange = (pagination, filters, sorter, extra) => {
-//   console.log('params', pagination, filters, sorter, extra);
-// };
 const onChange = (key) => {
   console.log(key);
 };
@@ -156,17 +155,6 @@ export default function Home() {
       ...getColumnSearchProps('title'),
     },
     {
-      title: 'Audience Rating',
-      dataIndex: 'audience_rating',
-      sorter: (a, b) => a.audience_rating - b.audience_rating,
-      // render: (audience_rating) => <Rate disabled defaultValue={audience_rating} count={10}/>
-      render: (audience_rating) => <>
-        <StarTwoTone twoToneColor="#fadb14" />
-        <> </>
-        {Number.parseFloat(audience_rating).toFixed(1)}
-      </>
-    },
-    {
       title: 'Release Date',
       dataIndex: 'release_date',
       sorter: (a, b) => new Date(b.release_date) - new Date(a.release_date),
@@ -174,6 +162,29 @@ export default function Home() {
         const date = new Date(release_date)
         return <div>{date.toLocaleDateString('en-US', { dateStyle: "medium", })}</div>
       },
+    },
+    // {
+    //   title: 'Audience Rating',
+    //   dataIndex: 'audience_rating',
+    //   sorter: (a, b) => a.audience_rating - b.audience_rating,
+    //   // render: (audience_rating) => <Rate disabled defaultValue={audience_rating} count={10}/>
+    //   render: (audience_rating) => <>
+    //     <StarTwoTone twoToneColor="#fadb14" />
+    //     <> </>
+    //     {Number.parseFloat(audience_rating).toFixed(1)}
+    //   </>
+    // },
+    {
+      title: 'My Rating',
+      dataIndex: 'my_rating',
+      sorter: (a, b) => a.my_rating - b.my_rating,
+      render: (my_rating) => {
+        return my_rating !== "unrated" ? <>
+          <StarTwoTone twoToneColor="#fadb14" />
+          <> </>
+          {Number.parseFloat(my_rating).toFixed(1)}
+        </> : <StarOutlined />
+      }
     },
     {
       title: 'Type',
@@ -208,18 +219,6 @@ export default function Home() {
             {media_type.toUpperCase()}
           </Tag>
         )
-      }
-    },
-    {
-      title: 'My Rating',
-      dataIndex: 'my_rating',
-      sorter: (a, b) => a.my_rating - b.my_rating,
-      render: (my_rating) => {
-        return my_rating !== "unrated" ? <>
-          <StarTwoTone twoToneColor="#fadb14" />
-          <> </>
-          {Number.parseFloat(my_rating).toFixed(1)}
-        </> : <StarOutlined />
       }
     },
     {
@@ -258,11 +257,21 @@ export default function Home() {
             (test) => {
               console.log(test)
             }
-          } style={{ maxWidth: "80px" }} controls={false} />
-          <InputNumber min={1} addonBefore="E" size="small" defaultValue={data.episode} onChange={onChange} style={{ maxWidth: "80px" }} controls={false} />
+          } style={{ maxWidth: "60px" }} controls={false} />
+          <InputNumber min={1} addonBefore="E" size="small" defaultValue={data.episode} onChange={onChange} style={{ maxWidth: "60px" }} controls={false} />
         </div> : <></>
       },
     },
+    {
+      // have a x / 128 episodes which takes total episodes and episodes youve watched
+      // remove percent in middle
+      title: "Status",
+      render: (data) => {
+        console.log(data.media_type, "DATA")
+        return <Progress type="circle" size={25} percent={data.media_type === "movie" ? 100 :27} />
+        //  <Progress type="circle" percent={100} size={25} />
+      }
+    }
   ];
 
   const onSuccess = (message) => {
@@ -294,15 +303,6 @@ export default function Home() {
   };
 
   // const url = "https://api.themoviedb.org/3/find/tt14998742?external_source=imdb_id";
-
-  const contentStyle = {
-    margin: 0,
-    height: '160px',
-    color: '#fff',
-    lineHeight: '160px',
-    textAlign: 'center',
-    background: '#364d79',
-  };
 
   const options = {
     method: "GET",
@@ -339,44 +339,16 @@ export default function Home() {
       label: (
         <span style={{ display: "flex", alignItems: "center" }}>
           <EyeOutlined style={{ marginRight: "7px" }} />
-          {/* <CheckOutlined  style={{marginRight:"7px"}}/>   */}
           <div>Seen</div>
         </span>
       ),
-      children: <>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <h2>My Movies List</h2>
-          <div>
-            {/* <Button
-              type="primary"
-            // onClick={onRemove}
-            // disabled={disableRemove}
-            >
-              Show Posters
-            </Button> */}
-            <> </>
-            <Button
-              type="primary"
-              danger
-              onClick={onRemove}
-              disabled={disableRemove}
-              icon={<DeleteOutlined />}
-            >
-              Remove Selected
-            </Button>
-          </div>
-        </div>
-        <Table
-          style={{ border: '1px solid #ede9e8', borderRadius: "6px" }}
-          // bordered
-          // onChange={onChange}
-          columns={movieColumns}
-          dataSource={movies}
-          pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
-          rowSelection={rowSelection}
-        // tableLayout={"auto"}
-        />
-      </>,
+      children: <MovieTable
+        onRemove={onRemove}
+        disableRemove={disableRemove}
+        movieColumns={movieColumns}
+        movies={movies}
+        rowSelection={rowSelection}
+      />,
     },
     {
       key: '2',
@@ -386,7 +358,17 @@ export default function Home() {
           <div style={{ marginLeft: "6px" }}>Watchlist</div>
         </span>
       ),
-      children: 'Content of Tab Pane 2',
+      children: '2',
+    },
+    {
+      key: '3',
+      label: (
+        <span style={{ display: "flex", alignItems: "center" }}>
+          <RiseOutlined />
+          <div>Upcoming</div>
+        </span>
+      ),
+      children: '3',
     },
   ];
 
@@ -438,50 +420,50 @@ export default function Home() {
         }}>
           {search.results.map((o) => o.media_type !== "people" && o.poster_path ?
             // only show movies with posters && not an actor in search results
-              <div
-                key={o.id}
-                style={{ border: "1px solid red", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-                <Image height="200" width="125" quality="75" src={"https://image.tmdb.org/t/p/original/" + o.poster_path} alt={o.id} />
-                <div >{o.media_type === "movie" ? o.title : o.name}</div>
-                <div>
-                  <Button type="default"
-                    onClick={() => {
-                      // make anime type if original lang is japanese
-                      let type = o.original_language === "ja" ? "anime" : o.media_type;
-                      // if tv or movie some fields will be different (title, release date)
-                      let release = o.media_type === "movie" ? o.release_date : o.first_air_date;
-                      let title = o.media_type === "movie" ? o.title : o.name;
+            <div
+              key={o.id}
+              style={{ border: "1px solid red", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+              <Image height="200" width="125" quality="75" src={"https://image.tmdb.org/t/p/original/" + o.poster_path} alt={o.id} />
+              <div >{o.media_type === "movie" ? o.title : o.name}</div>
+              <div>
+                <Button type="default"
+                  onClick={() => {
+                    // make anime type if original lang is japanese
+                    let type = o.original_language === "ja" ? "anime" : o.media_type;
+                    // if tv or movie some fields will be different (title, release date)
+                    let release = o.media_type === "movie" ? o.release_date : o.first_air_date;
+                    let title = o.media_type === "movie" ? o.title : o.name;
 
-                      setMovies([...movies, {
-                        key: o.id,
-                        title: title,
-                        poster: "https://image.tmdb.org/t/p/original/" + o.poster_path,
-                        audience_rating: o.vote_average,
-                        release_date: release,
-                        media_type: type,
-                        genres: o.genre_ids,
-                        season: "1",
-                        episode: "1",
-                        my_rating: "unrated"
-                      }]);
-                      localStorage.setItem("movies", JSON.stringify([...movies, {
-                        key: o.id,
-                        title: title,
-                        poster: "https://image.tmdb.org/t/p/original/" + o.poster_path,
-                        audience_rating: o.vote_average,
-                        release_date: release,
-                        media_type: type,
-                        genres: o.genre_ids,
-                        season: "1",
-                        episode: "1",
-                        my_rating: "unrated"
-                      }]));
-                      onSuccess('Added ' + title + ' to My Movies');
-                    }}
-                  >Add to List</Button>
-                  {/* <Button type="default" shape="circle" icon={<HeartOutlined />} /> */}
-                </div>
+                    setMovies([...movies, {
+                      key: o.id,
+                      title: title,
+                      poster: "https://image.tmdb.org/t/p/original/" + o.poster_path,
+                      audience_rating: o.vote_average,
+                      release_date: release,
+                      media_type: type,
+                      genres: o.genre_ids,
+                      season: "1",
+                      episode: "1",
+                      my_rating: "unrated"
+                    }]);
+                    localStorage.setItem("movies", JSON.stringify([...movies, {
+                      key: o.id,
+                      title: title,
+                      poster: "https://image.tmdb.org/t/p/original/" + o.poster_path,
+                      audience_rating: o.vote_average,
+                      release_date: release,
+                      media_type: type,
+                      genres: o.genre_ids,
+                      season: "1",
+                      episode: "1",
+                      my_rating: "unrated"
+                    }]));
+                    onSuccess('Added ' + title + ' to My Movies');
+                  }}
+                >Add to List</Button>
+                {/* <Button type="default" shape="circle" icon={<HeartOutlined />} /> */}
               </div>
+            </div>
             : null)}
         </div> : null}
       <br />
