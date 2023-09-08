@@ -47,5 +47,3 @@ const MovieTable = ({onRemove, disableRemove, movieColumns, movies, rowSelection
 }
 
 export default MovieTable;
-
-// width: ${(props) => props.isOpen ? "auto" : "333px"};

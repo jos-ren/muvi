@@ -8,28 +8,24 @@ import { FaRegBookmark } from "react-icons/fa6";
 import Highlighter from 'react-highlight-words';
 import { genreCodes } from "../../public/genres.js"
 import MovieTable from "../../comps/MovieTable.js"
+import Card from "../../comps/Card.js"
 
 // option to rate movies in your list
 // toggle for list / grid view
-// tab for (watched, to watch, favs)
 // *add* movie button which changes to *added* once clicked
 // prevent from adding an already added
-// tv show what episode you are on
-// top tab bar
-// search titles from my movies
-// suycces message when adding movies
 // add breakpoints for grid 
 // skeleton for grid when searching
 // hide poster button
-// turn major stuff into components
 // editable cells? (in table component ant design)
 // make title filter inline with column name
-// upcoming tab which features new seasons of shows in your lists
 // shopw more button for searched movies... (limit search to 10 initally and show more if clicked)
 // button for move to watchlist and vice versa (beside the remove button)
-// make major things into components (table, etcetera)
 // undo button when removing movies
 
+// make major things into components (table, etcetera)
+// upcoming tab which features new seasons of shows in your lists
+// tv show what episode you are on
 
 
 
@@ -47,22 +43,21 @@ export default function Home() {
   const [loaded, setLoaded] = useState(true);
   const [popularMovies, setPopularMovies] = useState([]);
   const [messageApi, contextHolder] = message.useMessage();
-
-  // console.log(tvGenres.genres)
-  // console.log(movies)
-
   const [searchText, setSearchText] = useState('');
   const [searchedColumn, setSearchedColumn] = useState('');
   const searchInput = useRef(null);
+
   const handleSearch = (selectedKeys, confirm, dataIndex) => {
     confirm();
     setSearchText(selectedKeys[0]);
     setSearchedColumn(dataIndex);
   };
+
   const handleReset = (clearFilters) => {
     clearFilters();
     setSearchText('');
   };
+
   const getColumnSearchProps = (dataIndex) => ({
     filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters, close }) => (
       <div
@@ -135,6 +130,100 @@ export default function Home() {
         text
       ),
   });
+
+
+
+  const onSuccess = (message) => {
+    messageApi.open({
+      type: 'success',
+      content: message,
+    });
+  };
+
+  const onSearch = (value) => {
+    fetch("https://api.themoviedb.org/3/search/multi?&language=en-US&query=" + value + "&page=1&include_adult=false", options)
+      .then((res) => res.json())
+      .then((json) => setSearch(json))
+      .catch((err) => console.error("error:" + err));
+    setDisableClear(false)
+  };
+
+  const clearSearch = () => {
+    setSearch([])
+    setDisableClear(true)
+    // onSuccess('Cleared Search Results');
+  };
+
+  const onRemove = () => {
+    setMovies(movies.filter(item => !selected.includes(item.key)));
+    localStorage.setItem("movies", JSON.stringify(movies.filter(item => !selected.includes(item.key))));
+    onSuccess('Successfully Removed ' + selected.length + ' Movies');
+    setDisableRemove(true)
+  };
+
+  const addMovie = (o) => {
+    // make anime type if original lang is japanese
+    let type = o.original_language === "ja" ? "anime" : o.media_type;
+    // if tv or movie some fields will be different (title, release date)
+    let release = o.media_type === "movie" ? o.release_date : o.first_air_date;
+    let title = o.media_type === "movie" ? o.title : o.name;
+
+    setMovies([...movies, {
+      key: o.id,
+      title: title,
+      poster: "https://image.tmdb.org/t/p/original/" + o.poster_path,
+      audience_rating: o.vote_average,
+      release_date: release,
+      media_type: type,
+      genres: o.genre_ids,
+      season: "1",
+      episode: "1",
+      my_rating: "unrated"
+    }]);
+    localStorage.setItem("movies", JSON.stringify([...movies, {
+      key: o.id,
+      title: title,
+      poster: "https://image.tmdb.org/t/p/original/" + o.poster_path,
+      audience_rating: o.vote_average,
+      release_date: release,
+      media_type: type,
+      genres: o.genre_ids,
+      season: "1",
+      episode: "1",
+      my_rating: "unrated"
+    }]));
+    onSuccess('Added ' + title + ' to My Movies');
+  };
+
+  const options = {
+    method: "GET",
+    headers: {
+      accept: "application/json",
+      Authorization: "Bearer " + process.env.NEXT_PUBLIC_TMDB_ACCESS_TOKEN,
+    },
+  };
+
+  useEffect(() => {
+    const localMovies = JSON.parse(localStorage.getItem("movies"));
+    if (localMovies) {
+      setMovies(localMovies);
+    }
+
+    // fetch top movies
+    fetch("https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc", options)
+      .then((res) => res.json())
+      .then((json) => setPopularMovies(json))
+      .catch((err) => console.error("error:" + err));
+  }, []);
+
+  const rowSelection = {
+    onChange: (selectedRowKeys, selectedRows) => {
+      console.log(`selectedRowKeys: ${selectedRowKeys}`, 'selectedRows: ', selectedRows);
+      setSelected(selectedRowKeys)
+      selectedRows.length !== 0 ? setDisableRemove(false) : setDisableRemove(true)
+    }
+  };
+
 
   const movieColumns = [
     {
@@ -255,7 +344,7 @@ export default function Home() {
           {/* have an option for Completed */}
           <InputNumber min={1} addonBefore="S" size="small" defaultValue={data.season} onChange={
             (test) => {
-              console.log(test)
+              // console.log(test)
             }
           } style={{ maxWidth: "60px" }} controls={false} />
           <InputNumber min={1} addonBefore="E" size="small" defaultValue={data.episode} onChange={onChange} style={{ maxWidth: "60px" }} controls={false} />
@@ -263,75 +352,22 @@ export default function Home() {
       },
     },
     {
-      // have a x / 128 episodes which takes total episodes and episodes youve watched
-      // remove percent in middle
       title: "Status",
       render: (data) => {
-        console.log(data.media_type, "DATA")
-        return <Progress type="circle" size={25} percent={data.media_type === "movie" ? 100 :27} />
-        //  <Progress type="circle" percent={100} size={25} />
+        let percent = 0
+        if (data.media_type === "movie") {
+          percent = 100
+        } else {
+          // have a x / 128 episodes which takes total episodes and episodes youve watched to make a percentage
+          percent = 67
+        }
+        // for the tooltip show x/x episodes and a percentage
+        return <Tooltip title={percent + "% Complete"}>
+          <Progress format={percent === 100 ? () => <CheckOutlined /> : () => ""} type="circle" size={25} percent={percent} />
+        </Tooltip>
       }
     }
   ];
-
-  const onSuccess = (message) => {
-    messageApi.open({
-      type: 'success',
-      content: message,
-    });
-  };
-
-  const onSearch = (value) => {
-    fetch("https://api.themoviedb.org/3/search/multi?&language=en-US&query=" + value + "&page=1&include_adult=false", options)
-      .then((res) => res.json())
-      .then((json) => setSearch(json))
-      .catch((err) => console.error("error:" + err));
-    setDisableClear(false)
-  };
-
-  const clearSearch = () => {
-    setSearch([])
-    setDisableClear(true)
-    // onSuccess('Cleared Search Results');
-  };
-
-  const onRemove = () => {
-    setMovies(movies.filter(item => !selected.includes(item.key)));
-    localStorage.setItem("movies", JSON.stringify(movies.filter(item => !selected.includes(item.key))));
-    onSuccess('Successfully Removed ' + selected.length + ' Movies');
-    setDisableRemove(true)
-  };
-
-  // const url = "https://api.themoviedb.org/3/find/tt14998742?external_source=imdb_id";
-
-  const options = {
-    method: "GET",
-    headers: {
-      accept: "application/json",
-      Authorization: "Bearer " + process.env.NEXT_PUBLIC_TMDB_ACCESS_TOKEN,
-    },
-  };
-
-  useEffect(() => {
-    const localMovies = JSON.parse(localStorage.getItem("movies"));
-    if (localMovies) {
-      setMovies(localMovies);
-    }
-
-    // fetch top movies
-    fetch("https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc", options)
-      .then((res) => res.json())
-      .then((json) => setPopularMovies(json))
-      .catch((err) => console.error("error:" + err));
-  }, []);
-
-  const rowSelection = {
-    onChange: (selectedRowKeys, selectedRows) => {
-      console.log(`selectedRowKeys: ${selectedRowKeys}`, 'selectedRows: ', selectedRows);
-      setSelected(selectedRowKeys)
-      selectedRows.length !== 0 ? setDisableRemove(false) : setDisableRemove(true)
-    }
-  };
 
   const tabItems = [
     {
@@ -369,27 +405,15 @@ export default function Home() {
         </span>
       ),
       children: '3',
+      // tv shows which have seasons or episodes coming soon
+      // a tracked tv show will be one in your watchlist or seen list
+      // popular list
     },
   ];
 
   return (
     <>
       {contextHolder}
-      {/* {popularMovies.results ? <Carousel 
-      // autoplay
-      >
-        {popularMovies.results.map((o) =>
-          <div style={{position:"relative", objectFit: 'cover'}}>
-            <Image quality="100" 
-            // fill={true} 
-            height={200}
-            width={900}
-            style={{objectFit:"cover"}}
-            src={"https://image.tmdb.org/t/p/original" + o.backdrop_path} alt={o.title} />
-            <h3 style={contentStyle}>{o.title}</h3>
-          </div>
-        )}
-      </Carousel> : <></>} */}
       <h1>Search</h1>
       <div style={{ display: "flex", alignItems: "center" }}>
         <Search
@@ -418,52 +442,15 @@ export default function Home() {
           gridRowGap: "10px",
           margin: "20px 0px"
         }}>
+          {/* // only show movies with posters && not an actor in search results */}
           {search.results.map((o) => o.media_type !== "people" && o.poster_path ?
-            // only show movies with posters && not an actor in search results
-            <div
+            <Card
+              addMovie={() => addMovie(o)}
               key={o.id}
-              style={{ border: "1px solid red", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-              <Image height="200" width="125" quality="75" src={"https://image.tmdb.org/t/p/original/" + o.poster_path} alt={o.id} />
-              <div >{o.media_type === "movie" ? o.title : o.name}</div>
-              <div>
-                <Button type="default"
-                  onClick={() => {
-                    // make anime type if original lang is japanese
-                    let type = o.original_language === "ja" ? "anime" : o.media_type;
-                    // if tv or movie some fields will be different (title, release date)
-                    let release = o.media_type === "movie" ? o.release_date : o.first_air_date;
-                    let title = o.media_type === "movie" ? o.title : o.name;
-
-                    setMovies([...movies, {
-                      key: o.id,
-                      title: title,
-                      poster: "https://image.tmdb.org/t/p/original/" + o.poster_path,
-                      audience_rating: o.vote_average,
-                      release_date: release,
-                      media_type: type,
-                      genres: o.genre_ids,
-                      season: "1",
-                      episode: "1",
-                      my_rating: "unrated"
-                    }]);
-                    localStorage.setItem("movies", JSON.stringify([...movies, {
-                      key: o.id,
-                      title: title,
-                      poster: "https://image.tmdb.org/t/p/original/" + o.poster_path,
-                      audience_rating: o.vote_average,
-                      release_date: release,
-                      media_type: type,
-                      genres: o.genre_ids,
-                      season: "1",
-                      episode: "1",
-                      my_rating: "unrated"
-                    }]));
-                    onSuccess('Added ' + title + ' to My Movies');
-                  }}
-                >Add to List</Button>
-                {/* <Button type="default" shape="circle" icon={<HeartOutlined />} /> */}
-              </div>
-            </div>
+              title={o.media_type === "movie" ? o.title : o.name}
+              src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
+              alt={o.id}
+            />
             : null)}
         </div> : null}
       <br />
