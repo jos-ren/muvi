@@ -22,13 +22,17 @@ import Card from "../../comps/Card.js"
 // shopw more button for searched movies... (limit search to 10 initally and show more if clicked)
 // button for move to watchlist and vice versa (beside the remove button)
 // undo button when removing movies
+// move tab bar to top? change color to dark blue
 
-// make major things into components (table, etcetera)
 // upcoming tab which features new seasons of shows in your lists
 // tv show what episode you are on
+// add a count of how many movies are in each tab 
+// perhaps combine status and progress columns
 
 
-
+// const onChange = (pagination, filters, sorter, extra) => {
+//   console.log('params', pagination, filters, sorter, extra);
+// };
 const onChange = (key) => {
   console.log(key);
 };
@@ -131,8 +135,6 @@ export default function Home() {
       ),
   });
 
-
-
   const onSuccess = (message) => {
     messageApi.open({
       type: 'success',
@@ -212,8 +214,9 @@ export default function Home() {
     // fetch top movies
     fetch("https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc", options)
       .then((res) => res.json())
-      .then((json) => setPopularMovies(json))
-      .catch((err) => console.error("error:" + err));
+      .then((json) => setPopularMovies(json.results))
+      .catch((err) => console.error("error:" + err))
+
   }, []);
 
   const rowSelection = {
@@ -223,7 +226,6 @@ export default function Home() {
       selectedRows.length !== 0 ? setDisableRemove(false) : setDisableRemove(true)
     }
   };
-
 
   const movieColumns = [
     {
@@ -347,7 +349,9 @@ export default function Home() {
               // console.log(test)
             }
           } style={{ maxWidth: "60px" }} controls={false} />
-          <InputNumber min={1} addonBefore="E" size="small" defaultValue={data.episode} onChange={onChange} style={{ maxWidth: "60px" }} controls={false} />
+          <InputNumber min={1} addonBefore="E" size="small" defaultValue={data.episode}
+            // onChange={onChange}
+            style={{ maxWidth: "60px" }} controls={false} />
         </div> : <></>
       },
     },
@@ -369,6 +373,88 @@ export default function Home() {
     }
   ];
 
+  const popMovColumns = [
+    {
+      title: 'Popularity',
+      render:(item, record, index)=>(<>{index+1}</>)
+    },
+    {
+      title: 'Poster',
+      dataIndex: 'poster_path',
+      render: (poster_path, title) => <Image
+        src={"https://image.tmdb.org/t/p/original/" + poster_path}
+        width={50}
+        height={75}
+        style={{ objectFit: "cover" }}
+        alt={title}
+      />,
+    },
+    {
+      title: 'Title',
+      dataIndex: 'title',
+      key: 'title',
+      ...getColumnSearchProps('title'),
+    },
+    {
+      title: 'Release Date',
+      dataIndex: 'release_date',
+      sorter: (a, b) => new Date(b.release_date) - new Date(a.release_date),
+      render: (release_date) => {
+        const date = new Date(release_date)
+        return <div>{date.toLocaleDateString('en-US', { dateStyle: "medium", })}</div>
+      },
+    },
+    {
+      title: 'Audience Rating',
+      dataIndex: 'vote_average',
+      sorter: (a, b) => a.vote_average - b.vote_average,
+      render: (vote_average) => <>
+        <StarTwoTone twoToneColor="#fadb14" />
+        <> </>
+        {Number.parseFloat(vote_average).toFixed(1)}
+      </>
+    },
+    {
+      title: 'Genres',
+      dataIndex: 'genre_ids',
+      render: (genre_ids) => {
+        let nameArr = []
+        let emojiArr = []
+        genre_ids.map((i) => {
+          genreCodes.forEach(myFunction)
+          function myFunction(i2) {
+            if (i === i2.id) {
+              nameArr.push(i2.name)
+              emojiArr.push(i2.emoji)
+            }
+          }
+        })
+        return <div style={{ display: "flex" }}>
+          {nameArr.map((i, index) =>
+            <div key={index} style={{ marginRight: "3px", cursor: "default", border: "1px solid #d9d9d9", width: "22px", display: "flex", alignItems: "center", justifyContent: "center", background: "#fafafa", borderRadius: "5px" }}>
+              <Tooltip title={i}>
+                {emojiArr[index]}
+              </Tooltip>
+            </div>
+          )}
+        </div>
+      },
+    },
+    {
+      title: 'Description',
+      dataIndex: 'overview',
+      width: "400px",
+      ellipsis: {
+        showTitle: false,
+      },
+      render: (overview) => (
+        <Tooltip placement="topLeft" title={overview}>
+          {overview}
+        </Tooltip>
+      ),
+    },
+  ];
+
   const tabItems = [
     {
       key: '1',
@@ -379,6 +465,7 @@ export default function Home() {
         </span>
       ),
       children: <MovieTable
+        header={"Seen Movies"}
         onRemove={onRemove}
         disableRemove={disableRemove}
         movieColumns={movieColumns}
@@ -404,10 +491,21 @@ export default function Home() {
           <div>Upcoming</div>
         </span>
       ),
-      children: '3',
+      children: <div>
+        <MovieTable
+          header={"Popular Movies"}
+          onRemove={onRemove}
+          disableRemove={disableRemove}
+          movieColumns={popMovColumns}
+          movies={popularMovies}
+          rowSelection={false}
+        />
+      </div>,
       // tv shows which have seasons or episodes coming soon
       // a tracked tv show will be one in your watchlist or seen list
       // popular list
+      // have a ranking, genre, description columns
+      // dont show remove button 
     },
   ];
 
@@ -456,7 +554,6 @@ export default function Home() {
       <br />
       <br />
       <br />
-
       <Tabs defaultActiveKey="1" items={tabItems} onChange={onChange} size={"large"} centered />
     </>
   );

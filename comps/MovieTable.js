@@ -1,17 +1,17 @@
 import React from 'react';
 import styled from "styled-components";
 import { Table, Button } from 'antd';
-import {DeleteOutlined } from '@ant-design/icons';
+import { DeleteOutlined } from '@ant-design/icons';
 
 const Container = styled.div`
 
 `;
 
-const MovieTable = ({onRemove, disableRemove, movieColumns, movies, rowSelection }) => {
+const MovieTable = ({ header, onRemove, disableRemove, movieColumns, movies, rowSelection }) => {
     return (
         <Container>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <h2>My Movies List</h2>
+                <h2>{header}</h2>
                 <div>
                     {/* <Button
               type="primary"
@@ -33,6 +33,7 @@ const MovieTable = ({onRemove, disableRemove, movieColumns, movies, rowSelection
                 </div>
             </div>
             <Table
+                // sortDirections={[descend, ascend]}
                 style={{ border: '1px solid #ede9e8', borderRadius: "6px" }}
                 // bordered
                 // onChange={onChange}
@@ -40,7 +41,7 @@ const MovieTable = ({onRemove, disableRemove, movieColumns, movies, rowSelection
                 dataSource={movies}
                 pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
                 rowSelection={rowSelection}
-                // tableLayout={"auto"}
+            // tableLayout={"auto"}
             />
         </Container>
     );
