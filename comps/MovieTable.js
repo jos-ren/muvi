@@ -7,7 +7,7 @@ const Container = styled.div`
 
 `;
 
-const MovieTable = ({ header, onRemove, disableRemove, movieColumns, movies, rowSelection, onChange }) => {
+const MovieTable = ({ header, onRemove, disableRemove, movieColumns, movies, rowSelection, onChange, showRemove }) => {
     return (
         <Container>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -20,22 +20,22 @@ const MovieTable = ({ header, onRemove, disableRemove, movieColumns, movies, row
             >
               Show Posters
             </Button> */}
-                    <> </>
-                    <Button
-                        type="primary"
-                        danger
-                        onClick={onRemove}
-                        disabled={disableRemove}
-                        icon={<DeleteOutlined />}
-                    >
-                        Remove Selected
-                    </Button>
+                    {showRemove ?
+                        <Button
+                            type="primary"
+                            danger
+                            onClick={onRemove}
+                            disabled={disableRemove}
+                            icon={<DeleteOutlined />}
+                        >
+                            Remove Selected
+                        </Button> : null}
+
                 </div>
             </div>
             <Table
                 // sortDirections={[descend, ascend]}
                 style={{ border: '1px solid #ede9e8', borderRadius: "6px" }}
-                // bordered
                 onChange={onChange}
                 columns={movieColumns}
                 dataSource={movies}
@@ -45,6 +45,10 @@ const MovieTable = ({ header, onRemove, disableRemove, movieColumns, movies, row
             />
         </Container>
     );
+}
+
+MovieTable.defaultProps = {
+    showRemove: true
 }
 
 export default MovieTable;

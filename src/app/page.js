@@ -228,6 +228,7 @@ export default function Home() {
     }
   };
 
+  // ------------ table columns ------------
   const movieColumns = [
     {
       title: 'Poster',
@@ -384,8 +385,8 @@ export default function Home() {
       dataIndex: 'poster_path',
       render: (poster_path, title) => <Image
         src={"https://image.tmdb.org/t/p/original/" + poster_path}
-        width={50}
-        height={75}
+        width={133}
+        height={216}
         style={{ objectFit: "cover" }}
         alt={title}
       />,
@@ -445,17 +446,18 @@ export default function Home() {
       title: 'Description',
       dataIndex: 'overview',
       width: "400px",
-      ellipsis: {
-        showTitle: false,
-      },
       render: (overview) => (
-        <Tooltip placement="topLeft" title={overview}>
-          {overview}
-        </Tooltip>
+        // <Tooltip placement="topLeft" title={overview}>
+          <div style={{
+            //  display: '-webkit-box', textOverflow: "ellipsis", overflow: "hidden", WebkitLineClamp: "3"
+             }}
+          >{overview}</div>
+        // </Tooltip>
       ),
     },
   ];
 
+  // --------- tabs ----------
   const tabItems = [
     {
       key: '1',
@@ -501,12 +503,11 @@ export default function Home() {
           movies={popularMovies}
           rowSelection={false}
           onChange={(page) => { setPage(page.current) }}
+          showRemove={false}
         />
       </div>,
       // tv shows which have seasons or episodes coming soon
       // a tracked tv show will be one in your watchlist or seen list
-      // popular list
-      // have a ranking, genre, description columns
       // dont show remove button 
     },
   ];
