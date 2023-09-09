@@ -23,11 +23,20 @@ import Card from "../../comps/Card.js"
 // button for move to watchlist and vice versa (beside the remove button)
 // undo button when removing movies
 // move tab bar to top? change color to dark blue
-
+// sort status by percentage complete
 // upcoming tab which features new seasons of shows in your lists
 // tv show what episode you are on
 // add a count of how many movies are in each tab 
 // perhaps combine status and progress columns
+
+// open a modal for rating series?
+
+// tmdb has season info! perhaps include this in your progress
+// (ALSO includes status! so maybe if its not concluded you can fdeature in upcoiming!)
+// https://api.themoviedb.org/3/tv/37854?language=en-US
+// number_of_episodes, next_episode_to_air, number_of_seasons
+
+// get movie details will give much more detailed stuff for the move like revenue or tagline or collection
 
 
 // const onChange = (pagination, filters, sorter, extra) => {
@@ -51,6 +60,8 @@ export default function Home() {
   const [searchText, setSearchText] = useState('');
   const [searchedColumn, setSearchedColumn] = useState('');
   const searchInput = useRef(null);
+
+  console.log(movies)
 
   const handleSearch = (selectedKeys, confirm, dataIndex) => {
     confirm();
@@ -164,12 +175,20 @@ export default function Home() {
     setDisableRemove(true)
   };
 
-  const addMovie = (o) => {
+  const addMovie = async (o) => {
     // make anime type if original lang is japanese
     let type = o.original_language === "ja" ? "anime" : o.media_type;
     // if tv or movie some fields will be different (title, release date)
-    let release = o.media_type === "movie" ? o.release_date : o.first_air_date;
     let title = o.media_type === "movie" ? o.title : o.name;
+    let release = o.media_type === "movie" ? o.release_date : o.first_air_date;
+
+    // fetch("https://api.themoviedb.org/3/" + o.media_type + "/" + o.id + "?language=en-US", options)
+    //   .then((res) => res.json())
+    //   .then((json) => setItemDetails(json))
+    //   .catch((err) => console.error("error:" + err));
+
+    const response = await fetch("https://api.themoviedb.org/3/" + o.media_type + "/" + o.id + "?language=en-US", options);
+    const details = await response.json();
 
     setMovies([...movies, {
       key: o.id,
@@ -179,9 +198,10 @@ export default function Home() {
       release_date: release,
       media_type: type,
       genres: o.genre_ids,
-      season: "1",
-      episode: "1",
-      my_rating: "unrated"
+      my_season: "1",
+      my_episode: "1",
+      my_rating: "unrated",
+      details: details
     }]);
     localStorage.setItem("movies", JSON.stringify([...movies, {
       key: o.id,
@@ -191,9 +211,10 @@ export default function Home() {
       release_date: release,
       media_type: type,
       genres: o.genre_ids,
-      season: "1",
-      episode: "1",
-      my_rating: "unrated"
+      my_season: "1",
+      my_episode: "1",
+      my_rating: "unrated",
+      details: details
     }]));
     onSuccess('Added ' + title + ' to My Movies');
   };
@@ -343,36 +364,50 @@ export default function Home() {
     {
       title: 'Progress',
       render: (data) => {
-        return data.media_type !== "movie" ? <div>
-          {/* perhaps include an edit buitton to edit this data */}
-          {/* have an option for Completed */}
-          <InputNumber min={1} addonBefore="S" size="small" defaultValue={data.season} onChange={
-            (test) => {
-              // console.log(test)
-            }
-          } style={{ maxWidth: "60px" }} controls={false} />
-          <InputNumber min={1} addonBefore="E" size="small" defaultValue={data.episode}
-            // onChange={onChange}
-            style={{ maxWidth: "60px" }} controls={false} />
-        </div> : <></>
-      },
-    },
-    {
-      title: "Status",
-      render: (data) => {
+
         let percent = 0
         if (data.media_type === "movie") {
           percent = 100
-        } else {
+        } else if (data.media_type === "tv") {
           // have a x / 128 episodes which takes total episodes and episodes youve watched to make a percentage
-          percent = 67
+          if (data.details.number_of_seasons === 1) {
+            percent = data.my_episode / data.details.number_of_episodes * 100
+          } else {
+            percent = data.my_season / data.details.number_of_seasons * 100
+          }
+        } else {
+          {/* for status bar, if its a tv show have status be about seasons, if anime be about episodes */ }
+          percent = data.my_episode / data.details.number_of_episodes * 100
         }
-        // for the tooltip show x/x episodes and a percentage
-        return <Tooltip title={percent + "% Complete"}>
-          <Progress format={percent === 100 ? () => <CheckOutlined /> : () => ""} type="circle" size={25} percent={percent} />
-        </Tooltip>
-      }
-    }
+        return <>
+
+          {data.media_type !== "movie" ? <div>
+            {/* if u want to get really technical, find how many episodes are in a specific season */}
+            {/* include an edit buitton to edit this data */}
+            {/* have an option for Completed */}
+            {/* if its an ANIME dont shoiw seasons */}
+            {data.media_type !== "anime" ? <>
+              {/* <InputNumber min={1} addonBefore="S" size="small" defaultValue={data.my_season} onChange={
+                (test) => {
+                  // console.log(test)
+                }
+              } style={{ maxWidth: "60px" }} controls={false} /> */}
+              <>S</>
+              <>{data.my_season + "/" + data.details.number_of_seasons}</>
+              <> - </>
+            </> : null}
+            <>E</>
+            {/* <InputNumber min={1} addonBefore="E" size="small" defaultValue={data.my_episode}
+              // onChange={onChange}
+              style={{ maxWidth: "60px" }} controls={false} /> */}
+            <>{data.my_episode + "/" + data.details.number_of_episodes}</>
+          </div> : <></>}
+          <Tooltip title={Number.parseFloat(percent).toFixed(0) + "%"}>
+            <Progress format={percent === 100 ? () => <CheckOutlined /> : () => ""} size="small" percent={percent} />
+          </Tooltip>
+        </>
+      },
+    },
   ];
 
   const popMovColumns = [
@@ -448,10 +483,10 @@ export default function Home() {
       width: "400px",
       render: (overview) => (
         // <Tooltip placement="topLeft" title={overview}>
-          <div style={{
-            //  display: '-webkit-box', textOverflow: "ellipsis", overflow: "hidden", WebkitLineClamp: "3"
-             }}
-          >{overview}</div>
+        <div style={{
+          //  display: '-webkit-box', textOverflow: "ellipsis", overflow: "hidden", WebkitLineClamp: "3"
+        }}
+        >{overview}</div>
         // </Tooltip>
       ),
     },
@@ -496,7 +531,7 @@ export default function Home() {
       ),
       children: <div>
         <MovieTable
-          header={"Popular Movies"}
+          header={"Trending Movies"}
           onRemove={onRemove}
           disableRemove={disableRemove}
           movieColumns={popMovColumns}
@@ -508,7 +543,6 @@ export default function Home() {
       </div>,
       // tv shows which have seasons or episodes coming soon
       // a tracked tv show will be one in your watchlist or seen list
-      // dont show remove button 
     },
   ];
 
@@ -546,8 +580,8 @@ export default function Home() {
           {/* // only show movies with posters && not an actor in search results */}
           {search.results.map((o) => o.media_type !== "people" && o.poster_path ?
             <Card
-              addMovie={() => addMovie(o)}
               key={o.id}
+              addMovie={() => addMovie(o)}
               title={o.media_type === "movie" ? o.title : o.name}
               src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
               alt={o.id}

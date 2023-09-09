@@ -7,7 +7,7 @@ const Container = styled.div`
 
 `;
 
-const MovieTable = ({ header, onRemove, disableRemove, movieColumns, movies, rowSelection, onChange, showRemove }) => {
+const MovieTable = ({ header, onRemove, disableRemove, movieColumns, movies, rowSelection, onChange, showRemove=true }) => {
     return (
         <Container>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -45,10 +45,6 @@ const MovieTable = ({ header, onRemove, disableRemove, movieColumns, movies, row
             />
         </Container>
     );
-}
-
-MovieTable.defaultProps = {
-    showRemove: true
 }
 
 export default MovieTable;
