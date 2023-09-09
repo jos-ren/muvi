@@ -27,23 +27,17 @@ import Card from "../../comps/Card.js"
 // upcoming tab which features new seasons of shows in your lists
 // tv show what episode you are on
 // add a count of how many movies are in each tab 
-// perhaps combine status and progress columns
-
+// add a functions page to clear up this page
 // open a modal for rating series?
 
-// tmdb has season info! perhaps include this in your progress
-// (ALSO includes status! so maybe if its not concluded you can fdeature in upcoiming!)
-// https://api.themoviedb.org/3/tv/37854?language=en-US
-// number_of_episodes, next_episode_to_air, number_of_seasons
 
-// get movie details will give much more detailed stuff for the move like revenue or tagline or collection
 
 
 // const onChange = (pagination, filters, sorter, extra) => {
 //   console.log('params', pagination, filters, sorter, extra);
 // };
 const onChange = (key) => {
-  console.log(key);
+  // console.log(key);
 };
 
 export default function Home() {
@@ -61,7 +55,7 @@ export default function Home() {
   const [searchedColumn, setSearchedColumn] = useState('');
   const searchInput = useRef(null);
 
-  console.log(movies)
+  // console.log(movies)
 
   const handleSearch = (selectedKeys, confirm, dataIndex) => {
     confirm();
@@ -182,11 +176,6 @@ export default function Home() {
     let title = o.media_type === "movie" ? o.title : o.name;
     let release = o.media_type === "movie" ? o.release_date : o.first_air_date;
 
-    // fetch("https://api.themoviedb.org/3/" + o.media_type + "/" + o.id + "?language=en-US", options)
-    //   .then((res) => res.json())
-    //   .then((json) => setItemDetails(json))
-    //   .catch((err) => console.error("error:" + err));
-
     const response = await fetch("https://api.themoviedb.org/3/" + o.media_type + "/" + o.id + "?language=en-US", options);
     const details = await response.json();
 
@@ -234,11 +223,14 @@ export default function Home() {
     }
 
     // fetch top movies
-    fetch("https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc", options)
-      .then((res) => res.json())
-      .then((json) => setPopularMovies(json.results))
-      .catch((err) => console.error("error:" + err))
-
+    async function fetchData() {
+      const response = await fetch("https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc", options);
+      const details = await response.json();
+      let temp = details.results
+      temp.forEach((item, index) => item.key = index+1)
+      setPopularMovies(temp)
+    }
+    fetchData();
   }, []);
 
   const rowSelection = {
@@ -413,7 +405,7 @@ export default function Home() {
   const popMovColumns = [
     {
       title: 'Popularity',
-      render: (item, record, index) => ((index + 1) + ((page - 1) * 10))
+      dataIndex: 'key',
     },
     {
       title: 'Poster',
@@ -529,7 +521,7 @@ export default function Home() {
           <div>Upcoming</div>
         </span>
       ),
-      children: <div>
+      children:
         <MovieTable
           header={"Trending Movies"}
           onRemove={onRemove}
@@ -540,7 +532,6 @@ export default function Home() {
           onChange={(page) => { setPage(page.current) }}
           showRemove={false}
         />
-      </div>,
       // tv shows which have seasons or episodes coming soon
       // a tracked tv show will be one in your watchlist or seen list
     },
@@ -578,15 +569,16 @@ export default function Home() {
           margin: "20px 0px"
         }}>
           {/* // only show movies with posters && not an actor in search results */}
-          {search.results.map((o) => o.media_type !== "people" && o.poster_path ?
-            <Card
-              key={o.id}
-              addMovie={() => addMovie(o)}
-              title={o.media_type === "movie" ? o.title : o.name}
-              src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
-              alt={o.id}
-            />
-            : null)}
+          {search.results.map((o) =>
+            o.media_type !== "people" && o.poster_path ?
+              <Card
+                key={o.id}
+                addMovie={() => addMovie(o)}
+                title={o.media_type === "movie" ? o.title : o.name}
+                src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
+                alt={o.id}
+              />
+              : <div key={o.id}></div>)}
         </div> : null}
       <br />
       <br />
