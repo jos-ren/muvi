@@ -35,7 +35,6 @@ import Card from "../../comps/Card.js"
 
 // bugs for tomorow :(
 // when switching tabs set make selections go to null --- IMPORTANT BUG TO FIX
-// CLEAN UP THE MESS THAT IS YOUR CRAZY REPEATED FUNCTIONS!!!!!!!!!!!!!! 
 // only 1 item is moved when selectiong multiple
 
 
@@ -195,21 +194,18 @@ export default function Home() {
     }
   };
 
-  const addSeen = async (o, method) => {
+  const addMedia = async (o, method, listType) => {
     // method 1 = creating, method 2 = swapping to watchlist
-    // make anime type if original lang is japanese
-    let type = method === 1 ? (o.original_language === "ja" ? "anime" : o.media_type) : o.media_type;
-    // if tv or movie some fields will be different (title, release date)
+    // type = anime, if original lang is japanese
+    let key = method === 1 ? o.id : o.key;
     let title = method === 1 ? (o.media_type === "movie" ? o.title : o.name) : o.title;
     let release = method === 1 ? (o.media_type === "movie" ? o.release_date : o.first_air_date) : o.release_date;
-    let genres = method === 1 ? o.genre_ids : o.genres;
-    let audience = method === 1 ? o.vote_average : o.audience_rating;
-    let key = method === 1 ? o.id : o.key;
-    let poster = method === 1 ? "https://image.tmdb.org/t/p/original/" + o.poster_path : o.poster;
+    let type = method === 1 ? (o.original_language === "ja" ? "anime" : o.media_type) : o.media_type;
     let my_season = method === 1 ? "1" : o.my_season;
     let my_episode = method === 1 ? "1" : o.my_episode;
     let my_rating = method === 1 ? "unrated" : o.my_rating;
     let og_mtype = method === 1 ? o.media_type : o.og_mtype;
+
     // get details
     let details = []
     if (method === 1) {
@@ -219,89 +215,29 @@ export default function Home() {
       details = o.details
     }
 
-    // shorten these... !!
-    setSeen([...seen, {
+    let obj = {
       key: key,
       title: title,
-      // poster: poster,
-      // audience_rating: audience,
       release_date: release,
       media_type: type,
-      // genres: genres,
       my_season: my_season,
       my_episode: my_episode,
       my_rating: my_rating,
       og_mtype: og_mtype,
       details: details
-    }]);
-    localStorage.setItem("seen", JSON.stringify([...seen, {
-      key: key,
-      title: title,
-      poster: poster,
-      audience_rating: audience,
-      release_date: release,
-      media_type: type,
-      genres: genres,
-      my_season: my_season,
-      my_episode: my_episode,
-      my_rating: my_rating,
-      og_mtype: og_mtype,
-      details: details
-    }]));
-    let verb = method === 1 ? "Added " : "Moved "
-    onSuccess(verb + title + ' to Seen');
-  };
+    }
 
-  const addWatchlist = async (o, method) => {
-    // method 1 = creating, method 2 = swapping to seen
-    // make anime type if original lang is japanese
-    let type = method === 1 ? (o.original_language === "ja" ? "anime" : o.media_type) : o.media_type;
-    // if tv or movie some fields will be different (title, release date)
-    let title = method === 1 ? (o.media_type === "movie" ? o.title : o.name) : o.title;
-    let release = method === 1 ? (o.media_type === "movie" ? o.release_date : o.first_air_date) : o.release_date;
-    let genres = method === 1 ? o.genre_ids : o.genres;
-    let audience = method === 1 ? o.vote_average : o.audience_rating;
-    let key = method === 1 ? o.id : o.key;
-    let poster = method === 1 ? "https://image.tmdb.org/t/p/original/" + o.poster_path : o.poster;
-    let my_season = method === 1 ? "1" : o.my_season;
-    let my_episode = method === 1 ? "1" : o.my_episode;
-    let my_rating = method === 1 ? "unrated" : o.my_rating;
-    let og_mtype = method === 1 ? o.media_type : o.og_mtype;
-
-    // get details
-    const response = await fetch("https://api.themoviedb.org/3/" + og_mtype + "/" + key + "?language=en-US", options);
-    const details = await response.json();
-
-    setWatchlist([...watchlist, {
-      key: key,
-      title: title,
-      poster: poster,
-      audience_rating: audience,
-      release_date: release,
-      media_type: type,
-      genres: genres,
-      my_season: my_season,
-      my_episode: my_episode,
-      my_rating: my_rating,
-      og_mtype: og_mtype,
-      details: details
-    }]);
-    localStorage.setItem("watchlist", JSON.stringify([...watchlist, {
-      key: key,
-      title: title,
-      poster: poster,
-      audience_rating: audience,
-      release_date: release,
-      media_type: type,
-      genres: genres,
-      my_season: my_season,
-      my_episode: my_episode,
-      my_rating: my_rating,
-      og_mtype: og_mtype,
-      details: details
-    }]));
-    let verb = method === 1 ? "Added " : "Moved "
-    onSuccess(verb + title + ' to Watchlist');
+    if (listType === "seen") {
+      setSeen([...seen, obj]);
+      localStorage.setItem("seen", JSON.stringify([...seen, obj]));
+      let verb = method === 1 ? "Added " : "Moved "
+      onSuccess(verb + title + ' to Seen');
+    } else if (listType === "watchlist") {
+      setWatchlist([...watchlist, obj]);
+      localStorage.setItem("watchlist", JSON.stringify([...watchlist, obj]));
+      let verb = method === 1 ? "Added " : "Moved "
+      onSuccess(verb + title + ' to Watchlist');
+    }
   };
 
   const onMove = (num) => {
@@ -310,14 +246,14 @@ export default function Home() {
       console.log("moved to watchlist", selected),
       selected.forEach((i) => {
         let data = seen.find((e) => e.key == i)
-        addWatchlist(data, 2)
+        addMedia(data, 2, "watchlist")
       }),
       onRemove(false, 1)
     ) : (
       console.log("moved to seen", selected),
       selected.forEach((i) => {
         let data = watchlist.find((e) => e.key == i)
-        addSeen(data, 2)
+        addMedia(data, 2, "seen")
       }),
       onRemove(false, 2)
     )
@@ -364,13 +300,12 @@ export default function Home() {
   const seenColumns = [
     {
       title: 'Poster',
-      dataIndex: 'poster',
-      render: (poster, title) => <Image
-        src={poster}
+      render: (data) => <Image
+        src={"https://image.tmdb.org/t/p/original/" + data.details.poster_path}
+        alt={data.title}
         width={50}
         height={75}
         style={{ objectFit: "cover" }}
-        alt={title}
       />,
     },
     {
@@ -526,13 +461,12 @@ export default function Home() {
   const watchlistColumns = [
     {
       title: 'Poster',
-      dataIndex: 'poster',
-      render: (poster, title) => <Image
-        src={poster}
+      render: (data) => <Image
+        src={"https://image.tmdb.org/t/p/original/" + data.details.poster_path}
+        alt={data.title}
         width={50}
         height={75}
         style={{ objectFit: "cover" }}
-        alt={title}
       />,
     },
     {
@@ -570,12 +504,12 @@ export default function Home() {
     },
     {
       title: 'Audience Rating',
-      dataIndex: 'audience_rating',
-      sorter: (a, b) => a.audience_rating - b.audience_rating,
-      render: (audience_rating) => <>
+      // dataIndex: 'data.details.vote_average',
+      // sorter: (a, b) => a.data.details.vote_average - b.data.details.vote_average,
+      render: (data) => <>
         <StarTwoTone twoToneColor="#fadb14" />
         <> </>
-        {Number.parseFloat(audience_rating).toFixed(1)}
+        {Number.parseFloat(data.details.vote_average).toFixed(1)}
       </>
     },
     {
@@ -852,8 +786,8 @@ export default function Home() {
               o.media_type !== "people" && o.poster_path ?
                 <Card
                   key={o.id}
-                  addToSeen={() => addSeen(o, 1)}
-                  addToWatchlist={() => addWatchlist(o, 1)}
+                  addToSeen={() => addMedia(o, 1, "seen")}
+                  addToWatchlist={() => addMedia(o, 1, "watchlist")}
                   title={o.media_type === "movie" ? o.title : o.name}
                   src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
                   alt={o.id}
@@ -882,8 +816,8 @@ export default function Home() {
         }}
       >
         <>JOSREN ©2023 | Created using data from</>
-        
-        <Image height="20" width="66" quality="75" src={"tmdb.svg"} alt={"tmdb"} style={{marginLeft:"7px"}}/>
+
+        <Image height="20" width="66" quality="75" src={"tmdb.svg"} alt={"tmdb"} style={{ marginLeft: "7px" }} />
       </div>
     </>
   );
