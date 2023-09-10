@@ -3,7 +3,7 @@ import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { message, Input, Button, Tag, Tabs, InputNumber, Space, Tooltip, Skeleton, Progress } from 'antd';
 const { Search } = Input;
-import { StarTwoTone, StarOutlined, EyeOutlined, SearchOutlined, CheckOutlined, RiseOutlined } from '@ant-design/icons';
+import { StarTwoTone, StarOutlined, EyeOutlined, SearchOutlined, CheckOutlined, RiseOutlined, EditOutlined, CheckCircleTwoTone } from '@ant-design/icons';
 import { FaRegBookmark } from "react-icons/fa6";
 import Highlighter from 'react-highlight-words';
 import { genreCodes } from "../../public/genres.js"
@@ -33,8 +33,10 @@ import Card from "../../comps/Card.js"
 // bug with search again... blanks are showing
 // have aguide for first time user that shows how upcoming works - set a const to true in localstorage if they have clicked it already (Tour comp)
 
+// bugs for tomorow :(
 // when switching tabs set make selections go to null --- IMPORTANT BUG TO FIX
 // CLEAN UP THE MESS THAT IS YOUR CRAZY REPEATED FUNCTIONS!!!!!!!!!!!!!! 
+// only 1 item is moved when selectiong multiple
 
 
 
@@ -64,6 +66,8 @@ export default function Home() {
     console.log(key);
     // setSelected([])
   };
+
+  console.log(seen, "SEEN")
 
   // --------------------------------- Functions ---------------------------
 
@@ -172,6 +176,11 @@ export default function Home() {
     // onSuccess('Cleared Search Results');
   };
 
+  const onRate = (data) => {
+    console.log("RATED!", data)
+    // onSuccess('Cleared Search Results');
+  };
+
   const onRemove = (showSuccess, rmType) => {
     if (rmType === 1) {
       setSeen(seen.filter(item => !selected.includes(item.key)));
@@ -187,58 +196,38 @@ export default function Home() {
   };
 
   const addSeen = async (o, method) => {
-    let type = "";
-    let title = "";
-    let release = "";
-    let genres = "";
-    let audience = "";
-    let key = "";
-    let poster = "";
-    let my_season = "";
-    let my_episode = "";
-    let my_rating = "";
-    let og_mtype = "";
-
+    // method 1 = creating, method 2 = swapping to watchlist
+    // make anime type if original lang is japanese
+    let type = method === 1 ? (o.original_language === "ja" ? "anime" : o.media_type) : o.media_type;
+    // if tv or movie some fields will be different (title, release date)
+    let title = method === 1 ? (o.media_type === "movie" ? o.title : o.name) : o.title;
+    let release = method === 1 ? (o.media_type === "movie" ? o.release_date : o.first_air_date) : o.release_date;
+    let genres = method === 1 ? o.genre_ids : o.genres;
+    let audience = method === 1 ? o.vote_average : o.audience_rating;
+    let key = method === 1 ? o.id : o.key;
+    let poster = method === 1 ? "https://image.tmdb.org/t/p/original/" + o.poster_path : o.poster;
+    let my_season = method === 1 ? "1" : o.my_season;
+    let my_episode = method === 1 ? "1" : o.my_episode;
+    let my_rating = method === 1 ? "unrated" : o.my_rating;
+    let og_mtype = method === 1 ? o.media_type : o.og_mtype;
+    // get details
+    let details = []
     if (method === 1) {
-      // make anime type if original lang is japanese
-      type = o.original_language === "ja" ? "anime" : o.media_type;
-      // if tv or movie some fields will be different (title, release date)
-      title = o.media_type === "movie" ? o.title : o.name;
-      release = o.media_type === "movie" ? o.release_date : o.first_air_date;
-      genres = o.genre_ids;
-      audience = o.vote_average;
-      key = o.id;
-      poster = "https://image.tmdb.org/t/p/original/" + o.poster_path;
-      my_season = "1";
-      my_episode = "1";
-      my_rating = "unrated";
-      og_mtype = o.media_type;
+      const response = await fetch("https://api.themoviedb.org/3/" + og_mtype + "/" + key + "?language=en-US", options);
+      details = await response.json();
     } else {
-      type = o.media_type;
-      title = o.title;
-      release = o.release_date;
-      genres = o.genres;
-      audience = o.audience_rating;
-      key = o.key;
-      poster = o.poster;
-      my_season = o.my_season;
-      my_episode = o.my_episode;
-      my_rating = o.my_rating;
-      og_mtype = o.og_mtype;
+      details = o.details
     }
 
-    // get details
-    const response = await fetch("https://api.themoviedb.org/3/" + og_mtype + "/" + key + "?language=en-US", options);
-    const details = await response.json();
-
+    // shorten these... !!
     setSeen([...seen, {
       key: key,
       title: title,
-      poster: poster,
-      audience_rating: audience,
+      // poster: poster,
+      // audience_rating: audience,
       release_date: release,
       media_type: type,
-      genres: genres,
+      // genres: genres,
       my_season: my_season,
       my_episode: my_episode,
       my_rating: my_rating,
@@ -264,48 +253,23 @@ export default function Home() {
   };
 
   const addWatchlist = async (o, method) => {
-    let type = "";
-    let title = "";
-    let release = "";
-    let genres = "";
-    let audience = "";
-    let key = "";
-    let poster = "";
-    let my_season = "";
-    let my_episode = "";
-    let my_rating = "";
-    let og_mtype = "";
-
-    if (method === 1) {
-      // make anime type if original lang is japanese
-      type = o.original_language === "ja" ? "anime" : o.media_type;
-      // if tv or movie some fields will be different (title, release date)
-      title = o.media_type === "movie" ? o.title : o.name;
-      release = o.media_type === "movie" ? o.release_date : o.first_air_date;
-      genres = o.genre_ids;
-      audience = o.vote_average;
-      key = o.id;
-      poster = "https://image.tmdb.org/t/p/original/" + o.poster_path;
-      my_season = "1";
-      my_episode = "1";
-      my_rating = "unrated";
-      og_mtype = o.media_type;
-    } else {
-      type = o.media_type;
-      title = o.title;
-      release = o.release_date;
-      genres = o.genres;
-      audience = o.audience_rating;
-      key = o.key;
-      poster = o.poster;
-      my_season = o.my_season;
-      my_episode = o.my_episode;
-      my_rating = o.my_rating;
-      og_mtype = o.og_mtype;
-    }
+    // method 1 = creating, method 2 = swapping to seen
+    // make anime type if original lang is japanese
+    let type = method === 1 ? (o.original_language === "ja" ? "anime" : o.media_type) : o.media_type;
+    // if tv or movie some fields will be different (title, release date)
+    let title = method === 1 ? (o.media_type === "movie" ? o.title : o.name) : o.title;
+    let release = method === 1 ? (o.media_type === "movie" ? o.release_date : o.first_air_date) : o.release_date;
+    let genres = method === 1 ? o.genre_ids : o.genres;
+    let audience = method === 1 ? o.vote_average : o.audience_rating;
+    let key = method === 1 ? o.id : o.key;
+    let poster = method === 1 ? "https://image.tmdb.org/t/p/original/" + o.poster_path : o.poster;
+    let my_season = method === 1 ? "1" : o.my_season;
+    let my_episode = method === 1 ? "1" : o.my_episode;
+    let my_rating = method === 1 ? "unrated" : o.my_rating;
+    let og_mtype = method === 1 ? o.media_type : o.og_mtype;
 
     // get details
-    const response = await fetch("https://api.themoviedb.org/3/" + o.og_mtype + "/" + o.key + "?language=en-US", options);
+    const response = await fetch("https://api.themoviedb.org/3/" + og_mtype + "/" + key + "?language=en-US", options);
     const details = await response.json();
 
     setWatchlist([...watchlist, {
@@ -341,7 +305,7 @@ export default function Home() {
   };
 
   const onMove = (num) => {
-    // if already in watchlist num = 1 or seen num = 0
+    // if already in watchlist num = 1. seen num = 0
     num === 0 ? (
       console.log("moved to watchlist", selected),
       selected.forEach((i) => {
@@ -357,6 +321,14 @@ export default function Home() {
       }),
       onRemove(false, 2)
     )
+  };
+
+  const rowSelection = {
+    onChange: (selectedRowKeys, selectedRows) => {
+      console.log(`selectedRowKeys: ${selectedRowKeys}`, 'selectedRows: ', selectedRows);
+      setSelected(selectedRowKeys)
+      selectedRows.length !== 0 ? setDisableButtons(false) : setDisableButtons(true)
+    }
   };
 
   const options = {
@@ -388,16 +360,8 @@ export default function Home() {
     fetchData();
   }, []);
 
-  const rowSelection = {
-    onChange: (selectedRowKeys, selectedRows) => {
-      console.log(`selectedRowKeys: ${selectedRowKeys}`, 'selectedRows: ', selectedRows);
-      setSelected(selectedRowKeys)
-      selectedRows.length !== 0 ? setDisableButtons(false) : setDisableButtons(true)
-    }
-  };
-
-  // ------------ table columns ------------
-  const movieColumns = [
+  // ------------ table columns ----------------------------------------------------------------------------------------------------------
+  const seenColumns = [
     {
       title: 'Poster',
       dataIndex: 'poster',
@@ -424,27 +388,18 @@ export default function Home() {
         return <div>{date.toLocaleDateString('en-US', { dateStyle: "medium", })}</div>
       },
     },
-    // {
-    //   title: 'Audience Rating',
-    //   dataIndex: 'audience_rating',
-    //   sorter: (a, b) => a.audience_rating - b.audience_rating,
-    //   // render: (audience_rating) => <Rate disabled defaultValue={audience_rating} count={10}/>
-    //   render: (audience_rating) => <>
-    //     <StarTwoTone twoToneColor="#fadb14" />
-    //     <> </>
-    //     {Number.parseFloat(audience_rating).toFixed(1)}
-    //   </>
-    // },
     {
       title: 'My Rating',
       dataIndex: 'my_rating',
       sorter: (a, b) => a.my_rating - b.my_rating,
-      render: (my_rating) => {
+      render: (my_rating, data) => {
         return my_rating !== "unrated" ? <>
           <StarTwoTone twoToneColor="#fadb14" />
           <> </>
           {Number.parseFloat(my_rating).toFixed(1)}
-        </> : <StarOutlined />
+        </> : <>
+          <StarOutlined />
+        </>
       }
     },
     {
@@ -484,14 +439,13 @@ export default function Home() {
     },
     {
       title: 'Genres',
-      dataIndex: 'genres',
-      render: (genres) => {
+      render: (data) => {
         let nameArr = []
         let emojiArr = []
-        genres.map((i) => {
+        data.details.genres.map((i) => {
           genreCodes.forEach(myFunction)
           function myFunction(i2) {
-            if (i === i2.id) {
+            if (i.id === i2.id) {
               nameArr.push(i2.name)
               emojiArr.push(i2.emoji)
             }
@@ -534,35 +488,155 @@ export default function Home() {
             {/* have an option for Completed */}
             {/* if its an ANIME dont shoiw seasons */}
             {data.media_type !== "anime" ? <>
-              {/* <InputNumber min={1} addonBefore="S" size="small" defaultValue={data.my_season} onChange={
+              <InputNumber min={1} addonBefore="S" size="small" defaultValue={data.my_season} onChange={
                 (test) => {
-                  // console.log(test)
+                  console.log(test)
                 }
-              } style={{ maxWidth: "60px" }} controls={false} /> */}
-              <>S</>
-              <>{data.my_season + "/" + data.details.number_of_seasons}</>
+              } style={{ maxWidth: "70px" }} controls={false} />
+              {/* <>S</>
+              <>{data.my_season + "/" + data.details.number_of_seasons}</> */}
               <> - </>
             </> : null}
-            <>E</>
-            {/* <InputNumber min={1} addonBefore="E" size="small" defaultValue={data.my_episode}
+            {/* <>E</> */}
+            <InputNumber min={1} addonBefore="E" size="small" defaultValue={data.my_episode}
               // onChange={onChange}
-              style={{ maxWidth: "60px" }} controls={false} /> */}
-            <>{data.my_episode + "/" + data.details.number_of_episodes}</>
-          </div> : <></>}
-          <Tooltip title={Number.parseFloat(percent).toFixed(0) + "%"}>
-            <Progress format={percent === 100 ? () => <CheckOutlined /> : () => ""} size="small" percent={percent} />
-          </Tooltip>
+              style={{ maxWidth: "60px" }} controls={false} />
+            {/* <>{data.my_episode + "/" + data.details.number_of_episodes}</> */}
+            <Tooltip title={Number.parseFloat(percent).toFixed(0) + "%"}>
+              <Progress format={percent === 100 ? () => <CheckOutlined /> : () => ""} size="small" percent={percent} />
+            </Tooltip>
+          </div> : <CheckCircleTwoTone twoToneColor="#52c41a" />}
         </>
       },
     },
+    // {
+    //   title: 'Edit',
+    //   render: (data) => {
+    //     return <Button
+    //       // type="link"
+    //       type="primary"
+    //       onClick={() => onRate(data)}
+    //       style={{ marginLeft: "10px" }}
+    //       icon={<EditOutlined />}
+    //     />
+    //   }
+    // },
   ];
 
   const watchlistColumns = [
+    {
+      title: 'Poster',
+      dataIndex: 'poster',
+      render: (poster, title) => <Image
+        src={poster}
+        width={50}
+        height={75}
+        style={{ objectFit: "cover" }}
+        alt={title}
+      />,
+    },
     {
       title: 'Title',
       dataIndex: 'title',
       key: 'title',
       ...getColumnSearchProps('title'),
+    },
+    {
+      title: 'Release Date',
+      dataIndex: 'release_date',
+      sorter: (a, b) => new Date(b.release_date) - new Date(a.release_date),
+      render: (release_date) => {
+        const date = new Date(release_date)
+        return <div>{date.toLocaleDateString('en-US', { dateStyle: "medium", })}</div>
+      },
+    },
+    {
+      title: 'Next Episode',
+      // sorter: (a, b) => new Date(b.data.details.next_episode_to_air.air_date) - new Date(a.data.details.next_episode_to_air.air_date),
+      render: (data) => {
+        let temp = ""
+        let date = ""
+        if (data.media_type === "movie") {
+          return "N/A"
+        }
+        if (data.details.next_episode_to_air === null) {
+          date = "Finished"
+        } else {
+          temp = new Date(data.details.next_episode_to_air.air_date)
+          date = temp.toLocaleDateString('en-US', { dateStyle: "medium", })
+        }
+        return <div>{date}</div>
+      },
+    },
+    {
+      title: 'Audience Rating',
+      dataIndex: 'audience_rating',
+      sorter: (a, b) => a.audience_rating - b.audience_rating,
+      render: (audience_rating) => <>
+        <StarTwoTone twoToneColor="#fadb14" />
+        <> </>
+        {Number.parseFloat(audience_rating).toFixed(1)}
+      </>
+    },
+    {
+      title: 'Type',
+      dataIndex: 'media_type',
+      filters: [
+        {
+          text: 'Movie',
+          value: 'movie',
+        },
+        {
+          text: 'TV',
+          value: 'tv',
+        },
+        {
+          text: 'Anime',
+          value: 'anime',
+        },
+      ],
+      onFilter: (value, record) => record.media_type.indexOf(value) === 0,
+      // render: (media_type) => media_type.charAt(0).toUpperCase() + media_type.slice(1)
+      render: (media_type) => {
+        let color = ""
+        if (media_type === "anime") {
+          color = "geekblue"
+        } else if (media_type === "tv") {
+          color = "green"
+        } else {
+          color = "volcano"
+        }
+        return (
+          <Tag color={color}>
+            {media_type.toUpperCase()}
+          </Tag>
+        )
+      }
+    },
+    {
+      title: 'Genres',
+      render: (data) => {
+        let nameArr = []
+        let emojiArr = []
+        data.details.genres.map((i) => {
+          genreCodes.forEach(myFunction)
+          function myFunction(i2) {
+            if (i.id === i2.id) {
+              nameArr.push(i2.name)
+              emojiArr.push(i2.emoji)
+            }
+          }
+        })
+        return <div style={{ display: "flex" }}>
+          {nameArr.map((i, index) =>
+            <div key={index} style={{ marginRight: "3px", cursor: "default", border: "1px solid #d9d9d9", width: "22px", display: "flex", alignItems: "center", justifyContent: "center", background: "#fafafa", borderRadius: "5px" }}>
+              <Tooltip title={i}>
+                {emojiArr[index]}
+              </Tooltip>
+            </div>
+          )}
+        </div>
+      },
     },
   ];
 
@@ -673,7 +747,7 @@ export default function Home() {
         onRemove={() => onRemove(true, 1)}
         onMove={() => onMove(0)}
         disableButtons={disableButtons}
-        movieColumns={movieColumns}
+        movieColumns={seenColumns}
         movies={seen}
         rowSelection={rowSelection}
         showMove={true}
@@ -792,7 +866,6 @@ export default function Home() {
         <Tabs defaultActiveKey="1" items={tabItems} onChange={onChange} size={"large"} centered />
       </div>
 
-
       <div
         style={{
           marginTop: "75px",
@@ -801,14 +874,16 @@ export default function Home() {
           justifyContent: "center",
           alignItems: "center",
           // border: "1px dashed gray"
-          height: "58px",
+          // height: "58px",
           position: "relative",
-          bottom: "-58px",
+          bottom: "-10px",
           background: "#fafafa",
           fontSize: "10pt"
         }}
       >
-        josren ©2023 | Created using data from TMDB API
+        <>JOSREN ©2023 | Created using data from</>
+        
+        <Image height="20" width="66" quality="75" src={"tmdb.svg"} alt={"tmdb"} style={{marginLeft:"7px"}}/>
       </div>
     </>
   );
