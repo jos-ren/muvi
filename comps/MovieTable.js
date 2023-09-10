@@ -1,13 +1,13 @@
 import React from 'react';
 import styled from "styled-components";
 import { Table, Button } from 'antd';
-import { DeleteOutlined } from '@ant-design/icons';
+import { DeleteOutlined, SwapOutlined } from '@ant-design/icons';
 
 const Container = styled.div`
 
 `;
 
-const MovieTable = ({ header, onRemove, disableRemove, movieColumns, movies, rowSelection, onChange, showRemove=true }) => {
+const MovieTable = ({ header, onRemove, disableButtons, movieColumns, movies, rowSelection, onChange, showRemove = true, showMove = false, pagination, moveKeyword, onMove}) => {
     return (
         <Container>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -20,15 +20,25 @@ const MovieTable = ({ header, onRemove, disableRemove, movieColumns, movies, row
             >
               Show Posters
             </Button> */}
+                    {showMove ?
+                        <Button
+                        style={{marginRight:"10px"}}
+                            type="primary"
+                            onClick={onMove}
+                            disabled={disableButtons}
+                            icon={<SwapOutlined />}
+                        >
+                            Move to {moveKeyword}
+                        </Button> : null}
                     {showRemove ?
                         <Button
                             type="primary"
                             danger
                             onClick={onRemove}
-                            disabled={disableRemove}
+                            disabled={disableButtons}
                             icon={<DeleteOutlined />}
                         >
-                            Remove Selected
+                            Remove
                         </Button> : null}
 
                 </div>
@@ -39,7 +49,7 @@ const MovieTable = ({ header, onRemove, disableRemove, movieColumns, movies, row
                 onChange={onChange}
                 columns={movieColumns}
                 dataSource={movies}
-                pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
+                pagination={pagination}
                 rowSelection={rowSelection}
             // tableLayout={"auto"}
             />

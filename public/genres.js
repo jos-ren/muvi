@@ -66,7 +66,7 @@ export const genreCodes = [
     },
     {
         "id": 10767,
-        "name": "Talk",
+        "name": "Talk Show",
         "emoji": "🗣️"
     },
     {
