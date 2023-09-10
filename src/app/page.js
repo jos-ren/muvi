@@ -2,6 +2,7 @@
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { Layout, message, Input, Button, Tag, Carousel, Tabs, InputNumber, Space, Tooltip, Skeleton, Progress } from 'antd';
+const { Footer } = Layout;
 const { Search } = Input;
 import { StarTwoTone, StarOutlined, EyeOutlined, SearchOutlined, CheckOutlined, RiseOutlined } from '@ant-design/icons';
 import { FaRegBookmark } from "react-icons/fa6";
@@ -29,6 +30,8 @@ import Card from "../../comps/Card.js"
 // add a count of how many movies are in each tab 
 // add a functions page to clear up this page
 // open a modal for rating series?
+// make trending movies a grid instead....? maybe 
+// bug with search again... blanks are showing
 
 
 
@@ -227,7 +230,7 @@ export default function Home() {
       const response = await fetch("https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc", options);
       const details = await response.json();
       let temp = details.results
-      temp.forEach((item, index) => item.key = index+1)
+      temp.forEach((item, index) => item.key = index + 1)
       setPopularMovies(temp)
     }
     fetchData();
@@ -484,6 +487,15 @@ export default function Home() {
     },
   ];
 
+  const upcomingColumns = [
+    {
+      title: 'Title',
+      dataIndex: 'title',
+      key: 'title',
+      ...getColumnSearchProps('title'),
+    },
+  ];
+
   // --------- tabs ----------
   const tabItems = [
     {
@@ -495,12 +507,15 @@ export default function Home() {
         </span>
       ),
       children: <MovieTable
+        pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
         header={"Seen Movies"}
         onRemove={onRemove}
         disableRemove={disableRemove}
         movieColumns={movieColumns}
         movies={movies}
         rowSelection={rowSelection}
+        showMove={true}
+        moveKeyword={"Watchlist"}
       />,
     },
     {
@@ -511,7 +526,17 @@ export default function Home() {
           <div style={{ marginLeft: "6px" }}>Watchlist</div>
         </span>
       ),
-      children: '2',
+      children: <MovieTable
+        pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
+        header={"Seen Movies"}
+        onRemove={onRemove}
+        disableRemove={disableRemove}
+        movieColumns={movieColumns}
+        movies={movies}
+        rowSelection={rowSelection}
+        showMove={true}
+        moveKeyword={"Seen"}
+      />,
     },
     {
       key: '3',
@@ -522,16 +547,32 @@ export default function Home() {
         </span>
       ),
       children:
-        <MovieTable
-          header={"Trending Movies"}
-          onRemove={onRemove}
-          disableRemove={disableRemove}
-          movieColumns={popMovColumns}
-          movies={popularMovies}
-          rowSelection={false}
-          onChange={(page) => { setPage(page.current) }}
-          showRemove={false}
-        />
+        <div>
+          {/* upcoming movies and shows */}
+          <MovieTable
+            pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
+            header={"Upcoming Movies/Shows"}
+            onRemove={onRemove}
+            disableRemove={disableRemove}
+            movieColumns={upcomingColumns}
+            // get upcoming data
+            movies={popularMovies}
+            rowSelection={false}
+            onChange={(page) => { setPage(page.current) }}
+            showRemove={false}
+          />
+          <MovieTable
+            pagination={{ hideOnSinglePage: true, defaultPageSize: 20 }}
+            header={"Trending Movies"}
+            onRemove={onRemove}
+            disableRemove={disableRemove}
+            movieColumns={popMovColumns}
+            movies={popularMovies}
+            rowSelection={false}
+            onChange={(page) => { setPage(page.current) }}
+            showRemove={false}
+          />
+        </div>
       // tv shows which have seasons or episodes coming soon
       // a tracked tv show will be one in your watchlist or seen list
     },
@@ -540,50 +581,71 @@ export default function Home() {
   return (
     <>
       {contextHolder}
-      <h1>Search</h1>
-      <div style={{ display: "flex", alignItems: "center" }}>
-        <Search
-          size="large"
-          placeholder="movie name"
-          enterButton="Search"
-          onSearch={onSearch}
-        />
-        <Button
-          type="link"
-          onClick={clearSearch}
-          style={{ marginLeft: "10px", height: "40px" }}
-          disabled={disableClear}
-        >
-          Clear Results
-        </Button>
+      <div style={{ padding: "20px 100px" }}>
+        <h1>Search</h1>
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <Search
+            size="large"
+            placeholder="movie name"
+            enterButton="Search"
+            onSearch={onSearch}
+          />
+          <Button
+            type="link"
+            onClick={clearSearch}
+            style={{ marginLeft: "10px", height: "40px" }}
+            disabled={disableClear}
+          >
+            Clear Results
+          </Button>
+        </div>
+
+        {search.results ?
+          <div style={{
+            // display: "flex", flexWrap: 'wrap', gap: '20px'
+            display: "grid",
+            gridTemplateColumns: "repeat(5, 1fr)",
+            // gridTemplateRows: "repeat(2, 1fr)",
+            gridColumnGap: "10px",
+            gridRowGap: "10px",
+            margin: "20px 0px"
+          }}>
+            {/* // only show movies with posters && not an actor in search results */}
+            {search.results.map((o) =>
+              o.media_type !== "people" && o.poster_path ?
+                <Card
+                  key={o.id}
+                  addMovie={() => addMovie(o)}
+                  title={o.media_type === "movie" ? o.title : o.name}
+                  src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
+                  alt={o.id}
+                />
+                : <div key={o.id}></div>)}
+          </div> : null}
+        <br />
+        <br />
+        <br />
+        <Tabs defaultActiveKey="1" items={tabItems} onChange={onChange} size={"large"} centered />
       </div>
 
-      {search.results ?
-        <div style={{
-          // display: "flex", flexWrap: 'wrap', gap: '20px'
-          display: "grid",
-          gridTemplateColumns: "repeat(5, 1fr)",
-          // gridTemplateRows: "repeat(2, 1fr)",
-          gridColumnGap: "10px",
-          gridRowGap: "10px",
-          margin: "20px 0px"
-        }}>
-          {/* // only show movies with posters && not an actor in search results */}
-          {search.results.map((o) =>
-            o.media_type !== "people" && o.poster_path ?
-              <Card
-                key={o.id}
-                addMovie={() => addMovie(o)}
-                title={o.media_type === "movie" ? o.title : o.name}
-                src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
-                alt={o.id}
-              />
-              : <div key={o.id}></div>)}
-        </div> : null}
-      <br />
-      <br />
-      <br />
-      <Tabs defaultActiveKey="1" items={tabItems} onChange={onChange} size={"large"} centered />
+
+      <div
+        style={{
+          marginTop: "75px",
+          display: "flex",
+          height: "75px",
+          justifyContent: "center",
+          alignItems: "center",
+          // border: "1px dashed gray"
+          height: "58px",
+          position: "relative",
+          bottom: "-58px",
+          background: "#fafafa",
+          fontSize: "10pt"
+        }}
+      >
+        josren ©2023 | Created using data from TMDB API
+      </div>
     </>
   );
 }
