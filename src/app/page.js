@@ -37,14 +37,6 @@ import Card from "../../comps/Card.js"
 // when switching tabs set make selections go to null --- IMPORTANT BUG TO FIX
 // only 1 item is moved when selectiong multiple
 
-
-
-
-// const onChange = (pagination, filters, sorter, extra) => {
-//   console.log('params', pagination, filters, sorter, extra);
-// };
-
-
 export default function Home() {
   const fetch = require("node-fetch");
   const [seen, setSeen] = useState([]);
@@ -61,14 +53,9 @@ export default function Home() {
   const [searchedColumn, setSearchedColumn] = useState('');
   const searchInput = useRef(null);
 
-  const onChange = (key) => {
-    console.log(key);
-    // setSelected([])
-  };
-
   console.log(seen, "SEEN")
 
-  // --------------------------------- Functions ---------------------------
+  // --------------------------------- Functions -----------------------------------------------------------------------------------------
 
   const handleSearch = (selectedKeys, confirm, dataIndex) => {
     confirm();
@@ -297,281 +284,218 @@ export default function Home() {
   }, []);
 
   // ------------ table columns ----------------------------------------------------------------------------------------------------------
-  const seenColumns = [
-    {
-      title: 'Poster',
-      render: (data) => <Image
-        src={"https://image.tmdb.org/t/p/original/" + data.details.poster_path}
-        alt={data.title}
-        width={50}
-        height={75}
-        style={{ objectFit: "cover" }}
-      />,
-    },
-    {
-      title: 'Title',
-      dataIndex: 'title',
-      key: 'title',
-      ...getColumnSearchProps('title'),
-    },
-    {
-      title: 'Release Date',
-      dataIndex: 'release_date',
-      sorter: (a, b) => new Date(b.release_date) - new Date(a.release_date),
-      render: (release_date) => {
-        const date = new Date(release_date)
-        return <div>{date.toLocaleDateString('en-US', { dateStyle: "medium", })}</div>
-      },
-    },
-    {
-      title: 'My Rating',
-      dataIndex: 'my_rating',
-      sorter: (a, b) => a.my_rating - b.my_rating,
-      render: (my_rating, data) => {
-        return my_rating !== "unrated" ? <>
-          <StarTwoTone twoToneColor="#fadb14" />
-          <> </>
-          {Number.parseFloat(my_rating).toFixed(1)}
-        </> : <>
-          <StarOutlined />
-        </>
-      }
-    },
-    {
-      title: 'Type',
-      dataIndex: 'media_type',
-      filters: [
-        {
-          text: 'Movie',
-          value: 'movie',
-        },
-        {
-          text: 'TV',
-          value: 'tv',
-        },
-        {
-          text: 'Anime',
-          value: 'anime',
-        },
-      ],
-      onFilter: (value, record) => record.media_type.indexOf(value) === 0,
-      // render: (media_type) => media_type.charAt(0).toUpperCase() + media_type.slice(1)
-      render: (media_type) => {
-        let color = ""
-        if (media_type === "anime") {
-          color = "geekblue"
-        } else if (media_type === "tv") {
-          color = "green"
-        } else {
-          color = "volcano"
-        }
-        return (
-          <Tag color={color}>
-            {media_type.toUpperCase()}
-          </Tag>
-        )
-      }
-    },
-    {
-      title: 'Genres',
-      render: (data) => {
-        let nameArr = []
-        let emojiArr = []
-        data.details.genres.map((i) => {
-          genreCodes.forEach(myFunction)
-          function myFunction(i2) {
-            if (i.id === i2.id) {
-              nameArr.push(i2.name)
-              emojiArr.push(i2.emoji)
-            }
-          }
-        })
-        return <div style={{ display: "flex" }}>
-          {nameArr.map((i, index) =>
-            <div key={index} style={{ marginRight: "3px", cursor: "default", border: "1px solid #d9d9d9", width: "22px", display: "flex", alignItems: "center", justifyContent: "center", background: "#fafafa", borderRadius: "5px" }}>
-              <Tooltip title={i}>
-                {emojiArr[index]}
-              </Tooltip>
-            </div>
-          )}
-        </div>
-      },
-    },
-    {
-      title: 'Progress',
-      render: (data) => {
+  const poster = {
+    title: 'Poster',
+    render: (data) => <Image
+      src={"https://image.tmdb.org/t/p/original/" + data.details.poster_path}
+      alt={data.title}
+      width={50}
+      height={75}
+      style={{ objectFit: "cover" }}
+    />
+  }
 
-        let percent = 0
-        if (data.media_type === "movie") {
-          percent = 100
-        } else if (data.media_type === "tv") {
-          // have a x / 128 episodes which takes total episodes and episodes youve watched to make a percentage
-          if (data.details.number_of_seasons === 1) {
-            percent = data.my_episode / data.details.number_of_episodes * 100
-          } else {
-            percent = data.my_season / data.details.number_of_seasons * 100
-          }
-        } else {
-          {/* for status bar, if its a tv show have status be about seasons, if anime be about episodes */ }
-          percent = data.my_episode / data.details.number_of_episodes * 100
-        }
-        return <>
+  const title = {
+    title: 'Title',
+    dataIndex: 'title',
+    key: 'title',
+    ...getColumnSearchProps('title'),
+  }
 
-          {data.media_type !== "movie" ? <div>
-            {/* if u want to get really technical, find how many episodes are in a specific season */}
-            {/* include an edit buitton to edit this data */}
-            {/* have an option for Completed */}
-            {/* if its an ANIME dont shoiw seasons */}
-            {data.media_type !== "anime" ? <>
-              <InputNumber min={1} addonBefore="S" size="small" defaultValue={data.my_season} onChange={
-                (test) => {
-                  console.log(test)
-                }
-              } style={{ maxWidth: "70px" }} controls={false} />
-              {/* <>S</>
-              <>{data.my_season + "/" + data.details.number_of_seasons}</> */}
-              <> - </>
-            </> : null}
-            {/* <>E</> */}
-            <InputNumber min={1} addonBefore="E" size="small" defaultValue={data.my_episode}
-              // onChange={onChange}
-              style={{ maxWidth: "60px" }} controls={false} />
-            {/* <>{data.my_episode + "/" + data.details.number_of_episodes}</> */}
-            <Tooltip title={Number.parseFloat(percent).toFixed(0) + "%"}>
-              <Progress format={percent === 100 ? () => <CheckOutlined /> : () => ""} size="small" percent={percent} />
+  const release_date = {
+    title: 'Release Date',
+    dataIndex: 'release_date',
+    sorter: (a, b) => new Date(b.release_date) - new Date(a.release_date),
+    render: (release_date) => {
+      const date = new Date(release_date)
+      return <div>{date.toLocaleDateString('en-US', { dateStyle: "medium", })}</div>
+    }
+  }
+
+  const my_rating = {
+    title: 'My Rating',
+    dataIndex: 'my_rating',
+    sorter: (a, b) => a.my_rating - b.my_rating,
+    render: (my_rating, data) => {
+      return my_rating !== "unrated" ? <>
+        <StarTwoTone twoToneColor="#fadb14" />
+        <> </>
+        {Number.parseFloat(my_rating).toFixed(1)}
+      </> : <>
+        <StarOutlined />
+      </>
+    }
+  }
+
+  const audience_rating = {
+    title: 'Audience Rating',
+    // dataIndex: 'data.details.vote_average',
+    // sorter: (a, b) => a.data.details.vote_average - b.data.details.vote_average,
+    render: (data) => <>
+      <StarTwoTone twoToneColor="#fadb14" />
+      <> </>
+      {Number.parseFloat(data.details.vote_average).toFixed(1)}
+    </>
+  }
+
+  const type = {
+    title: 'Type',
+    dataIndex: 'media_type',
+    filters: [
+      {
+        text: 'Movie',
+        value: 'movie',
+      },
+      {
+        text: 'TV',
+        value: 'tv',
+      },
+      {
+        text: 'Anime',
+        value: 'anime',
+      },
+    ],
+    onFilter: (value, record) => record.media_type.indexOf(value) === 0,
+    // render: (media_type) => media_type.charAt(0).toUpperCase() + media_type.slice(1)
+    render: (media_type) => {
+      let color = ""
+      if (media_type === "anime") {
+        color = "geekblue"
+      } else if (media_type === "tv") {
+        color = "green"
+      } else {
+        color = "volcano"
+      }
+      return (
+        <Tag color={color}>
+          {media_type.toUpperCase()}
+        </Tag>
+      )
+    }
+  }
+
+  const genres = {
+    title: 'Genres',
+    render: (data) => {
+      let nameArr = []
+      let emojiArr = []
+      data.details.genres.map((i) => {
+        genreCodes.forEach(myFunction)
+        function myFunction(i2) {
+          if (i.id === i2.id) {
+            nameArr.push(i2.name)
+            emojiArr.push(i2.emoji)
+          }
+        }
+      })
+      return <div style={{ display: "flex" }}>
+        {nameArr.map((i, index) =>
+          <div key={index} style={{ marginRight: "3px", cursor: "default", border: "1px solid #d9d9d9", width: "22px", display: "flex", alignItems: "center", justifyContent: "center", background: "#fafafa", borderRadius: "5px" }}>
+            <Tooltip title={i}>
+              {emojiArr[index]}
             </Tooltip>
-          </div> : <CheckCircleTwoTone twoToneColor="#52c41a" />}
-        </>
-      },
-    },
-    // {
-    //   title: 'Edit',
-    //   render: (data) => {
-    //     return <Button
-    //       // type="link"
-    //       type="primary"
-    //       onClick={() => onRate(data)}
-    //       style={{ marginLeft: "10px" }}
-    //       icon={<EditOutlined />}
-    //     />
-    //   }
-    // },
+          </div>
+        )}
+      </div>
+    }
+  }
+
+  const next_episode = {
+    title: 'Next Episode',
+    // sorter: (a, b) => new Date(b.data.details.next_episode_to_air.air_date) - new Date(a.data.details.next_episode_to_air.air_date),
+    render: (data) => {
+      let temp = ""
+      let date = ""
+      if (data.media_type === "movie") {
+        return "N/A"
+      }
+      if (data.details.next_episode_to_air === null) {
+        date = "Finished"
+      } else {
+        temp = new Date(data.details.next_episode_to_air.air_date)
+        date = temp.toLocaleDateString('en-US', { dateStyle: "medium", })
+      }
+      return <div>{date}</div>
+    }
+  }
+
+  const progress = {
+    title: 'Progress',
+    render: (data) => {
+      let percent = 0
+      if (data.media_type === "movie") {
+        percent = 100
+      } else if (data.media_type === "tv") {
+        // have a x / 128 episodes which takes total episodes and episodes youve watched to make a percentage
+        if (data.details.number_of_seasons === 1) {
+          percent = data.my_episode / data.details.number_of_episodes * 100
+        } else {
+          percent = data.my_season / data.details.number_of_seasons * 100
+        }
+      } else {
+        {/* for status bar, if its a tv show have status be about seasons, if anime be about episodes */ }
+        percent = data.my_episode / data.details.number_of_episodes * 100
+      }
+      return <>
+        {data.media_type !== "movie" ? <div>
+          {/* if u want to get really technical, find how many episodes are in a specific season */}
+          {/* include an edit buitton to edit this data */}
+          {/* have an option for Completed */}
+          {/* if its an ANIME dont shoiw seasons */}
+          {data.media_type !== "anime" ? <>
+            <InputNumber min={1} addonBefore="S" size="small" defaultValue={data.my_season} onChange={
+              (test) => {
+                console.log(test)
+              }
+            } style={{ maxWidth: "70px" }} controls={false} />
+            {/* <>S</>
+            <>{data.my_season + "/" + data.details.number_of_seasons}</> */}
+            <> - </>
+          </> : null}
+          {/* <>E</> */}
+          <InputNumber min={1} addonBefore="E" size="small" defaultValue={data.my_episode}
+            // onChange={onChange}
+            style={{ maxWidth: "60px" }} controls={false} />
+          {/* <>{data.my_episode + "/" + data.details.number_of_episodes}</> */}
+          <Tooltip title={Number.parseFloat(percent).toFixed(0) + "%"}>
+            <Progress format={percent === 100 ? () => <CheckOutlined /> : () => ""} size="small" percent={percent} />
+          </Tooltip>
+        </div> : <CheckCircleTwoTone twoToneColor="#52c41a" />}
+      </>
+    }
+  }
+
+  // {
+  //   title: 'Edit',
+  //   render: (data) => {
+  //     return <Button
+  //       // type="link"
+  //       type="primary"
+  //       onClick={() => onRate(data)}
+  //       style={{ marginLeft: "10px" }}
+  //       icon={<EditOutlined />}
+  //     />
+  //   }
+  // },
+
+  const seenColumns = [
+    poster,
+    title,
+    release_date,
+    my_rating,
+    type,
+    genres,
+    progress,
   ];
 
   const watchlistColumns = [
-    {
-      title: 'Poster',
-      render: (data) => <Image
-        src={"https://image.tmdb.org/t/p/original/" + data.details.poster_path}
-        alt={data.title}
-        width={50}
-        height={75}
-        style={{ objectFit: "cover" }}
-      />,
-    },
-    {
-      title: 'Title',
-      dataIndex: 'title',
-      key: 'title',
-      ...getColumnSearchProps('title'),
-    },
-    {
-      title: 'Release Date',
-      dataIndex: 'release_date',
-      sorter: (a, b) => new Date(b.release_date) - new Date(a.release_date),
-      render: (release_date) => {
-        const date = new Date(release_date)
-        return <div>{date.toLocaleDateString('en-US', { dateStyle: "medium", })}</div>
-      },
-    },
-    {
-      title: 'Next Episode',
-      // sorter: (a, b) => new Date(b.data.details.next_episode_to_air.air_date) - new Date(a.data.details.next_episode_to_air.air_date),
-      render: (data) => {
-        let temp = ""
-        let date = ""
-        if (data.media_type === "movie") {
-          return "N/A"
-        }
-        if (data.details.next_episode_to_air === null) {
-          date = "Finished"
-        } else {
-          temp = new Date(data.details.next_episode_to_air.air_date)
-          date = temp.toLocaleDateString('en-US', { dateStyle: "medium", })
-        }
-        return <div>{date}</div>
-      },
-    },
-    {
-      title: 'Audience Rating',
-      // dataIndex: 'data.details.vote_average',
-      // sorter: (a, b) => a.data.details.vote_average - b.data.details.vote_average,
-      render: (data) => <>
-        <StarTwoTone twoToneColor="#fadb14" />
-        <> </>
-        {Number.parseFloat(data.details.vote_average).toFixed(1)}
-      </>
-    },
-    {
-      title: 'Type',
-      dataIndex: 'media_type',
-      filters: [
-        {
-          text: 'Movie',
-          value: 'movie',
-        },
-        {
-          text: 'TV',
-          value: 'tv',
-        },
-        {
-          text: 'Anime',
-          value: 'anime',
-        },
-      ],
-      onFilter: (value, record) => record.media_type.indexOf(value) === 0,
-      // render: (media_type) => media_type.charAt(0).toUpperCase() + media_type.slice(1)
-      render: (media_type) => {
-        let color = ""
-        if (media_type === "anime") {
-          color = "geekblue"
-        } else if (media_type === "tv") {
-          color = "green"
-        } else {
-          color = "volcano"
-        }
-        return (
-          <Tag color={color}>
-            {media_type.toUpperCase()}
-          </Tag>
-        )
-      }
-    },
-    {
-      title: 'Genres',
-      render: (data) => {
-        let nameArr = []
-        let emojiArr = []
-        data.details.genres.map((i) => {
-          genreCodes.forEach(myFunction)
-          function myFunction(i2) {
-            if (i.id === i2.id) {
-              nameArr.push(i2.name)
-              emojiArr.push(i2.emoji)
-            }
-          }
-        })
-        return <div style={{ display: "flex" }}>
-          {nameArr.map((i, index) =>
-            <div key={index} style={{ marginRight: "3px", cursor: "default", border: "1px solid #d9d9d9", width: "22px", display: "flex", alignItems: "center", justifyContent: "center", background: "#fafafa", borderRadius: "5px" }}>
-              <Tooltip title={i}>
-                {emojiArr[index]}
-              </Tooltip>
-            </div>
-          )}
-        </div>
-      },
-    },
+    poster,
+    title,
+    release_date,
+    next_episode,
+    audience_rating,
+    type,
+    genres,
   ];
 
   const popMovColumns = [
@@ -590,21 +514,8 @@ export default function Home() {
         alt={title}
       />,
     },
-    {
-      title: 'Title',
-      dataIndex: 'title',
-      key: 'title',
-      ...getColumnSearchProps('title'),
-    },
-    {
-      title: 'Release Date',
-      dataIndex: 'release_date',
-      sorter: (a, b) => new Date(b.release_date) - new Date(a.release_date),
-      render: (release_date) => {
-        const date = new Date(release_date)
-        return <div>{date.toLocaleDateString('en-US', { dateStyle: "medium", })}</div>
-      },
-    },
+    title,
+    release_date,
     {
       title: 'Audience Rating',
       dataIndex: 'vote_average',
@@ -797,7 +708,7 @@ export default function Home() {
         <br />
         <br />
         <br />
-        <Tabs defaultActiveKey="1" items={tabItems} onChange={onChange} size={"large"} centered />
+        <Tabs defaultActiveKey="1" items={tabItems} size={"large"} centered />
       </div>
 
       <div
