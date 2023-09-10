@@ -7,7 +7,7 @@ const Container = styled.div`
 
 `;
 
-const MovieTable = ({ header, onRemove, disableRemove, movieColumns, movies, rowSelection, onChange, showRemove = true, showMove = false, pagination, moveKeyword }) => {
+const MovieTable = ({ header, onRemove, disableButtons, movieColumns, movies, rowSelection, onChange, showRemove = true, showMove = false, pagination, moveKeyword, onMove}) => {
     return (
         <Container>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -24,8 +24,8 @@ const MovieTable = ({ header, onRemove, disableRemove, movieColumns, movies, row
                         <Button
                         style={{marginRight:"10px"}}
                             type="primary"
-                            onClick={onRemove}
-                            disabled={disableRemove}
+                            onClick={onMove}
+                            disabled={disableButtons}
                             icon={<SwapOutlined />}
                         >
                             Move to {moveKeyword}
@@ -35,10 +35,10 @@ const MovieTable = ({ header, onRemove, disableRemove, movieColumns, movies, row
                             type="primary"
                             danger
                             onClick={onRemove}
-                            disabled={disableRemove}
+                            disabled={disableButtons}
                             icon={<DeleteOutlined />}
                         >
-                            Remove Selected
+                            Remove
                         </Button> : null}
 
                 </div>

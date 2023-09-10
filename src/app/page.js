@@ -1,8 +1,7 @@
 "use client";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
-import { Layout, message, Input, Button, Tag, Carousel, Tabs, InputNumber, Space, Tooltip, Skeleton, Progress } from 'antd';
-const { Footer } = Layout;
+import { message, Input, Button, Tag, Tabs, InputNumber, Space, Tooltip, Skeleton, Progress } from 'antd';
 const { Search } = Input;
 import { StarTwoTone, StarOutlined, EyeOutlined, SearchOutlined, CheckOutlined, RiseOutlined } from '@ant-design/icons';
 import { FaRegBookmark } from "react-icons/fa6";
@@ -32,6 +31,10 @@ import Card from "../../comps/Card.js"
 // open a modal for rating series?
 // make trending movies a grid instead....? maybe 
 // bug with search again... blanks are showing
+// have aguide for first time user that shows how upcoming works - set a const to true in localstorage if they have clicked it already (Tour comp)
+
+// when switching tabs set make selections go to null --- IMPORTANT BUG TO FIX
+// CLEAN UP THE MESS THAT IS YOUR CRAZY REPEATED FUNCTIONS!!!!!!!!!!!!!! 
 
 
 
@@ -39,17 +42,16 @@ import Card from "../../comps/Card.js"
 // const onChange = (pagination, filters, sorter, extra) => {
 //   console.log('params', pagination, filters, sorter, extra);
 // };
-const onChange = (key) => {
-  // console.log(key);
-};
+
 
 export default function Home() {
   const fetch = require("node-fetch");
-  const [movies, setMovies] = useState([]);
+  const [seen, setSeen] = useState([]);
+  const [watchlist, setWatchlist] = useState([]);
   const [search, setSearch] = useState([]);
   const [selected, setSelected] = useState([]);
   const [disableClear, setDisableClear] = useState(true);
-  const [disableRemove, setDisableRemove] = useState(true);
+  const [disableButtons, setDisableButtons] = useState(true);
   const [loaded, setLoaded] = useState(true);
   const [page, setPage] = useState(1);
   const [popularMovies, setPopularMovies] = useState([]);
@@ -58,7 +60,12 @@ export default function Home() {
   const [searchedColumn, setSearchedColumn] = useState('');
   const searchInput = useRef(null);
 
-  // console.log(movies)
+  const onChange = (key) => {
+    console.log(key);
+    // setSelected([])
+  };
+
+  // --------------------------------- Functions ---------------------------
 
   const handleSearch = (selectedKeys, confirm, dataIndex) => {
     confirm();
@@ -165,50 +172,191 @@ export default function Home() {
     // onSuccess('Cleared Search Results');
   };
 
-  const onRemove = () => {
-    setMovies(movies.filter(item => !selected.includes(item.key)));
-    localStorage.setItem("movies", JSON.stringify(movies.filter(item => !selected.includes(item.key))));
-    onSuccess('Successfully Removed ' + selected.length + ' Movies');
-    setDisableRemove(true)
+  const onRemove = (showSuccess, rmType) => {
+    if (rmType === 1) {
+      setSeen(seen.filter(item => !selected.includes(item.key)));
+      localStorage.setItem("seen", JSON.stringify(seen.filter(item => !selected.includes(item.key))));
+      { showSuccess === true ? onSuccess('Successfully Removed ' + selected.length + ' Movies') : null }
+      setDisableButtons(true)
+    } else {
+      setWatchlist(watchlist.filter(item => !selected.includes(item.key)));
+      localStorage.setItem("watchlist", JSON.stringify(watchlist.filter(item => !selected.includes(item.key))));
+      { showSuccess === true ? onSuccess('Successfully Removed ' + selected.length + ' Movies') : null }
+      setDisableButtons(true)
+    }
   };
 
-  const addMovie = async (o) => {
-    // make anime type if original lang is japanese
-    let type = o.original_language === "ja" ? "anime" : o.media_type;
-    // if tv or movie some fields will be different (title, release date)
-    let title = o.media_type === "movie" ? o.title : o.name;
-    let release = o.media_type === "movie" ? o.release_date : o.first_air_date;
+  const addSeen = async (o, method) => {
+    let type = "";
+    let title = "";
+    let release = "";
+    let genres = "";
+    let audience = "";
+    let key = "";
+    let poster = "";
+    let my_season = "";
+    let my_episode = "";
+    let my_rating = "";
+    let og_mtype = "";
 
-    const response = await fetch("https://api.themoviedb.org/3/" + o.media_type + "/" + o.id + "?language=en-US", options);
+    if (method === 1) {
+      // make anime type if original lang is japanese
+      type = o.original_language === "ja" ? "anime" : o.media_type;
+      // if tv or movie some fields will be different (title, release date)
+      title = o.media_type === "movie" ? o.title : o.name;
+      release = o.media_type === "movie" ? o.release_date : o.first_air_date;
+      genres = o.genre_ids;
+      audience = o.vote_average;
+      key = o.id;
+      poster = "https://image.tmdb.org/t/p/original/" + o.poster_path;
+      my_season = "1";
+      my_episode = "1";
+      my_rating = "unrated";
+      og_mtype = o.media_type;
+    } else {
+      type = o.media_type;
+      title = o.title;
+      release = o.release_date;
+      genres = o.genres;
+      audience = o.audience_rating;
+      key = o.key;
+      poster = o.poster;
+      my_season = o.my_season;
+      my_episode = o.my_episode;
+      my_rating = o.my_rating;
+      og_mtype = o.og_mtype;
+    }
+
+    // get details
+    const response = await fetch("https://api.themoviedb.org/3/" + og_mtype + "/" + key + "?language=en-US", options);
     const details = await response.json();
 
-    setMovies([...movies, {
-      key: o.id,
+    setSeen([...seen, {
+      key: key,
       title: title,
-      poster: "https://image.tmdb.org/t/p/original/" + o.poster_path,
-      audience_rating: o.vote_average,
+      poster: poster,
+      audience_rating: audience,
       release_date: release,
       media_type: type,
-      genres: o.genre_ids,
-      my_season: "1",
-      my_episode: "1",
-      my_rating: "unrated",
+      genres: genres,
+      my_season: my_season,
+      my_episode: my_episode,
+      my_rating: my_rating,
+      og_mtype: og_mtype,
       details: details
     }]);
-    localStorage.setItem("movies", JSON.stringify([...movies, {
-      key: o.id,
+    localStorage.setItem("seen", JSON.stringify([...seen, {
+      key: key,
       title: title,
-      poster: "https://image.tmdb.org/t/p/original/" + o.poster_path,
-      audience_rating: o.vote_average,
+      poster: poster,
+      audience_rating: audience,
       release_date: release,
       media_type: type,
-      genres: o.genre_ids,
-      my_season: "1",
-      my_episode: "1",
-      my_rating: "unrated",
+      genres: genres,
+      my_season: my_season,
+      my_episode: my_episode,
+      my_rating: my_rating,
+      og_mtype: og_mtype,
       details: details
     }]));
-    onSuccess('Added ' + title + ' to My Movies');
+    let verb = method === 1 ? "Added " : "Moved "
+    onSuccess(verb + title + ' to Seen');
+  };
+
+  const addWatchlist = async (o, method) => {
+    let type = "";
+    let title = "";
+    let release = "";
+    let genres = "";
+    let audience = "";
+    let key = "";
+    let poster = "";
+    let my_season = "";
+    let my_episode = "";
+    let my_rating = "";
+    let og_mtype = "";
+
+    if (method === 1) {
+      // make anime type if original lang is japanese
+      type = o.original_language === "ja" ? "anime" : o.media_type;
+      // if tv or movie some fields will be different (title, release date)
+      title = o.media_type === "movie" ? o.title : o.name;
+      release = o.media_type === "movie" ? o.release_date : o.first_air_date;
+      genres = o.genre_ids;
+      audience = o.vote_average;
+      key = o.id;
+      poster = "https://image.tmdb.org/t/p/original/" + o.poster_path;
+      my_season = "1";
+      my_episode = "1";
+      my_rating = "unrated";
+      og_mtype = o.media_type;
+    } else {
+      type = o.media_type;
+      title = o.title;
+      release = o.release_date;
+      genres = o.genres;
+      audience = o.audience_rating;
+      key = o.key;
+      poster = o.poster;
+      my_season = o.my_season;
+      my_episode = o.my_episode;
+      my_rating = o.my_rating;
+      og_mtype = o.og_mtype;
+    }
+
+    // get details
+    const response = await fetch("https://api.themoviedb.org/3/" + o.og_mtype + "/" + o.key + "?language=en-US", options);
+    const details = await response.json();
+
+    setWatchlist([...watchlist, {
+      key: key,
+      title: title,
+      poster: poster,
+      audience_rating: audience,
+      release_date: release,
+      media_type: type,
+      genres: genres,
+      my_season: my_season,
+      my_episode: my_episode,
+      my_rating: my_rating,
+      og_mtype: og_mtype,
+      details: details
+    }]);
+    localStorage.setItem("watchlist", JSON.stringify([...watchlist, {
+      key: key,
+      title: title,
+      poster: poster,
+      audience_rating: audience,
+      release_date: release,
+      media_type: type,
+      genres: genres,
+      my_season: my_season,
+      my_episode: my_episode,
+      my_rating: my_rating,
+      og_mtype: og_mtype,
+      details: details
+    }]));
+    let verb = method === 1 ? "Added " : "Moved "
+    onSuccess(verb + title + ' to Watchlist');
+  };
+
+  const onMove = (num) => {
+    // if already in watchlist num = 1 or seen num = 0
+    num === 0 ? (
+      console.log("moved to watchlist", selected),
+      selected.forEach((i) => {
+        let data = seen.find((e) => e.key == i)
+        addWatchlist(data, 2)
+      }),
+      onRemove(false, 1)
+    ) : (
+      console.log("moved to seen", selected),
+      selected.forEach((i) => {
+        let data = watchlist.find((e) => e.key == i)
+        addSeen(data, 2)
+      }),
+      onRemove(false, 2)
+    )
   };
 
   const options = {
@@ -220,9 +368,13 @@ export default function Home() {
   };
 
   useEffect(() => {
-    const localMovies = JSON.parse(localStorage.getItem("movies"));
-    if (localMovies) {
-      setMovies(localMovies);
+    const localSeen = JSON.parse(localStorage.getItem("seen"));
+    const localWatchlist = JSON.parse(localStorage.getItem("watchlist"));
+    if (localSeen) {
+      setSeen(localSeen);
+    }
+    if (localWatchlist) {
+      setWatchlist(localWatchlist);
     }
 
     // fetch top movies
@@ -240,7 +392,7 @@ export default function Home() {
     onChange: (selectedRowKeys, selectedRows) => {
       console.log(`selectedRowKeys: ${selectedRowKeys}`, 'selectedRows: ', selectedRows);
       setSelected(selectedRowKeys)
-      selectedRows.length !== 0 ? setDisableRemove(false) : setDisableRemove(true)
+      selectedRows.length !== 0 ? setDisableButtons(false) : setDisableButtons(true)
     }
   };
 
@@ -405,6 +557,15 @@ export default function Home() {
     },
   ];
 
+  const watchlistColumns = [
+    {
+      title: 'Title',
+      dataIndex: 'title',
+      key: 'title',
+      ...getColumnSearchProps('title'),
+    },
+  ];
+
   const popMovColumns = [
     {
       title: 'Popularity',
@@ -496,7 +657,7 @@ export default function Home() {
     },
   ];
 
-  // --------- tabs ----------
+  // --------- tabs ----------------------------------------------------------------------
   const tabItems = [
     {
       key: '1',
@@ -508,11 +669,12 @@ export default function Home() {
       ),
       children: <MovieTable
         pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
-        header={"Seen Movies"}
-        onRemove={onRemove}
-        disableRemove={disableRemove}
+        header={seen.length + " Items"}
+        onRemove={() => onRemove(true, 1)}
+        onMove={() => onMove(0)}
+        disableButtons={disableButtons}
         movieColumns={movieColumns}
-        movies={movies}
+        movies={seen}
         rowSelection={rowSelection}
         showMove={true}
         moveKeyword={"Watchlist"}
@@ -528,11 +690,12 @@ export default function Home() {
       ),
       children: <MovieTable
         pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
-        header={"Seen Movies"}
-        onRemove={onRemove}
-        disableRemove={disableRemove}
-        movieColumns={movieColumns}
-        movies={movies}
+        header={watchlist.length + " Items"}
+        onRemove={() => onRemove(true, 2)}
+        onMove={() => onMove(1)}
+        disableButtons={disableButtons}
+        movieColumns={watchlistColumns}
+        movies={watchlist}
         rowSelection={rowSelection}
         showMove={true}
         moveKeyword={"Seen"}
@@ -552,8 +715,8 @@ export default function Home() {
           <MovieTable
             pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
             header={"Upcoming Movies/Shows"}
-            onRemove={onRemove}
-            disableRemove={disableRemove}
+            onRemove={() => { }}
+            disableButtons={disableButtons}
             movieColumns={upcomingColumns}
             // get upcoming data
             movies={popularMovies}
@@ -564,8 +727,8 @@ export default function Home() {
           <MovieTable
             pagination={{ hideOnSinglePage: true, defaultPageSize: 20 }}
             header={"Trending Movies"}
-            onRemove={onRemove}
-            disableRemove={disableRemove}
+            onRemove={() => { }}
+            disableButtons={disableButtons}
             movieColumns={popMovColumns}
             movies={popularMovies}
             rowSelection={false}
@@ -615,7 +778,8 @@ export default function Home() {
               o.media_type !== "people" && o.poster_path ?
                 <Card
                   key={o.id}
-                  addMovie={() => addMovie(o)}
+                  addToSeen={() => addSeen(o, 1)}
+                  addToWatchlist={() => addWatchlist(o, 1)}
                   title={o.media_type === "movie" ? o.title : o.name}
                   src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
                   alt={o.id}
