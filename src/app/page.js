@@ -10,11 +10,8 @@ import { genreCodes } from "../../public/genres.js"
 import MovieTable from "../../comps/MovieTable.js"
 import Card from "../../comps/Card.js"
 
-// option to rate movies in your list
-// toggle for list / grid view
 // *add* movie button which changes to *added* once clicked
 // prevent from adding an already added
-// add breakpoints for grid 
 // skeleton for grid when searching
 // hide poster button
 // editable cells? (in table component ant design)
@@ -25,17 +22,21 @@ import Card from "../../comps/Card.js"
 // move tab bar to top? change color to dark blue
 // sort status by percentage complete
 // upcoming tab which features new seasons of shows in your lists
-// tv show what episode you are on
-// add a count of how many movies are in each tab 
 // add a functions page to clear up this page
-// open a modal for rating series?
-// make trending movies a grid instead....? maybe 
-// bug with search again... blanks are showing
 // have aguide for first time user that shows how upcoming works - set a const to true in localstorage if they have clicked it already (Tour comp)
 
 // bugs for tomorow :(
 // when switching tabs set make selections go to null --- IMPORTANT BUG TO FIX
 // only 1 item is moved when selectiong multiple
+
+// to do ---
+// rethink how editing data process will be
+// tv show what episode you are on
+// option to rate movies in your list
+// open a modal for rating series?
+// make trending movies a grid instead....? maybe 
+// add view more button for grids
+
 
 export default function Home() {
   const fetch = require("node-fetch");
@@ -53,7 +54,7 @@ export default function Home() {
   const [searchedColumn, setSearchedColumn] = useState('');
   const searchInput = useRef(null);
 
-  console.log(seen, "SEEN")
+  // console.log(seen, "SEEN")
 
   // --------------------------------- Functions -----------------------------------------------------------------------------------------
 
@@ -141,6 +142,14 @@ export default function Home() {
       ),
   });
 
+  const rowSelection = {
+    onChange: (selectedRowKeys, selectedRows) => {
+      console.log(`selectedRowKeys: ${selectedRowKeys}`, 'selectedRows: ', selectedRows);
+      setSelected(selectedRowKeys)
+      selectedRows.length !== 0 ? setDisableButtons(false) : setDisableButtons(true)
+    }
+  };
+
   const onSuccess = (message) => {
     messageApi.open({
       type: 'success',
@@ -159,12 +168,10 @@ export default function Home() {
   const clearSearch = () => {
     setSearch([])
     setDisableClear(true)
-    // onSuccess('Cleared Search Results');
   };
 
   const onRate = (data) => {
     console.log("RATED!", data)
-    // onSuccess('Cleared Search Results');
   };
 
   const onRemove = (showSuccess, rmType) => {
@@ -181,15 +188,17 @@ export default function Home() {
     }
   };
 
-  const addMedia = async (o, method, listType) => {
+  const addMedia = async (o, method, listType, season, episode) => {
     // method 1 = creating, method 2 = swapping to watchlist
     // type = anime, if original lang is japanese
     let key = method === 1 ? o.id : o.key;
     let title = method === 1 ? (o.media_type === "movie" ? o.title : o.name) : o.title;
     let release = method === 1 ? (o.media_type === "movie" ? o.release_date : o.first_air_date) : o.release_date;
     let type = method === 1 ? (o.original_language === "ja" ? "anime" : o.media_type) : o.media_type;
-    let my_season = method === 1 ? "1" : o.my_season;
-    let my_episode = method === 1 ? "1" : o.my_episode;
+
+    let my_season = season ? season : (method === 1 ? "1" : o.my_season);
+    let my_episode = episode ? episode : (method === 1 ? "1" : o.my_episode);
+
     let my_rating = method === 1 ? "unrated" : o.my_rating;
     let og_mtype = method === 1 ? o.media_type : o.og_mtype;
 
@@ -244,14 +253,6 @@ export default function Home() {
       }),
       onRemove(false, 2)
     )
-  };
-
-  const rowSelection = {
-    onChange: (selectedRowKeys, selectedRows) => {
-      console.log(`selectedRowKeys: ${selectedRowKeys}`, 'selectedRows: ', selectedRows);
-      setSelected(selectedRowKeys)
-      selectedRows.length !== 0 ? setDisableButtons(false) : setDisableButtons(true)
-    }
   };
 
   const options = {
@@ -443,20 +444,35 @@ export default function Home() {
           {/* have an option for Completed */}
           {/* if its an ANIME dont shoiw seasons */}
           {data.media_type !== "anime" ? <>
-            <InputNumber min={1} addonBefore="S" size="small" defaultValue={data.my_season} onChange={
+            <InputNumber
+              min={1}
+              addonBefore="S"
+              size="small"
+              defaultValue={data.my_season}
+              controls={false}
+              style={{ maxWidth: "70px" }}
+              onChange={
+                (num) => {
+                  // console.log(num),
+                  // addMedia(data, 2, "seen", num)
+                  // onRemove(false, 2)
+                }
+              }
+            />
+          </> : null}
+          <InputNumber
+            min={1}
+            addonBefore="E"
+            size="small"
+            defaultValue={data.my_episode}
+            controls={false}
+            style={{ maxWidth: "70px" }}
+            onChange={
               (test) => {
                 console.log(test)
               }
-            } style={{ maxWidth: "70px" }} controls={false} />
-            {/* <>S</>
-            <>{data.my_season + "/" + data.details.number_of_seasons}</> */}
-            <> - </>
-          </> : null}
-          {/* <>E</> */}
-          <InputNumber min={1} addonBefore="E" size="small" defaultValue={data.my_episode}
-            // onChange={onChange}
-            style={{ maxWidth: "60px" }} controls={false} />
-          {/* <>{data.my_episode + "/" + data.details.number_of_episodes}</> */}
+            }
+          />
           <Tooltip title={Number.parseFloat(percent).toFixed(0) + "%"}>
             <Progress format={percent === 100 ? () => <CheckOutlined /> : () => ""} size="small" percent={percent} />
           </Tooltip>
@@ -593,7 +609,7 @@ export default function Home() {
         onMove={() => onMove(0)}
         disableButtons={disableButtons}
         movieColumns={seenColumns}
-        movies={seen}
+        movies={seen.reverse()}
         rowSelection={rowSelection}
         showMove={true}
         moveKeyword={"Watchlist"}
@@ -614,7 +630,7 @@ export default function Home() {
         onMove={() => onMove(1)}
         disableButtons={disableButtons}
         movieColumns={watchlistColumns}
-        movies={watchlist}
+        movies={watchlist.reverse()}
         rowSelection={rowSelection}
         showMove={true}
         moveKeyword={"Seen"}
@@ -643,17 +659,29 @@ export default function Home() {
             onChange={(page) => { setPage(page.current) }}
             showRemove={false}
           />
-          <MovieTable
-            pagination={{ hideOnSinglePage: true, defaultPageSize: 20 }}
-            header={"Trending Movies"}
-            onRemove={() => { }}
-            disableButtons={disableButtons}
-            movieColumns={popMovColumns}
-            movies={popularMovies}
-            rowSelection={false}
-            onChange={(page) => { setPage(page.current) }}
-            showRemove={false}
-          />
+          <h2>Popular Movies</h2>
+          <div style={{
+            // display: "flex", flexWrap: 'wrap', gap: '20px'
+            display: "grid",
+            gridTemplateColumns: "repeat(5, 1fr)",
+            // gridTemplateRows: "repeat(2, 1fr)",
+            gridColumnGap: "10px",
+            gridRowGap: "10px",
+            margin: "20px 0px"
+          }}>
+            {popularMovies.map((o) =>
+              <Card
+                key={o.id}
+                addToSeen={() => addMedia(o, 1, "seen")}
+                addToWatchlist={() => addMedia(o, 1, "watchlist")}
+                title={o.media_type === "movie" ? o.title : o.name}
+                src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
+                alt={o.id}
+                height={300}
+                width={200}
+              />
+            )}
+          </div>
         </div>
       // tv shows which have seasons or episodes coming soon
       // a tracked tv show will be one in your watchlist or seen list
@@ -703,7 +731,7 @@ export default function Home() {
                   src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
                   alt={o.id}
                 />
-                : <div key={o.id}></div>)}
+                : null)}
           </div> : null}
         <br />
         <br />
