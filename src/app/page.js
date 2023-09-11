@@ -10,36 +10,46 @@ import { genreCodes } from "../../public/genres.js"
 import MovieTable from "../../comps/MovieTable.js"
 import Card from "../../comps/Card.js"
 import { getTodaysDate } from "../../functions.js"
+import styled from "styled-components";
 
-// *add* movie button which changes to *added* once clicked
-// prevent from adding an already added
 // skeleton for grid when searching
-// hide poster button
+// hide poster button (will hide or show a column based on if true or not)
 // editable cells? (in table component ant design)
 // make title filter inline with column name
-// shopw more button for searched movies... (limit search to 10 initally and show more if clicked)
-// button for move to watchlist and vice versa (beside the remove button)
-// undo button when removing movies
 // move tab bar to top? change color to dark blue
-// sort status by percentage complete
+// sort progress by percentage complete
 // upcoming tab which features new seasons of shows in your lists
-// add a functions page to clear up this page
-// have aguide for first time user that shows how upcoming works - set a const to true in localstorage if they have clicked it already (Tour comp)
+// have a guide for first time user that shows how upcoming works - set a const to true in localstorage if they have clicked it already (Tour comp)
 
 // bugs for tomorow :(
 // when switching tabs set make selections go to null --- IMPORTANT BUG TO FIX
-// only 1 item is moved when selectiong multiple
+// only 1 item is moved when selecting multiple
 
 // to do ---
 // rethink how editing data process will be
 // tv show what episode you are on
 // option to rate movies in your list
 // open a modal for rating series?
-// make trending movies a grid instead....? maybe 
-// add view more button for grids
-// do a comparison when adding movies, check if it is already in list when clicking add. if so make a warning appear on screen
 // show more details by linking to its imdb page
 
+const Grid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-column-gap: 10px;
+  grid-row-gap: 10px;
+`;
+
+const Footer = styled.div`
+  margin-top: 75px;
+  display: flex;
+  height: 75px;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  bottom: -10px;
+  background: #fafafa;
+  font-size: 10pt;
+`;
 
 export default function Home() {
   const fetch = require("node-fetch");
@@ -56,6 +66,8 @@ export default function Home() {
   const [searchText, setSearchText] = useState('');
   const [searchedColumn, setSearchedColumn] = useState('');
   const searchInput = useRef(null);
+  const [viewMoreSearch, setViewMoreSearch] = useState(false);
+  const [viewMoreTrending, setViewMoreTrending] = useState(false);
 
   // console.log(seen, "SEEN")
 
@@ -160,11 +172,12 @@ export default function Home() {
     });
   };
 
-  const onSearch = (value) => {
-    fetch("https://api.themoviedb.org/3/search/multi?&language=en-US&query=" + value + "&page=1&include_adult=false", options)
-      .then((res) => res.json())
-      .then((json) => setSearch(json))
-      .catch((err) => console.error("error:" + err));
+  const onSearch = async (value) => {
+    const response = await fetch("https://api.themoviedb.org/3/search/multi?&language=en-US&query=" + value + "&page=1&include_adult=false", options);
+    let json = await response.json();
+    // if items are people or dont include a poster, remove from search results
+    let passed = json.results.filter((e) => e.poster_path !== null && e.media_type !== "person")
+    setSearch(passed)
     setDisableClear(false)
   };
 
@@ -173,9 +186,9 @@ export default function Home() {
     setDisableClear(true)
   };
 
-  const onRate = (data) => {
-    console.log("RATED!", data)
-  };
+  // const onRate = (data) => {
+  //   console.log("RATED!", data)
+  // };
 
   const onRemove = (showSuccess, rmType) => {
     if (rmType === 1) {
@@ -321,6 +334,7 @@ export default function Home() {
   const date_added = {
     title: 'Date Added',
     dataIndex: 'date_added',
+    // defaultSortOrder: 'ascend',
     sorter: (a, b) => new Date(b.date_added) - new Date(a.date_added),
     render: (date_added) => {
       const date = new Date(date_added)
@@ -604,6 +618,8 @@ export default function Home() {
       children:
         <div>
           {/* upcoming movies and shows */}
+          {/* // tv shows which have seasons or episodes coming soon
+          // a tracked tv show will be one in your watchlist or seen list */}
           <MovieTable
             pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
             header={"Upcoming Movies/Shows from your Lists"}
@@ -616,17 +632,10 @@ export default function Home() {
             onChange={(page) => { setPage(page.current) }}
             showRemove={false}
           />
+
           <h2>Trending Movies</h2>
-          <div style={{
-            // display: "flex", flexWrap: 'wrap', gap: '20px'
-            display: "grid",
-            gridTemplateColumns: "repeat(5, 1fr)",
-            // gridTemplateRows: "repeat(2, 1fr)",
-            gridColumnGap: "10px",
-            gridRowGap: "10px",
-            margin: "20px 0px"
-          }}>
-            {popularMovies.map((o) =>
+          <Grid>
+            {popularMovies.slice(0, 10).map((o) =>
               <Card
                 key={o.id}
                 addToSeen={() => addMedia(o, 1, "seen")}
@@ -638,10 +647,28 @@ export default function Home() {
                 width={200}
               />
             )}
+          </Grid>
+          <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
+            {viewMoreTrending === false ? <Button type="primary" onClick={() => setViewMoreTrending(true)}>View More</Button> : null}
           </div>
-        </div>
-      // tv shows which have seasons or episodes coming soon
-      // a tracked tv show will be one in your watchlist or seen list
+          <Grid>
+            {viewMoreTrending ? popularMovies.slice(10).map((o) =>
+              <Card
+                key={o.id}
+                addToSeen={() => addMedia(o, 1, "seen")}
+                addToWatchlist={() => addMedia(o, 1, "watchlist")}
+                title={o.media_type === "movie" ? o.title : o.name}
+                src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
+                alt={o.id}
+                height={300}
+                width={200}
+              />)
+              : null}
+          </Grid>
+          <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
+            {viewMoreTrending === true ? <Button type="primary" onClick={() => setViewMoreTrending(false)}>View Less</Button> : null}
+          </div>
+        </div >
     },
   ];
 
@@ -666,20 +693,12 @@ export default function Home() {
             Clear Results
           </Button>
         </div>
+        <br/>
 
-        {search.results ?
-          <div style={{
-            // display: "flex", flexWrap: 'wrap', gap: '20px'
-            display: "grid",
-            gridTemplateColumns: "repeat(5, 1fr)",
-            // gridTemplateRows: "repeat(2, 1fr)",
-            gridColumnGap: "10px",
-            gridRowGap: "10px",
-            margin: "20px 0px"
-          }}>
-            {/* // only show movies with posters && not an actor in search results */}
-            {search.results.map((o) =>
-              o.media_type !== "people" && o.poster_path ?
+        {search ?
+          <>
+            <Grid>
+              {search.slice(0, 5).map((o) =>
                 <Card
                   key={o.id}
                   addToSeen={() => addMedia(o, 1, "seen")}
@@ -687,34 +706,41 @@ export default function Home() {
                   title={o.media_type === "movie" ? o.title : o.name}
                   src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
                   alt={o.id}
+                  height={300}
+                  width={200}
                 />
-                : null)}
-          </div> : null}
-        <br />
+              )}
+            </Grid>
+            <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
+              {viewMoreSearch === false && disableClear === false ? <Button onClick={() => setViewMoreSearch(true)}>View More</Button> : null}
+            </div>
+            <Grid>
+            {viewMoreSearch ? search.slice(5).map((o) =>
+              <Card
+                key={o.id}
+                addToSeen={() => addMedia(o, 1, "seen")}
+                addToWatchlist={() => addMedia(o, 1, "watchlist")}
+                title={o.media_type === "movie" ? o.title : o.name}
+                src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
+                alt={o.id}
+                height={300}
+                width={200}
+              />)
+              : null}
+          </Grid>
+          <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
+            {viewMoreSearch === true && disableClear === false ? <Button onClick={() => setViewMoreSearch(false)}>View Less</Button> : null}
+          </div>
+          </> : null}
         <br />
         <br />
         <Tabs defaultActiveKey="1" items={tabItems} size={"large"} centered />
       </div>
 
-      <div
-        style={{
-          marginTop: "75px",
-          display: "flex",
-          height: "75px",
-          justifyContent: "center",
-          alignItems: "center",
-          // border: "1px dashed gray"
-          // height: "58px",
-          position: "relative",
-          bottom: "-10px",
-          background: "#fafafa",
-          fontSize: "10pt"
-        }}
-      >
+      <Footer>
         <>JOSREN ©2023 | Created using data from</>
-
         <Image height="20" width="66" quality="75" src={"tmdb.svg"} alt={"tmdb"} style={{ marginLeft: "7px" }} />
-      </div>
+      </Footer>
     </>
   );
 }
