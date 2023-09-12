@@ -6,7 +6,7 @@ const { Search } = Input;
 import { StarTwoTone, StarOutlined, EyeOutlined, SearchOutlined, CheckOutlined, RiseOutlined, EditOutlined, CheckCircleTwoTone } from '@ant-design/icons';
 import { FaRegBookmark } from "react-icons/fa6";
 import Highlighter from 'react-highlight-words';
-import { genreCodes } from "../../public/genres.js"
+import { genreCodes } from "../../genres.js"
 import MovieTable from "../../comps/MovieTable.js"
 import Card from "../../comps/Card.js"
 import { getTodaysDate } from "../../functions.js"
@@ -20,17 +20,13 @@ import styled from "styled-components";
 // sort progress by percentage complete
 // upcoming tab which features new seasons of shows in your lists
 // have a guide for first time user that shows how upcoming works - set a const to true in localstorage if they have clicked it already (Tour comp)
+// find a way to update the data for your items as next episodes dont update localstorage dynamically
 
-// bugs for tomorow :(
-// when switching tabs set make selections go to null --- IMPORTANT BUG TO FIX
-// only 1 item is moved when selecting multiple
-
-// to do ---
-// rethink how editing data process will be
-// tv show what episode you are on
-// option to rate movies in your list
-// open a modal for rating series?
-// show more details by linking to its imdb page
+// MOST IMPORTANT
+// edit rating
+// edit ss && ee
+// upcoming tab
+// hero section
 
 const Grid = styled.div`
   display: grid;
@@ -69,7 +65,7 @@ export default function Home() {
   const [viewMoreSearch, setViewMoreSearch] = useState(false);
   const [viewMoreTrending, setViewMoreTrending] = useState(false);
 
-  // console.log(seen, "SEEN")
+  console.log(seen, "SEEN")
 
   // --------------------------------- Functions -----------------------------------------------------------------------------------------
 
@@ -164,6 +160,7 @@ export default function Home() {
       selectedRows.length !== 0 ? setDisableButtons(false) : setDisableButtons(true)
     }
   };
+  // console.log(rowSelection.selectedRowKeys)
 
   const onMessage = (message, type) => {
     messageApi.open({
@@ -186,11 +183,8 @@ export default function Home() {
     setDisableClear(true)
   };
 
-  // const onRate = (data) => {
-  //   console.log("RATED!", data)
-  // };
-
   const onRemove = (showSuccess, rmType) => {
+    // rmType is which list it comes from
     if (rmType === 1) {
       setSeen(seen.filter(item => !selected.includes(item.key)));
       localStorage.setItem("seen", JSON.stringify(seen.filter(item => !selected.includes(item.key))));
@@ -205,21 +199,26 @@ export default function Home() {
   };
 
   const addMedia = async (o, method, listType) => {
-
     // first check seen, then watchlist for the movie. ELSE add the movie
     if (seen.some(e => e.key === o.id)) {
-      onMessage("Already exists in Seen", "warning");
+      onMessage("Already in Seen", "warning");
     } else if (watchlist.some(e => e.key === o.id)) {
-      onMessage("Already exists in Watchlist", "warning");
+      onMessage("Already in Watchlist", "warning");
     } else {
       // method 1 = creating, method 2 = swapping to different list
       let key = method === 1 ? o.id : o.key;
       let title = method === 1 ? (o.media_type === "movie" ? o.title : o.name) : o.title;
       let date_added = method === 1 ? getTodaysDate() : o.date_added;
       let release = method === 1 ? (o.media_type === "movie" ? o.release_date : o.first_air_date) : o.release_date;
-      // type = anime, if original lang is japanese
-      let type = method === 1 ? (o.original_language === "ja" ? "anime" : o.media_type) : o.media_type;
-      let og_mtype = method === 1 ? o.media_type : o.og_mtype;
+
+      // determine if anime. japanese language + animation genre
+      let animation = false
+      o.genre_ids.forEach((id) => {
+        if (id === 16) {
+          animation = true
+        }
+      })
+      let is_anime = method === 1 ? (o.original_language === "ja" && animation === true ? true : false) : o.is_anime;
 
       let my_season = method === 1 ? "1" : o.my_season;
       let my_episode = method === 1 ? "1" : o.my_episode;
@@ -228,7 +227,7 @@ export default function Home() {
       // get details
       let details = []
       if (method === 1) {
-        const response = await fetch("https://api.themoviedb.org/3/" + og_mtype + "/" + key + "?language=en-US", options);
+        const response = await fetch("https://api.themoviedb.org/3/" + o.media_type + "/" + key + "?language=en-US", options);
         details = await response.json();
       } else {
         details = o.details
@@ -239,8 +238,8 @@ export default function Home() {
         title: title,
         date_added: date_added,
         release_date: release,
-        media_type: type,
-        og_mtype: og_mtype,
+        media_type: o.media_type,
+        is_anime: is_anime,
         my_season: my_season,
         my_episode: my_episode,
         my_rating: my_rating,
@@ -248,35 +247,36 @@ export default function Home() {
       }
 
       if (listType === "seen") {
-        setSeen([...seen, obj]);
-        localStorage.setItem("seen", JSON.stringify([...seen, obj]));
-        let verb = method === 1 ? "Added " : "Moved "
-        onMessage(verb + title + ' to Seen', 'success');
+        // you want to set the storage
+        // 1+1, 2+1, 3+1
+        method === 2 ? setSeen([...JSON.parse(localStorage.getItem("seen")), obj]) : setSeen([...seen, obj])
+        localStorage.setItem("seen", JSON.stringify([...JSON.parse(localStorage.getItem("seen")), obj]));
+        method === 1 ? onMessage("Added" + title + ' to Seen', 'success') : null
       } else if (listType === "watchlist") {
-        setWatchlist([...watchlist, obj]);
-        localStorage.setItem("watchlist", JSON.stringify([...watchlist, obj]));
-        let verb = method === 1 ? "Added " : "Moved "
-        onMessage(verb + title + ' to Watchlist', 'success');
+        method === 2 ? setWatchlist([...JSON.parse(localStorage.getItem("watchlist")), obj]) : setWatchlist([...watchlist, obj])
+        localStorage.setItem("watchlist", JSON.stringify([...JSON.parse(localStorage.getItem("watchlist")), obj]));
+        method === 1 ? onMessage("Added" + title + ' to Watchlist', 'success') : null
       }
     }
   };
 
+
   const onMove = (num) => {
     // if currently in seen num = 0. watchlist num = 1. 
     num === 0 ? (
-      console.log("moved to watchlist", selected),
       selected.forEach((i) => {
         let data = seen.find((e) => e.key == i)
         addMedia(data, 2, "watchlist")
       }),
-      onRemove(false, 1)
+      onRemove(false, 1),
+      onMessage("Moved " + selected.length + ' items to Watchlist', 'success')
     ) : (
-      console.log("moved to seen", selected),
       selected.forEach((i) => {
         let data = watchlist.find((e) => e.key == i)
         addMedia(data, 2, "seen")
       }),
-      onRemove(false, 2)
+      onRemove(false, 2),
+      onMessage("Moved " + selected.length + ' items to Seen', 'success')
     )
   };
 
@@ -378,9 +378,19 @@ export default function Home() {
     </>
   }
 
+  const view = {
+    title: 'Details',
+    // dataIndex: 'data.details.vote_average',
+    // sorter: (a, b) => a.data.details.vote_average - b.data.details.vote_average,
+    render: (data) => {
+      let link =  data.media_type === "movie" ? "https://www.imdb.com/title/" + data.details.imdb_id : "https://www.themoviedb.org/tv/" + data.details.id
+      return <Button type="link" href={link} target="_blank">View</Button>
+    }
+  }
+
   const type = {
     title: 'Type',
-    dataIndex: 'media_type',
+    // dataIndex: 'media_type',
     filters: [
       {
         text: 'Movie',
@@ -397,18 +407,22 @@ export default function Home() {
     ],
     onFilter: (value, record) => record.media_type.indexOf(value) === 0,
     // render: (media_type) => media_type.charAt(0).toUpperCase() + media_type.slice(1)
-    render: (media_type) => {
+    render: (data) => {
       let color = ""
-      if (media_type === "anime") {
+      let text = ""
+      if (data.is_anime === true && data.media_type !== "movie") {
         color = "geekblue"
-      } else if (media_type === "tv") {
+        text = "anime"
+      } else if (data.media_type === "tv") {
         color = "green"
+        text = "tv"
       } else {
         color = "volcano"
+        text = "movie"
       }
       return (
         <Tag color={color}>
-          {media_type.toUpperCase()}
+          {text.toUpperCase()}
         </Tag>
       )
     }
@@ -449,7 +463,7 @@ export default function Home() {
       if (data.media_type === "movie") {
         return "N/A"
       }
-      if (data.details.next_episode_to_air === null) {
+      if (data.details.next_episode_to_air === null || data.details.next_episode_to_air === undefined) {
         date = "Finished"
       } else {
         temp = new Date(data.details.next_episode_to_air.air_date)
@@ -541,7 +555,8 @@ export default function Home() {
     type,
     genres,
     progress,
-    date_added
+    date_added,
+    view
   ];
 
   const watchlistColumns = [
@@ -676,6 +691,7 @@ export default function Home() {
     <>
       {contextHolder}
       <div style={{ padding: "20px 100px" }}>
+        {/* <h1 style={{fontSize:"100pt"}}>Movie Tracker</h1> */}
         <h1>Search</h1>
         <div style={{ display: "flex", alignItems: "center" }}>
           <Search
@@ -693,7 +709,7 @@ export default function Home() {
             Clear Results
           </Button>
         </div>
-        <br/>
+        <br />
 
         {search ?
           <>
@@ -715,22 +731,22 @@ export default function Home() {
               {viewMoreSearch === false && disableClear === false ? <Button onClick={() => setViewMoreSearch(true)}>View More</Button> : null}
             </div>
             <Grid>
-            {viewMoreSearch ? search.slice(5).map((o) =>
-              <Card
-                key={o.id}
-                addToSeen={() => addMedia(o, 1, "seen")}
-                addToWatchlist={() => addMedia(o, 1, "watchlist")}
-                title={o.media_type === "movie" ? o.title : o.name}
-                src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
-                alt={o.id}
-                height={300}
-                width={200}
-              />)
-              : null}
-          </Grid>
-          <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
-            {viewMoreSearch === true && disableClear === false ? <Button onClick={() => setViewMoreSearch(false)}>View Less</Button> : null}
-          </div>
+              {viewMoreSearch ? search.slice(5).map((o) =>
+                <Card
+                  key={o.id}
+                  addToSeen={() => addMedia(o, 1, "seen")}
+                  addToWatchlist={() => addMedia(o, 1, "watchlist")}
+                  title={o.media_type === "movie" ? o.title : o.name}
+                  src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
+                  alt={o.id}
+                  height={300}
+                  width={200}
+                />)
+                : null}
+            </Grid>
+            <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
+              {viewMoreSearch === true && disableClear === false ? <Button onClick={() => setViewMoreSearch(false)}>View Less</Button> : null}
+            </div>
           </> : null}
         <br />
         <br />
