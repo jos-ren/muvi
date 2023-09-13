@@ -7,7 +7,7 @@ const Container = styled.div`
 
 `;
 
-const MovieTable = ({ header, onRemove, disableButtons, movieColumns, movies, rowSelection, onChange, showRemove = true, showMove = false, pagination, moveKeyword, onMove}) => {
+const MovieTable = ({ header, onRemove, disableButtons, movieColumns, movies, rowSelection, onChange, showRemove = false, showMove = false, pagination, moveKeyword, onMove, num}) => {
     return (
         <Container>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
