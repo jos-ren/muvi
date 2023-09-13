@@ -1,14 +1,15 @@
 "use client";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
-import { message, Input, Button, Tag, Tabs, InputNumber, Space, Tooltip, Skeleton, Progress } from 'antd';
+import { message, Input, Button, Tag, Tabs, InputNumber, Space, Tooltip, Skeleton, Progress, Popover } from 'antd';
 const { Search } = Input;
-import { StarTwoTone, StarOutlined, EyeOutlined, SearchOutlined, CheckOutlined, RiseOutlined, EditOutlined, CheckCircleTwoTone } from '@ant-design/icons';
+import { StarTwoTone, StarOutlined, EyeOutlined, SearchOutlined, CheckOutlined, RiseOutlined, EditOutlined, CheckCircleTwoTone, QuestionCircleOutlined } from '@ant-design/icons';
 import { FaRegBookmark } from "react-icons/fa6";
 import Highlighter from 'react-highlight-words';
 import { genreCodes } from "../../genres.js"
 import MovieTable from "../../comps/MovieTable.js"
 import Card from "../../comps/Card.js"
+import Hero from "../../comps/Hero.js"
 import { getTodaysDate } from "../../functions.js"
 import styled from "styled-components";
 
@@ -24,12 +25,15 @@ import styled from "styled-components";
 // clear selection button for tables
 // feedback when no results for search
 // bug: if you swap an item to an empty table it will be null
+// refresh button to upcoming
 
 // MOST IMPORTANT
 // edit rating
 // edit ss && ee
-// upcoming tab
 // hero section
+// upcoming tab
+// ✅ --> sort by release if movie, and next episode if tv 
+// --> function to check daily if a tv show should be removed
 
 const Grid = styled.div`
   display: grid;
@@ -55,7 +59,7 @@ export default function Home() {
   const [seen, setSeen] = useState([]);
   const [watchlist, setWatchlist] = useState([]);
   const [upcoming, setUpcoming] = useState([]);
-  const [popular, setPopular] = useState([]);
+  const [trending, setTrending] = useState([]);
   const [search, setSearch] = useState([]);
   const [selected, setSelected] = useState([]);
   const [disableClear, setDisableClear] = useState(true);
@@ -70,6 +74,7 @@ export default function Home() {
   const [viewMoreTrending, setViewMoreTrending] = useState(false);
 
   // console.log(seen, "SEEN")
+  console.log(upcoming, "UPCOMING")
 
   // --------------------------------- Functions -----------------------------------------------------------------------------------------
 
@@ -197,6 +202,8 @@ export default function Home() {
     } else {
       setWatchlist(watchlist.filter(item => !selected.includes(item.key)));
       localStorage.setItem("watchlist", JSON.stringify(watchlist.filter(item => !selected.includes(item.key))));
+      setUpcoming(upcoming.filter(item => !selected.includes(item.key)));
+      localStorage.setItem("upcoming", JSON.stringify(upcoming.filter(item => !selected.includes(item.key))));
       { showSuccess === true ? onMessage('Successfully Removed ' + selected.length + ' Movies', 'success') : null }
       setDisableButtons(true)
     }
@@ -241,8 +248,9 @@ export default function Home() {
       } else {
         details = o.details
       }
+      console.log("DETAILS", details)
 
-
+      let upcoming_release = method === 1 ? (o.media_type === "movie" ? details.release_date : details.next_episode_to_air.air_date) : o.upcoming_release
 
       let obj = {
         key: key,
@@ -254,12 +262,11 @@ export default function Home() {
         my_season: my_season,
         my_episode: my_episode,
         my_rating: my_rating,
+        upcoming_release: upcoming_release,
         details: details
       }
 
       if (listType === "seen") {
-        // you want to set the storage
-        // 1+1, 2+1, 3+1
         method === 1 ? setSeen([...seen, obj]) : setSeen([...JSON.parse(localStorage.getItem("seen")), obj])
         method === 1 ? localStorage.setItem("seen", JSON.stringify([...seen, obj])) : localStorage.setItem("seen", JSON.stringify([...JSON.parse(localStorage.getItem("seen")), obj]));
         method === 1 ? onMessage("Added " + title + ' to Seen', 'success') : null
@@ -332,14 +339,14 @@ export default function Home() {
 
     // fetch top movies
     async function fetchData() {
-      const response = await fetch("https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc", options);
+      const response = await fetch("https://api.themoviedb.org/3/trending/all/day?language=en-US", options);
       const json = await response.json();
+      console.log(json)
       let temp = json.results
       temp.forEach((item, index) => {
         item.key = index + 1;
-        item.media_type = "movie";
       })
-      setPopular(temp)
+      setTrending(temp)
     }
     fetchData();
   }, []);
@@ -377,7 +384,7 @@ export default function Home() {
   const release_date = {
     title: 'Release Date',
     dataIndex: 'release_date',
-    defaultSortOrder: 'ascend',
+    // defaultSortOrder: 'descend',
     sorter: (a, b) => new Date(b.release_date) - new Date(a.release_date),
     render: (release_date) => {
       const date = new Date(release_date)
@@ -581,6 +588,18 @@ export default function Home() {
   //   }
   // },
 
+  const upcoming_release = {
+    title: 'Date',
+    dataIndex: 'upcoming_release',
+    defaultSortOrder: 'descend',
+    sorter: (a, b) => new Date(b.upcoming_release) - new Date(a.upcoming_release),
+    render: (upcoming_release) => {
+      console.log(upcoming_release)
+      const date = new Date(upcoming_release)
+      return <div>{date.toLocaleDateString('en-US', { dateStyle: "medium", })}</div>
+    }
+  }
+
   const seenColumns = [
     poster,
     title,
@@ -604,9 +623,10 @@ export default function Home() {
   ];
 
   const upcomingColumns = [
+    upcoming_release,
+    poster,
     title,
-    release_date,
-    next_episode,
+    // next_episode,
     type,
     genres,
   ];
@@ -669,7 +689,14 @@ export default function Home() {
         <div>
           <MovieTable
             pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
-            header={"Your Upcoming Movies / Shows"}
+            header={
+              <div style={{ display: "flex", alignItems: "center" }}>
+                <div>Your Upcoming Movies / Shows</div>
+                <Popover trigger="click" content={"Generated from items you have added to your watchlist. Only displays items which are still unreleased."} >
+                  <QuestionCircleOutlined style={{ fontSize: "13px", color: "grey", margin: "6px 0px 0px 10px" }} />
+                </Popover>
+              </div>
+            }
             onRemove={() => { }}
             disableButtons={disableButtons}
             movieColumns={upcomingColumns}
@@ -679,7 +706,7 @@ export default function Home() {
 
           <h2>Trending Movies</h2>
           <Grid>
-            {popular.slice(0, 10).map((o) =>
+            {trending.slice(0, 10).map((o) =>
               <Card
                 key={o.id}
                 addToSeen={() => addMedia(o, 1, "seen")}
@@ -696,7 +723,7 @@ export default function Home() {
             {viewMoreTrending === false ? <Button style={{ marginTop: "10px" }} type="primary" onClick={() => setViewMoreTrending(true)}>Load More</Button> : null}
           </div>
           <Grid>
-            {viewMoreTrending ? popular.slice(10).map((o) =>
+            {viewMoreTrending ? trending.slice(10).map((o) =>
               <Card
                 key={o.id}
                 addToSeen={() => addMedia(o, 1, "seen")}
@@ -719,27 +746,13 @@ export default function Home() {
   return (
     <>
       {contextHolder}
+      <Hero
+        onSearch={onSearch}
+        clearSearch={clearSearch}
+        disableClear={disableClear}
+      />
       <div style={{ padding: "20px 100px" }}>
-        {/* <h1 style={{fontSize:"100pt"}}>Movie Tracker</h1> */}
-        <h1>Search</h1>
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <Search
-            size="large"
-            placeholder="movie name"
-            enterButton="Search"
-            onSearch={onSearch}
-          />
-          <Button
-            type="link"
-            onClick={clearSearch}
-            style={{ marginLeft: "10px", height: "40px" }}
-            disabled={disableClear}
-          >
-            Clear Results
-          </Button>
-        </div>
         <br />
-
         {search ?
           <>
             <Grid>
@@ -779,7 +792,7 @@ export default function Home() {
           </> : null}
         <br />
         <br />
-        <Tabs defaultActiveKey="1" items={tabItems} size={"large"} centered />
+        <Tabs rootClassName="tabClass" defaultActiveKey="1" items={tabItems} size={"large"} centered />
       </div>
 
       <Footer>
