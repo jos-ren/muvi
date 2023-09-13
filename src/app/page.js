@@ -14,13 +14,16 @@ import styled from "styled-components";
 
 // skeleton for grid when searching
 // hide poster button (will hide or show a column based on if true or not)
-// editable cells? (in table component ant design)
 // make title filter inline with column name
 // move tab bar to top? change color to dark blue
 // sort progress by percentage complete
-// upcoming tab which features new seasons of shows in your lists
 // have a guide for first time user that shows how upcoming works - set a const to true in localstorage if they have clicked it already (Tour comp)
 // find a way to update the data for your items as next episodes dont update localstorage dynamically
+// make view more, more stylish
+// sticky tab bar (make your own)
+// clear selection button for tables
+// feedback when no results for search
+// bug: if you swap an item to an empty table it will be null
 
 // MOST IMPORTANT
 // edit rating
@@ -51,13 +54,14 @@ export default function Home() {
   const fetch = require("node-fetch");
   const [seen, setSeen] = useState([]);
   const [watchlist, setWatchlist] = useState([]);
+  const [upcoming, setUpcoming] = useState([]);
+  const [popular, setPopular] = useState([]);
   const [search, setSearch] = useState([]);
   const [selected, setSelected] = useState([]);
   const [disableClear, setDisableClear] = useState(true);
   const [disableButtons, setDisableButtons] = useState(true);
   const [loaded, setLoaded] = useState(true);
   const [page, setPage] = useState(1);
-  const [popularMovies, setPopularMovies] = useState([]);
   const [messageApi, contextHolder] = message.useMessage();
   const [searchText, setSearchText] = useState('');
   const [searchedColumn, setSearchedColumn] = useState('');
@@ -65,7 +69,7 @@ export default function Home() {
   const [viewMoreSearch, setViewMoreSearch] = useState(false);
   const [viewMoreTrending, setViewMoreTrending] = useState(false);
 
-  console.log(seen, "SEEN")
+  // console.log(seen, "SEEN")
 
   // --------------------------------- Functions -----------------------------------------------------------------------------------------
 
@@ -198,6 +202,10 @@ export default function Home() {
     }
   };
 
+  // track tv shows that are currently airing
+  // movies that are coming out in the future on watchlist
+  // seperate by day of release
+
   const addMedia = async (o, method, listType) => {
     // first check seen, then watchlist for the movie. ELSE add the movie
     if (seen.some(e => e.key === o.id)) {
@@ -213,7 +221,8 @@ export default function Home() {
 
       // determine if anime. japanese language + animation genre
       let animation = false
-      o.genre_ids.forEach((id) => {
+      let g_ids = method === 1 ? o.genre_ids : o.details.genres
+      g_ids.forEach((id) => {
         if (id === 16) {
           animation = true
         }
@@ -233,6 +242,8 @@ export default function Home() {
         details = o.details
       }
 
+
+
       let obj = {
         key: key,
         title: title,
@@ -249,13 +260,30 @@ export default function Home() {
       if (listType === "seen") {
         // you want to set the storage
         // 1+1, 2+1, 3+1
-        method === 2 ? setSeen([...JSON.parse(localStorage.getItem("seen")), obj]) : setSeen([...seen, obj])
-        localStorage.setItem("seen", JSON.stringify([...JSON.parse(localStorage.getItem("seen")), obj]));
-        method === 1 ? onMessage("Added" + title + ' to Seen', 'success') : null
+        method === 1 ? setSeen([...seen, obj]) : setSeen([...JSON.parse(localStorage.getItem("seen")), obj])
+        method === 1 ? localStorage.setItem("seen", JSON.stringify([...seen, obj])) : localStorage.setItem("seen", JSON.stringify([...JSON.parse(localStorage.getItem("seen")), obj]));
+        method === 1 ? onMessage("Added " + title + ' to Seen', 'success') : null
       } else if (listType === "watchlist") {
-        method === 2 ? setWatchlist([...JSON.parse(localStorage.getItem("watchlist")), obj]) : setWatchlist([...watchlist, obj])
-        localStorage.setItem("watchlist", JSON.stringify([...JSON.parse(localStorage.getItem("watchlist")), obj]));
-        method === 1 ? onMessage("Added" + title + ' to Watchlist', 'success') : null
+        method === 1 ? setWatchlist([...watchlist, obj]) : setWatchlist([...JSON.parse(localStorage.getItem("watchlist")), obj])
+        method === 1 ? localStorage.setItem("watchlist", JSON.stringify([...watchlist, obj])) : localStorage.setItem("watchlist", JSON.stringify([...JSON.parse(localStorage.getItem("watchlist")), obj]));
+        method === 1 ? onMessage("Added " + title + ' to Watchlist', 'success') : null
+
+        // add to upcoming list if hasn't come out yet
+        // have a select to choose between released (max of 3 months since release) and unreleased
+        // if you watched it, make a value true: "watched"
+        if (o.media_type === "tv") {
+          if (details.next_episode_to_air !== null) {
+            console.log("unreleased, tv")
+            setUpcoming([...upcoming, obj])
+            localStorage.setItem("upcoming", JSON.stringify([...upcoming, obj]));
+          }
+        } else {
+          if (new Date(o.release_date) > new Date()) {
+            console.log("unreleased, movie")
+            setUpcoming([...upcoming, obj])
+            localStorage.setItem("upcoming", JSON.stringify([...upcoming, obj]));
+          }
+        }
       }
     }
   };
@@ -291,11 +319,15 @@ export default function Home() {
   useEffect(() => {
     const localSeen = JSON.parse(localStorage.getItem("seen"));
     const localWatchlist = JSON.parse(localStorage.getItem("watchlist"));
+    const localUpcoming = JSON.parse(localStorage.getItem("upcoming"));
     if (localSeen) {
       setSeen(localSeen);
     }
     if (localWatchlist) {
       setWatchlist(localWatchlist);
+    }
+    if (localUpcoming) {
+      setUpcoming(localUpcoming);
     }
 
     // fetch top movies
@@ -307,7 +339,7 @@ export default function Home() {
         item.key = index + 1;
         item.media_type = "movie";
       })
-      setPopularMovies(temp)
+      setPopular(temp)
     }
     fetchData();
   }, []);
@@ -345,6 +377,7 @@ export default function Home() {
   const release_date = {
     title: 'Release Date',
     dataIndex: 'release_date',
+    defaultSortOrder: 'ascend',
     sorter: (a, b) => new Date(b.release_date) - new Date(a.release_date),
     render: (release_date) => {
       const date = new Date(release_date)
@@ -383,7 +416,7 @@ export default function Home() {
     // dataIndex: 'data.details.vote_average',
     // sorter: (a, b) => a.data.details.vote_average - b.data.details.vote_average,
     render: (data) => {
-      let link =  data.media_type === "movie" ? "https://www.imdb.com/title/" + data.details.imdb_id : "https://www.themoviedb.org/tv/" + data.details.id
+      let link = data.media_type === "movie" ? "https://www.imdb.com/title/" + data.details.imdb_id : "https://www.themoviedb.org/tv/" + data.details.id
       return <Button type="link" href={link} target="_blank">View</Button>
     }
   }
@@ -462,12 +495,13 @@ export default function Home() {
       let date = ""
       if (data.media_type === "movie") {
         return "N/A"
-      }
-      if (data.details.next_episode_to_air === null || data.details.next_episode_to_air === undefined) {
-        date = "Finished"
       } else {
-        temp = new Date(data.details.next_episode_to_air.air_date)
-        date = temp.toLocaleDateString('en-US', { dateStyle: "medium", })
+        if (data.details.next_episode_to_air === null || data.details.next_episode_to_air === undefined) {
+          date = "Finished"
+        } else {
+          temp = new Date(data.details.next_episode_to_air.air_date)
+          date = temp.toLocaleDateString('en-US', { dateStyle: "medium", })
+        }
       }
       return <div>{date}</div>
     }
@@ -570,12 +604,11 @@ export default function Home() {
   ];
 
   const upcomingColumns = [
-    {
-      title: 'Title',
-      dataIndex: 'title',
-      key: 'title',
-      ...getColumnSearchProps('title'),
-    },
+    title,
+    release_date,
+    next_episode,
+    type,
+    genres,
   ];
 
   // --------- tabs ----------------------------------------------------------------------
@@ -589,7 +622,7 @@ export default function Home() {
         </span>
       ),
       children: <MovieTable
-        pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
+        pagination={{ position: ["bottomCenter"], showSizeChanger: true, }}
         header={seen.length + " Items"}
         onRemove={() => onRemove(true, 1)}
         onMove={() => onMove(0)}
@@ -599,6 +632,7 @@ export default function Home() {
         rowSelection={rowSelection}
         showMove={true}
         moveKeyword={"Watchlist"}
+        showRemove={true}
       />,
     },
     {
@@ -620,6 +654,7 @@ export default function Home() {
         rowSelection={rowSelection}
         showMove={true}
         moveKeyword={"Seen"}
+        showRemove={true}
       />,
     },
     {
@@ -632,25 +667,19 @@ export default function Home() {
       ),
       children:
         <div>
-          {/* upcoming movies and shows */}
-          {/* // tv shows which have seasons or episodes coming soon
-          // a tracked tv show will be one in your watchlist or seen list */}
           <MovieTable
             pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
-            header={"Upcoming Movies/Shows from your Lists"}
+            header={"Your Upcoming Movies / Shows"}
             onRemove={() => { }}
             disableButtons={disableButtons}
             movieColumns={upcomingColumns}
-            // get upcoming data
-            movies={popularMovies}
+            movies={upcoming}
             rowSelection={false}
-            onChange={(page) => { setPage(page.current) }}
-            showRemove={false}
           />
 
           <h2>Trending Movies</h2>
           <Grid>
-            {popularMovies.slice(0, 10).map((o) =>
+            {popular.slice(0, 10).map((o) =>
               <Card
                 key={o.id}
                 addToSeen={() => addMedia(o, 1, "seen")}
@@ -664,10 +693,10 @@ export default function Home() {
             )}
           </Grid>
           <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
-            {viewMoreTrending === false ? <Button type="primary" onClick={() => setViewMoreTrending(true)}>View More</Button> : null}
+            {viewMoreTrending === false ? <Button style={{ marginTop: "10px" }} type="primary" onClick={() => setViewMoreTrending(true)}>Load More</Button> : null}
           </div>
           <Grid>
-            {viewMoreTrending ? popularMovies.slice(10).map((o) =>
+            {viewMoreTrending ? popular.slice(10).map((o) =>
               <Card
                 key={o.id}
                 addToSeen={() => addMedia(o, 1, "seen")}
@@ -681,7 +710,7 @@ export default function Home() {
               : null}
           </Grid>
           <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
-            {viewMoreTrending === true ? <Button type="primary" onClick={() => setViewMoreTrending(false)}>View Less</Button> : null}
+            {viewMoreTrending === true ? <Button style={{ marginTop: "10px" }} type="primary" onClick={() => setViewMoreTrending(false)}>Load Less</Button> : null}
           </div>
         </div >
     },
@@ -728,7 +757,7 @@ export default function Home() {
               )}
             </Grid>
             <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
-              {viewMoreSearch === false && disableClear === false ? <Button onClick={() => setViewMoreSearch(true)}>View More</Button> : null}
+              {viewMoreSearch === false && disableClear === false ? <Button type="primary" style={{ marginTop: "10px" }} onClick={() => setViewMoreSearch(true)}>Load More</Button> : null}
             </div>
             <Grid>
               {viewMoreSearch ? search.slice(5).map((o) =>
@@ -745,7 +774,7 @@ export default function Home() {
                 : null}
             </Grid>
             <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
-              {viewMoreSearch === true && disableClear === false ? <Button onClick={() => setViewMoreSearch(false)}>View Less</Button> : null}
+              {viewMoreSearch === true && disableClear === false ? <Button style={{ marginTop: "10px" }} type="primary" onClick={() => setViewMoreSearch(false)}>Load Less</Button> : null}
             </div>
           </> : null}
         <br />
