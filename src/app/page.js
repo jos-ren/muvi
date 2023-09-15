@@ -3,7 +3,7 @@ import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { message, Input, Button, Tag, Tabs, InputNumber, Space, Tooltip, Skeleton, Progress, Popover } from 'antd';
 const { Search } = Input;
-import { StarTwoTone, StarOutlined, EyeOutlined, SearchOutlined, CheckOutlined, RiseOutlined, EditOutlined, CheckCircleTwoTone, QuestionCircleOutlined } from '@ant-design/icons';
+import { StarTwoTone, StarOutlined, EyeOutlined, SearchOutlined, CheckOutlined, RiseOutlined, EditOutlined, CheckCircleTwoTone, QuestionCircleOutlined, CloseOutlined } from '@ant-design/icons';
 import { FaRegBookmark } from "react-icons/fa6";
 import Highlighter from 'react-highlight-words';
 import { genreCodes } from "../../genres.js"
@@ -26,14 +26,19 @@ import styled from "styled-components";
 // feedback when no results for search
 // bug: if you swap an item to an empty table it will be null
 // refresh button to upcoming
+// screen if something goes wrong, tell them to delete their localstorage
+//  a statistics tab, showing what is your prefered genres, average rating, what decade movies you like most, etc
 
 // MOST IMPORTANT
 // edit rating
 // edit ss && ee
+// ==> only edit one at a time
+// --> needs to look better while displaying
 // hero section
 // upcoming tab
 // ✅ --> sort by release if movie, and next episode if tv 
 // --> function to check daily if a tv show should be removed
+// --> also track items in watchlist which have unreleased episodes
 
 const Grid = styled.div`
   display: grid;
@@ -72,9 +77,16 @@ export default function Home() {
   const searchInput = useRef(null);
   const [viewMoreSearch, setViewMoreSearch] = useState(false);
   const [viewMoreTrending, setViewMoreTrending] = useState(false);
+  const [episodeEditMode, setEpisodeEditMode] = useState();
+  const [ratingEditMode, setRatingEditMode] = useState();
+  const [epValue, setEpValue] = useState();
+  const [seValue, setSeValue] = useState();
 
-  // console.log(seen, "SEEN")
-  console.log(upcoming, "UPCOMING")
+  // console.log("upcoming", upcoming)
+  // console.log("seen", seen)
+  // console.log("watchlist", watchlist)
+  // console.log("search", search)
+  // console.log("======")
 
   // --------------------------------- Functions -----------------------------------------------------------------------------------------
 
@@ -238,7 +250,7 @@ export default function Home() {
 
       let my_season = method === 1 ? "1" : o.my_season;
       let my_episode = method === 1 ? "1" : o.my_episode;
-      let my_rating = method === 1 ? "unrated" : o.my_rating;
+      let my_rating = method === 1 ? 0 : o.my_rating;
 
       // get details
       let details = []
@@ -248,9 +260,8 @@ export default function Home() {
       } else {
         details = o.details
       }
-      console.log("DETAILS", details)
 
-      let upcoming_release = method === 1 ? (o.media_type === "movie" ? details.release_date : details.next_episode_to_air.air_date) : o.upcoming_release
+      let upcoming_release = method === 1 ? (o.media_type === "movie" ? details.release_date : (details.next_episode_to_air !== null ? details.next_episode_to_air.air_date : details.last_air_date)) : o.upcoming_release
 
       let obj = {
         key: key,
@@ -265,14 +276,16 @@ export default function Home() {
         upcoming_release: upcoming_release,
         details: details
       }
-
+      
       if (listType === "seen") {
-        method === 1 ? setSeen([...seen, obj]) : setSeen([...JSON.parse(localStorage.getItem("seen")), obj])
-        method === 1 ? localStorage.setItem("seen", JSON.stringify([...seen, obj])) : localStorage.setItem("seen", JSON.stringify([...JSON.parse(localStorage.getItem("seen")), obj]));
+        let local_seen = JSON.parse(localStorage.getItem("seen"))
+        method === 1 ? setSeen([...seen, obj]) : setSeen(local_seen !== null ? [...local_seen, obj] : [obj])
+        method === 1 ? localStorage.setItem("seen", JSON.stringify([...seen, obj])) : localStorage.setItem("seen", JSON.stringify([local_seen !== null ? [...local_seen, obj] : [obj]]));
         method === 1 ? onMessage("Added " + title + ' to Seen', 'success') : null
       } else if (listType === "watchlist") {
-        method === 1 ? setWatchlist([...watchlist, obj]) : setWatchlist([...JSON.parse(localStorage.getItem("watchlist")), obj])
-        method === 1 ? localStorage.setItem("watchlist", JSON.stringify([...watchlist, obj])) : localStorage.setItem("watchlist", JSON.stringify([...JSON.parse(localStorage.getItem("watchlist")), obj]));
+        let local_watchlist = JSON.parse(localStorage.getItem("watchlist"))
+        method === 1 ? setWatchlist([...watchlist, obj]) : setWatchlist(local_watchlist !== null ? [...local_watchlist, obj] : [obj])
+        method === 1 ? localStorage.setItem("watchlist", JSON.stringify([...watchlist, obj])) : localStorage.setItem("watchlist", JSON.stringify(local_watchlist !== null ? [...local_watchlist, obj] : [obj]));
         method === 1 ? onMessage("Added " + title + ' to Watchlist', 'success') : null
 
         // add to upcoming list if hasn't come out yet
@@ -280,13 +293,11 @@ export default function Home() {
         // if you watched it, make a value true: "watched"
         if (o.media_type === "tv") {
           if (details.next_episode_to_air !== null) {
-            console.log("unreleased, tv")
             setUpcoming([...upcoming, obj])
             localStorage.setItem("upcoming", JSON.stringify([...upcoming, obj]));
           }
         } else {
           if (new Date(o.release_date) > new Date()) {
-            console.log("unreleased, movie")
             setUpcoming([...upcoming, obj])
             localStorage.setItem("upcoming", JSON.stringify([...upcoming, obj]));
           }
@@ -327,6 +338,7 @@ export default function Home() {
     const localSeen = JSON.parse(localStorage.getItem("seen"));
     const localWatchlist = JSON.parse(localStorage.getItem("watchlist"));
     const localUpcoming = JSON.parse(localStorage.getItem("upcoming"));
+    console.log(localSeen, localWatchlist, localUpcoming)
     if (localSeen) {
       setSeen(localSeen);
     }
@@ -336,12 +348,10 @@ export default function Home() {
     if (localUpcoming) {
       setUpcoming(localUpcoming);
     }
-
     // fetch top movies
     async function fetchData() {
       const response = await fetch("https://api.themoviedb.org/3/trending/all/day?language=en-US", options);
       const json = await response.json();
-      console.log(json)
       let temp = json.results
       temp.forEach((item, index) => {
         item.key = index + 1;
@@ -397,12 +407,36 @@ export default function Home() {
     dataIndex: 'my_rating',
     sorter: (a, b) => a.my_rating - b.my_rating,
     render: (my_rating, data) => {
-      return my_rating !== "unrated" ? <>
-        <StarTwoTone twoToneColor="#fadb14" />
-        <> </>
-        {Number.parseFloat(my_rating).toFixed(1)}
-      </> : <>
-        <StarOutlined />
+      return <>
+        {ratingEditMode === data.key ?
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <InputNumber
+              min={1}
+              addonBefore={<StarTwoTone twoToneColor="#fadb14" />}
+              size="small"
+              defaultValue={data.my_rating}
+              controls={false}
+              style={{ maxWidth: "65px", marginRight: "4px" }}
+              onChange={(value) => { console.log(value), setEpValue(value) }}
+            />
+            <div>
+              <Button icon={<CheckOutlined />} size="small" onClick={() => { setRatingEditMode(false), addMedia()}}></Button>
+              <Button icon={<CloseOutlined />} size="small" onClick={() => { setRatingEditMode(false) }}></Button>
+            </div>
+          </div>
+          :
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            {my_rating !== 0 ?
+              <div>
+                <StarTwoTone twoToneColor="#fadb14" />
+                <> </>
+                {Number.parseFloat(my_rating).toFixed(1)}
+              </div> : <>
+                <StarOutlined />
+              </>}
+            <Button icon={<EditOutlined />} size="small" onClick={() => { setRatingEditMode(data.key), console.log("clicked", data.key) }}></Button>
+          </div>
+        }
       </>
     }
   }
@@ -518,6 +552,8 @@ export default function Home() {
     title: 'Progress',
     render: (data) => {
       let percent = 0
+      {/* if u want to get really technical, find how many episodes are in a specific season, and calculate the percentage by episode/episode total */ }
+      // S1 eps + S2 eps + etc...
       if (data.media_type === "movie") {
         percent = 100
       } else if (data.media_type === "tv") {
@@ -533,44 +569,48 @@ export default function Home() {
       }
       return <>
         {data.media_type !== "movie" ? <div>
-          {/* if u want to get really technical, find how many episodes are in a specific season */}
-          {/* include an edit buitton to edit this data */}
           {/* have an option for Completed */}
-          {/* if its an ANIME dont shoiw seasons */}
-          {data.media_type !== "anime" ? <>
-            <InputNumber
-              min={1}
-              addonBefore="S"
-              size="small"
-              defaultValue={data.my_season}
-              controls={false}
-              style={{ maxWidth: "70px" }}
-              onChange={
-                (num) => {
-                  // console.log(num),
-                  // addMedia(data, 2, "seen", num)
-                  // onRemove(false, 2)
-                }
-              }
-            />
-          </> : null}
-          <InputNumber
-            min={1}
-            addonBefore="E"
-            size="small"
-            defaultValue={data.my_episode}
-            controls={false}
-            style={{ maxWidth: "70px" }}
-            onChange={
-              (test) => {
-                console.log(test)
-              }
-            }
-          />
-          <Tooltip title={Number.parseFloat(percent).toFixed(0) + "% " + data.my_episode + "/" + data.details.number_of_episodes}>
-            <Progress format={percent === 100 ? () => <CheckOutlined /> : () => ""} size="small" percent={percent} />
+          {episodeEditMode === data.key ?
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <div>
+                {data.is_anime !== true ?
+                  <InputNumber
+                    min={1}
+                    addonBefore="S"
+                    size="small"
+                    defaultValue={data.my_season}
+                    controls={false}
+                    style={{ maxWidth: "65px", marginRight: "4px" }}
+                    onChange={() => { }}
+                  /> : null}
+                <InputNumber
+                  min={1}
+                  addonBefore="E"
+                  size="small"
+                  defaultValue={data.my_episode}
+                  controls={false}
+                  style={{ maxWidth: "65px", marginRight: "4px" }}
+                  onChange={(value) => { console.log(value), setEpValue(value) }}
+                />
+              </div>
+              <div>
+                <Button icon={<CheckOutlined />} size="small" onClick={() => { setEpisodeEditMode(false), console.log(epValue, "??") }}></Button>
+                <Button icon={<CloseOutlined />} size="small" onClick={() => { setEpisodeEditMode(false) }}></Button>
+              </div>
+            </div> : <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <>
+                {data.is_anime !== true ? <> S:{data.my_season}</> : null}
+                <> E:{data.my_episode}</>
+              </>
+              <Button icon={<EditOutlined />} size="small" onClick={() => setEpisodeEditMode(data.key)}></Button>
+            </div>
+          }
+
+          <Tooltip title={Number.parseFloat(percent).toFixed(0) + "% " + data.my_episode + "/" + data.details.number_of_episodes + " Episodes"}>
+            <Progress style={{ width: "100%" }} format={percent === 100 ? () => <CheckOutlined /> : () => ""} size="small" percent={percent} />
           </Tooltip>
-        </div> : <CheckCircleTwoTone twoToneColor="#52c41a" />}
+        </div> : <CheckCircleTwoTone twoToneColor="#52c41a" />
+        }
       </>
     }
   }
@@ -594,7 +634,6 @@ export default function Home() {
     defaultSortOrder: 'descend',
     sorter: (a, b) => new Date(b.upcoming_release) - new Date(a.upcoming_release),
     render: (upcoming_release) => {
-      console.log(upcoming_release)
       const date = new Date(upcoming_release)
       return <div>{date.toLocaleDateString('en-US', { dateStyle: "medium", })}</div>
     }
@@ -692,7 +731,7 @@ export default function Home() {
             header={
               <div style={{ display: "flex", alignItems: "center" }}>
                 <div>Your Upcoming Movies / Shows</div>
-                <Popover trigger="click" content={"Generated from items you have added to your watchlist. Only displays items which are still unreleased."} >
+                <Popover trigger="click" content={"Generated from items you have added to your watchlist. Only displays items which haven't came out yet."} >
                   <QuestionCircleOutlined style={{ fontSize: "13px", color: "grey", margin: "6px 0px 0px 10px" }} />
                 </Popover>
               </div>
@@ -716,6 +755,7 @@ export default function Home() {
                 alt={o.id}
                 height={300}
                 width={200}
+                url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
               />
             )}
           </Grid>
@@ -733,6 +773,7 @@ export default function Home() {
                 alt={o.id}
                 height={300}
                 width={200}
+                url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
               />)
               : null}
           </Grid>
@@ -746,12 +787,12 @@ export default function Home() {
   return (
     <>
       {contextHolder}
-      <Hero
-        onSearch={onSearch}
-        clearSearch={clearSearch}
-        disableClear={disableClear}
-      />
       <div style={{ padding: "20px 100px" }}>
+        <Hero
+          onSearch={onSearch}
+          clearSearch={clearSearch}
+          disableClear={disableClear}
+        />
         <br />
         {search ?
           <>
@@ -766,6 +807,7 @@ export default function Home() {
                   alt={o.id}
                   height={300}
                   width={200}
+                  url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
                 />
               )}
             </Grid>
@@ -783,6 +825,7 @@ export default function Home() {
                   alt={o.id}
                   height={300}
                   width={200}
+                  url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
                 />)
                 : null}
             </Grid>
