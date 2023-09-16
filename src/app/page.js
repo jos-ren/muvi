@@ -41,13 +41,10 @@ import styled from "styled-components";
 // --> also track items in watchlist which have unreleased episodes
 
 // =========== RESHIFT ====
-// combine upcoming, seen, watchlist into same array of objects.
-// add a key value for seen/watchlist
 // filter out movies in upcoming whicvh have upcoming_release before today :)
 // maybe a refresh button in upcoming to check for more recent dates for your media
 
-// tomorow
-// REMOVE AND MOVE need work. adding seems okay for now
+// tomorrow
 // once done these, figure out edits
 
 const Grid = styled.div`
@@ -278,47 +275,46 @@ export default function Home() {
       }
       if (method === 1) {
         lType === "seen" ? setSeen(localMedia !== "" ? [...localSeen, obj] : [obj]) : setWatchlist(localMedia !== "" ? [...localWatchlist, obj] : [obj])
-        // setMedia(localMedia !== "" ? [...localMedia, obj] : [obj])
+        setMedia(localMedia !== "" ? [...localMedia, obj] : [obj])
         localStorage.setItem("media", JSON.stringify([...localMedia, obj]))
-        onMessage("Added " + title + ' to' + list_type, 'success')
+        onMessage("Added " + title + ' to ' + lType, 'success')
       } else {
         lType === "seen" ? setSeen([...localSeen, obj]) : setWatchlist([...localWatchlist, obj])
-        // setMedia([...localMedia, obj])
+        setMedia([...localMedia, obj])
         localStorage.setItem("media", JSON.stringify([...localMedia, obj]))
       }
     }
   };
 
-
-
-  // console.log(media, seen, watchlist)
-
-  // it is adding them, then selecting both the addition and the old, by the key, then removing both...
-
   const onMove = (lType) => {
     // lType = the list destination
     // remove item, read it with list_type changed
-    // console.log(selected)
     selected.forEach((i) => {
       let data = media.find((e) => e.key == i)
-      console.log(data, i, lType, "HH")
       addMedia(data, 2, lType)
     })
     onRemove(false, lType)
-    // onMessage("Moved " + selected.length + ' items to ' + lType, 'success')
+    onMessage("Moved " + selected.length + ' items to ' + lType, 'success')
   };
 
   const onRemove = (showSuccess, lType) => {
-    // lType === "seen" ? setSeen(seen.filter(item => !selected.includes(item.key))) : setWatchlist(watchlist.filter(item => !selected.includes(item.key)));
     let filtered = JSON.parse(localStorage.getItem("media")).filter(item => !selected.includes(item.key))
-    console.log(filtered, "filtered")
-    // setMedia(filtered)
-    // localStorage.setItem("media", JSON.stringify(filtered));
-    // showSuccess === true ? onMessage('Successfully Removed ' + selected.length + ' Items', 'success') : null;
-    // setDisableButtons(true);
+    if(showSuccess === false){
+      let addition = JSON.parse(localStorage.getItem("media")).filter(item => selected.includes(item.key) && item.list_type === lType)
+      filtered = filtered.concat(addition)
+    }
+    setSeen(filtered.filter((o) => checkType(o, 1)))
+    setWatchlist(filtered.filter((o) => checkType(o, 2)))
+    setMedia(filtered)
+    localStorage.setItem("media", JSON.stringify(filtered));
+    showSuccess === true ? onMessage('Successfully Removed ' + selected.length + ' Items', 'success') : null;
+    setDisableButtons(true);
   };
 
-  console.log(seen, watchlist, media)
+  console.log("SEEN",seen)
+  console.log("WATCHLIST",watchlist)
+  console.log("MEDIA",media)
+  console.log("---")
 
   const options = {
     method: "GET",
@@ -540,6 +536,7 @@ export default function Home() {
     render: (data) => {
       let percent = 0
       {/* if u want to get really technical, find how many episodes are in a specific season, and calculate the percentage by episode/episode total */ }
+      // chnage inpuits to searchable dropdowns ^
       // S1 eps + S2 eps + etc...
       if (data.media_type === "movie") {
         percent = 100
