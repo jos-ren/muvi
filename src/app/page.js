@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
-import { message, Input, Button, Tag, Tabs, InputNumber, Space, Tooltip, Skeleton, Progress, Popover } from 'antd';
+import { message, Input, Button, Tag, Tabs, InputNumber, Space, Tooltip, Skeleton, Progress, Popover, Select } from 'antd';
 const { Search } = Input;
 import { StarTwoTone, StarOutlined, EyeOutlined, SearchOutlined, CheckOutlined, RiseOutlined, EditOutlined, CheckCircleTwoTone, QuestionCircleOutlined, CloseOutlined } from '@ant-design/icons';
 import { FaRegBookmark } from "react-icons/fa6";
@@ -28,6 +28,7 @@ import styled from "styled-components";
 // refresh button to upcoming
 // screen if something goes wrong, tell them to delete their localstorage
 //  a statistics tab, showing what is your prefered genres, average rating, what decade movies you like most, etc
+// in the future have a view button to expand and see all the details of the show. possibly a new page or maybe just accordian
 
 // MOST IMPORTANT
 // edit rating
@@ -39,13 +40,7 @@ import styled from "styled-components";
 // ✅ --> sort by release if movie, and next episode if tv 
 // --> function to check daily if a tv show should be removed
 // --> also track items in watchlist which have unreleased episodes
-
-// =========== RESHIFT ====
-// filter out movies in upcoming whicvh have upcoming_release before today :)
-// maybe a refresh button in upcoming to check for more recent dates for your media
-
-// tomorrow
-// once done these, figure out edits
+// --> maybe a refresh button in upcoming to check for more recent dates for your media
 
 const Grid = styled.div`
   display: grid;
@@ -66,11 +61,24 @@ const Footer = styled.div`
   font-size: 10pt;
 `;
 
+const Block = styled.div`
+  margin-right: 3px;
+  cursor: default;
+  border: 1px solid #d9d9d9;
+  width: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fafafa;
+  border-radius: 5px;
+`;
+
 export default function Home() {
   const fetch = require("node-fetch");
+  const [media, setMedia] = useState([]);
   const [seen, setSeen] = useState([]);
   const [watchlist, setWatchlist] = useState([]);
-  const [media, setMedia] = useState([]);
+  const [upcoming, setUpcoming] = useState([]);
   const [trending, setTrending] = useState([]);
   const [search, setSearch] = useState([]);
   const [selected, setSelected] = useState([]);
@@ -84,7 +92,7 @@ export default function Home() {
   const searchInput = useRef(null);
   const [viewMoreSearch, setViewMoreSearch] = useState(false);
   const [viewMoreTrending, setViewMoreTrending] = useState(false);
-  const [episodeEditMode, setEpisodeEditMode] = useState();
+  const [episodeEditMode, setEpisodeEditMode] = useState(37854);
   const [ratingEditMode, setRatingEditMode] = useState();
   const [epValue, setEpValue] = useState();
   const [seValue, setSeValue] = useState();
@@ -299,7 +307,7 @@ export default function Home() {
 
   const onRemove = (showSuccess, lType) => {
     let filtered = JSON.parse(localStorage.getItem("media")).filter(item => !selected.includes(item.key))
-    if(showSuccess === false){
+    if (showSuccess === false) {
       let addition = JSON.parse(localStorage.getItem("media")).filter(item => selected.includes(item.key) && item.list_type === lType)
       filtered = filtered.concat(addition)
     }
@@ -311,11 +319,7 @@ export default function Home() {
     setDisableButtons(true);
   };
 
-  console.log("SEEN",seen)
-  console.log("WATCHLIST",watchlist)
-  console.log("MEDIA",media)
-  console.log("---")
-
+  
   const options = {
     method: "GET",
     headers: {
@@ -323,6 +327,12 @@ export default function Home() {
       Authorization: "Bearer " + process.env.NEXT_PUBLIC_TMDB_ACCESS_TOKEN,
     },
   };
+  
+  // console.log("SEEN", seen)
+  // console.log("WATCHLIST", watchlist)
+  // console.log("MEDIA", media)
+  // console.log("up", upcoming)
+  // console.log("---")
 
   useEffect(() => {
     const localMedia = JSON.parse(localStorage.getItem("media"));
@@ -330,6 +340,7 @@ export default function Home() {
       setMedia(localMedia);
       setSeen(localMedia.filter((o) => checkType(o, 1)));
       setWatchlist(localMedia.filter((o) => checkType(o, 2)));
+      setUpcoming(localMedia.filter((o) => new Date(o.upcoming_release) > new Date()));
     }
     // fetch top movies
     async function fetchData() {
@@ -501,11 +512,11 @@ export default function Home() {
       })
       return <div style={{ display: "flex" }}>
         {nameArr.map((i, index) =>
-          <div key={index} style={{ marginRight: "3px", cursor: "default", border: "1px solid #d9d9d9", width: "22px", display: "flex", alignItems: "center", justifyContent: "center", background: "#fafafa", borderRadius: "5px" }}>
+          <Block key={index}>
             <Tooltip title={i}>
               {emojiArr[index]}
             </Tooltip>
-          </div>
+          </Block>
         )}
       </div>
     }
@@ -530,6 +541,17 @@ export default function Home() {
       return <div>{date}</div>
     }
   }
+
+  const selectChange = (value) => {
+    console.log(`selected ${value}`);
+  };
+
+  const selectSearch = (value) => {
+    console.log('search:', value);
+  };
+
+  const filterOption = (input, option) =>
+    (option?.label ?? '').toLowerCase().includes(input.toLowerCase());
 
   const progress = {
     title: 'Progress',
@@ -557,7 +579,22 @@ export default function Home() {
           {episodeEditMode === data.key ?
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <div>
-                {data.is_anime !== true ?
+                <Select
+                  showSearch
+                  defaultValue="lucy"
+                  placeholder="Select a person"
+                  optionFilterProp="children"
+                  style={{ width: 120 }}
+                  onChange={selectChange}
+                  onSearch={selectSearch}
+                  filterOption={filterOption}
+                  options={[
+                    { value: 'jack', label: 'Jack', },
+                    { value: 'lucy', label: 'Lucy', },
+                    { value: 'Yiminghe', label: 'yiminghe', }
+                  ]}
+                />
+                {/* {data.is_anime !== true ?
                   <InputNumber
                     min={1}
                     addonBefore="S"
@@ -566,8 +603,8 @@ export default function Home() {
                     controls={false}
                     style={{ maxWidth: "65px", marginRight: "4px" }}
                     onChange={() => { }}
-                  /> : null}
-                <InputNumber
+                  /> : null} */}
+                {/* <InputNumber
                   min={1}
                   addonBefore="E"
                   size="small"
@@ -575,7 +612,7 @@ export default function Home() {
                   controls={false}
                   style={{ maxWidth: "65px", marginRight: "4px" }}
                   onChange={(value) => { console.log(value), setEpValue(value) }}
-                />
+                /> */}
               </div>
               <div>
                 <Button icon={<CheckOutlined />} size="small" onClick={() => { setEpisodeEditMode(false), console.log(epValue, "??") }}></Button>
@@ -583,8 +620,8 @@ export default function Home() {
               </div>
             </div> : <div style={{ display: "flex", justifyContent: "space-between" }}>
               <>
-                {data.is_anime !== true ? <> S:{data.my_season}</> : null}
-                <> E:{data.my_episode}</>
+                {data.is_anime !== true ? <> S {data.my_season}</> : null}
+                <> E {data.my_episode}</>
               </>
               <Button icon={<EditOutlined />} size="small" onClick={() => setEpisodeEditMode(data.key)}></Button>
             </div>
@@ -713,7 +750,7 @@ export default function Home() {
         <div>
           {/* sort by this for movie (new Date(o.release_date) > new Date()) */}
           {/* for tv: details.next_episode_to_air !== null */}
-          {/* <MovieTable
+          <MovieTable
             pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
             header={
               <div style={{ display: "flex", alignItems: "center" }}>
@@ -726,9 +763,9 @@ export default function Home() {
             onRemove={() => { }}
             disableButtons={disableButtons}
             movieColumns={upcomingColumns}
-            movies={media}
+            movies={upcoming}
             rowSelection={false}
-          /> */}
+          />
 
           <h2>Trending Movies</h2>
           <Grid>
