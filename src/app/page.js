@@ -1,18 +1,18 @@
 "use client";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
-import { message, Input, Button, Tag, Tabs, InputNumber, Space, Tooltip, Skeleton, Progress, Popover } from 'antd';
-const { Search } = Input;
-import { StarTwoTone, StarOutlined, EyeOutlined, SearchOutlined, CheckOutlined, RiseOutlined, EditOutlined, CheckCircleTwoTone, QuestionCircleOutlined } from '@ant-design/icons';
+import { message, Input, Button, Tag, Tabs, InputNumber, Space, Tooltip, Skeleton, Progress, Popover, Select } from 'antd';
+import { StarTwoTone, StarOutlined, EyeOutlined, SearchOutlined, CheckOutlined, RiseOutlined, EditOutlined, CheckCircleTwoTone, QuestionCircleOutlined, CloseOutlined } from '@ant-design/icons';
 import { FaRegBookmark } from "react-icons/fa6";
 import Highlighter from 'react-highlight-words';
 import { genreCodes } from "../../genres.js"
 import MovieTable from "../../comps/MovieTable.js"
 import Card from "../../comps/Card.js"
 import Hero from "../../comps/Hero.js"
-import { getTodaysDate } from "../../functions.js"
+import { getTodaysDate, checkType } from "../../functions.js"
 import styled from "styled-components";
 
+// --- NOTES --- 
 // skeleton for grid when searching
 // hide poster button (will hide or show a column based on if true or not)
 // make title filter inline with column name
@@ -26,14 +26,24 @@ import styled from "styled-components";
 // feedback when no results for search
 // bug: if you swap an item to an empty table it will be null
 // refresh button to upcoming
+// screen if something goes wrong, tell them to delete their localstorage
+//  a statistics tab, showing what is your prefered genres, average rating, what decade movies you like most, etc
+// in the future have a view button to expand and see all the details of the show. possibly a new page or maybe just accordian
+// columns, tabs, and functions should each be in their own files
 
 // MOST IMPORTANT
 // edit rating
 // edit ss && ee
+// ✅ --> update localstorage data.
+// --> update progress bar
+// --> needs to look better while displaying
 // hero section
 // upcoming tab
 // ✅ --> sort by release if movie, and next episode if tv 
-// --> function to check daily if a tv show should be removed
+// --> maybe function to check daily if a tv show should be removed
+// --> maybe a refresh button in upcoming to check for more recent dates for your media
+// --> maybe have the date data be pulled from api each time you open tab
+// --> also track items in watchlist which have unreleased episodes
 
 const Grid = styled.div`
   display: grid;
@@ -54,8 +64,21 @@ const Footer = styled.div`
   font-size: 10pt;
 `;
 
+const Block = styled.div`
+  margin-right: 3px;
+  cursor: default;
+  border: 1px solid #d9d9d9;
+  width: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fafafa;
+  border-radius: 5px;
+`;
+
 export default function Home() {
   const fetch = require("node-fetch");
+  const [media, setMedia] = useState([]);
   const [seen, setSeen] = useState([]);
   const [watchlist, setWatchlist] = useState([]);
   const [upcoming, setUpcoming] = useState([]);
@@ -72,9 +95,13 @@ export default function Home() {
   const searchInput = useRef(null);
   const [viewMoreSearch, setViewMoreSearch] = useState(false);
   const [viewMoreTrending, setViewMoreTrending] = useState(false);
-
-  // console.log(seen, "SEEN")
-  console.log(upcoming, "UPCOMING")
+  const [progressEditMode, setProgressEditMode] = useState();
+  const [ratingEditMode, setRatingEditMode] = useState();
+  const [epOptions, setEpOptions] = useState([]);
+  const [seOptions, setSeOptions] = useState([]);
+  const [seValue, setSeValue] = useState(null);
+  const [epValue, setEpValue] = useState(null);
+  const [ratingValue, setRatingValue] = useState(null);
 
   // --------------------------------- Functions -----------------------------------------------------------------------------------------
 
@@ -192,41 +219,24 @@ export default function Home() {
     setDisableClear(true)
   };
 
-  const onRemove = (showSuccess, rmType) => {
-    // rmType is which list it comes from
-    if (rmType === 1) {
-      setSeen(seen.filter(item => !selected.includes(item.key)));
-      localStorage.setItem("seen", JSON.stringify(seen.filter(item => !selected.includes(item.key))));
-      { showSuccess === true ? onMessage('Successfully Removed ' + selected.length + ' Movies', 'success') : null }
-      setDisableButtons(true)
-    } else {
-      setWatchlist(watchlist.filter(item => !selected.includes(item.key)));
-      localStorage.setItem("watchlist", JSON.stringify(watchlist.filter(item => !selected.includes(item.key))));
-      setUpcoming(upcoming.filter(item => !selected.includes(item.key)));
-      localStorage.setItem("upcoming", JSON.stringify(upcoming.filter(item => !selected.includes(item.key))));
-      { showSuccess === true ? onMessage('Successfully Removed ' + selected.length + ' Movies', 'success') : null }
-      setDisableButtons(true)
-    }
-  };
-
   // track tv shows that are currently airing
   // movies that are coming out in the future on watchlist
   // seperate by day of release
 
-  const addMedia = async (o, method, listType) => {
+  const onAdd = async (o, method, lType, changes) => {
     // first check seen, then watchlist for the movie. ELSE add the movie
     if (seen.some(e => e.key === o.id)) {
       onMessage("Already in Seen", "warning");
     } else if (watchlist.some(e => e.key === o.id)) {
       onMessage("Already in Watchlist", "warning");
     } else {
-      // method 1 = creating, method 2 = swapping to different list
+      // method 1 = creating, method 2 = swapping list_type
       let key = method === 1 ? o.id : o.key;
       let title = method === 1 ? (o.media_type === "movie" ? o.title : o.name) : o.title;
       let date_added = method === 1 ? getTodaysDate() : o.date_added;
-      let release = method === 1 ? (o.media_type === "movie" ? o.release_date : o.first_air_date) : o.release_date;
+      let release_date = method === 1 ? (o.media_type === "movie" ? o.release_date : o.first_air_date) : o.release_date;
 
-      // determine if anime. japanese language + animation genre
+      // determine if anime. animation genre + japanese language = true
       let animation = false
       let g_ids = method === 1 ? o.genre_ids : o.details.genres
       g_ids.forEach((id) => {
@@ -236,9 +246,21 @@ export default function Home() {
       })
       let is_anime = method === 1 ? (o.original_language === "ja" && animation === true ? true : false) : o.is_anime;
 
-      let my_season = method === 1 ? "1" : o.my_season;
-      let my_episode = method === 1 ? "1" : o.my_episode;
-      let my_rating = method === 1 ? "unrated" : o.my_rating;
+      // needs change once i make edit theose possible
+      let my_season = 1;
+      let my_episode = 1;
+      let my_rating = 0;
+      if (method === 2) {
+        my_season = o.my_season;
+        my_episode = o.my_episode;
+        my_rating = o.my_rating;
+      } else if (method === 3) {
+        my_season = changes.my_season !== null ? changes.my_season : o.my_season;
+        my_episode = changes.my_episode !== null ? changes.my_episode : o.my_episode;
+        my_rating = changes.my_rating !== null ? changes.my_rating : o.my_rating;
+      }
+
+      let list_type = lType;
 
       // get details
       let details = []
@@ -248,16 +270,16 @@ export default function Home() {
       } else {
         details = o.details
       }
-      console.log("DETAILS", details)
 
-      let upcoming_release = method === 1 ? (o.media_type === "movie" ? details.release_date : details.next_episode_to_air.air_date) : o.upcoming_release
+      let upcoming_release = method === 1 ? (o.media_type === "movie" ? details.release_date : (details.next_episode_to_air !== null ? details.next_episode_to_air.air_date : details.last_air_date)) : o.upcoming_release
 
       let obj = {
         key: key,
         title: title,
         date_added: date_added,
-        release_date: release,
+        release_date: release_date,
         media_type: o.media_type,
+        list_type: list_type,
         is_anime: is_anime,
         my_season: my_season,
         my_episode: my_episode,
@@ -266,53 +288,75 @@ export default function Home() {
         details: details
       }
 
-      if (listType === "seen") {
-        method === 1 ? setSeen([...seen, obj]) : setSeen([...JSON.parse(localStorage.getItem("seen")), obj])
-        method === 1 ? localStorage.setItem("seen", JSON.stringify([...seen, obj])) : localStorage.setItem("seen", JSON.stringify([...JSON.parse(localStorage.getItem("seen")), obj]));
-        method === 1 ? onMessage("Added " + title + ' to Seen', 'success') : null
-      } else if (listType === "watchlist") {
-        method === 1 ? setWatchlist([...watchlist, obj]) : setWatchlist([...JSON.parse(localStorage.getItem("watchlist")), obj])
-        method === 1 ? localStorage.setItem("watchlist", JSON.stringify([...watchlist, obj])) : localStorage.setItem("watchlist", JSON.stringify([...JSON.parse(localStorage.getItem("watchlist")), obj]));
-        method === 1 ? onMessage("Added " + title + ' to Watchlist', 'success') : null
-
-        // add to upcoming list if hasn't come out yet
-        // have a select to choose between released (max of 3 months since release) and unreleased
-        // if you watched it, make a value true: "watched"
-        if (o.media_type === "tv") {
-          if (details.next_episode_to_air !== null) {
-            console.log("unreleased, tv")
-            setUpcoming([...upcoming, obj])
-            localStorage.setItem("upcoming", JSON.stringify([...upcoming, obj]));
-          }
-        } else {
-          if (new Date(o.release_date) > new Date()) {
-            console.log("unreleased, movie")
-            setUpcoming([...upcoming, obj])
-            localStorage.setItem("upcoming", JSON.stringify([...upcoming, obj]));
-          }
-        }
+      let localMedia = ""
+      let localSeen = ""
+      let localWatchlist = ""
+      if (JSON.parse(localStorage.getItem("media")) !== null) {
+        localMedia = JSON.parse(localStorage.getItem("media"))
+        localSeen = localMedia.filter((o) => checkType(o, 1))
+        localWatchlist = localMedia.filter((o) => checkType(o, 2))
+      }
+      if (method === 1) {
+        lType === "seen" ? setSeen(localMedia !== "" ? [...localSeen, obj] : [obj]) : setWatchlist(localMedia !== "" ? [...localWatchlist, obj] : [obj])
+        setMedia(localMedia !== "" ? [...localMedia, obj] : [obj])
+        localStorage.setItem("media", JSON.stringify([...localMedia, obj]))
+        onMessage("Added " + title + ' to ' + lType, 'success')
+      } else {
+        lType === "seen" ? setSeen([...localSeen, obj]) : setWatchlist([...localWatchlist, obj])
+        setMedia([...localMedia, obj])
+        localStorage.setItem("media", JSON.stringify([...localMedia, obj]))
       }
     }
   };
 
+  const onMove = (lType) => {
+    // lType = the list destination
+    // remove item, read it with list_type changed
+    selected.forEach((i) => {
+      let data = media.find((e) => e.key == i)
+      onAdd(data, 2, lType)
+    })
+    onRemove(lType, 2)
+    onMessage("Moved " + selected.length + ' items to ' + lType, 'success')
+  };
 
-  const onMove = (num) => {
-    // if currently in seen num = 0. watchlist num = 1. 
-    num === 0 ? (
-      selected.forEach((i) => {
-        let data = seen.find((e) => e.key == i)
-        addMedia(data, 2, "watchlist")
-      }),
-      onRemove(false, 1),
-      onMessage("Moved " + selected.length + ' items to Watchlist', 'success')
-    ) : (
-      selected.forEach((i) => {
-        let data = watchlist.find((e) => e.key == i)
-        addMedia(data, 2, "seen")
-      }),
-      onRemove(false, 2),
-      onMessage("Moved " + selected.length + ' items to Seen', 'success')
-    )
+  const onUpdate = (data) => {
+    let changes = {
+      my_season: seValue,
+      my_episode: epValue,
+      my_rating: ratingValue
+    }
+    // if at least one value is changed, update items data
+    if (seValue !== null || epValue !== null || ratingValue !== null) {
+      onAdd(data, 3, "seen", changes)
+      onRemove("seen", 3, data.key)
+    } else {
+      console.log("no changes")
+    }
+  }
+
+  const onRemove = (lType, method, key) => {
+    // method 1 = pressing remove button directly. method 2 = onMove. method 3 = onUpdate.
+    let filtered = ""
+    if (method !== 3) {
+      // filter out all "selected" items
+      filtered = JSON.parse(localStorage.getItem("media")).filter(item => !selected.includes(item.key))
+    } else {
+      filtered = JSON.parse(localStorage.getItem("media")).filter(item => item.key !== key)
+    }
+    if (method === 2) {
+      let addition = JSON.parse(localStorage.getItem("media")).filter(item => selected.includes(item.key) && item.list_type === lType)
+      filtered = filtered.concat(addition)
+    } else if (method === 3) {
+      let addition = JSON.parse(localStorage.getItem("media")).filter(item => item.key === key)
+      filtered = filtered.concat(addition[1])
+    }
+    setSeen(filtered.filter((o) => checkType(o, 1)))
+    setWatchlist(filtered.filter((o) => checkType(o, 2)))
+    setMedia(filtered)
+    localStorage.setItem("media", JSON.stringify(filtered));
+    method === 1 ? onMessage('Successfully Removed ' + selected.length + ' Items', 'success') : null;
+    setDisableButtons(true);
   };
 
   const options = {
@@ -323,25 +367,25 @@ export default function Home() {
     },
   };
 
-  useEffect(() => {
-    const localSeen = JSON.parse(localStorage.getItem("seen"));
-    const localWatchlist = JSON.parse(localStorage.getItem("watchlist"));
-    const localUpcoming = JSON.parse(localStorage.getItem("upcoming"));
-    if (localSeen) {
-      setSeen(localSeen);
-    }
-    if (localWatchlist) {
-      setWatchlist(localWatchlist);
-    }
-    if (localUpcoming) {
-      setUpcoming(localUpcoming);
-    }
+  // console.log("SEEN", seen)
+  // console.log("WATCHLIST", watchlist)
+  // console.log("MEDIA", media)
+  // console.log("up", upcoming)
+  // console.log("---")
 
+  useEffect(() => {
+    const localMedia = JSON.parse(localStorage.getItem("media"));
+    if (localMedia) {
+      setMedia(localMedia);
+      setSeen(localMedia.filter((o) => checkType(o, 1)));
+      setWatchlist(localMedia.filter((o) => checkType(o, 2)));
+      setUpcoming(localMedia.filter((o) => new Date(o.upcoming_release) > new Date()));
+    }
+    // console.log("RUNNING USEEFFECT")
     // fetch top movies
     async function fetchData() {
       const response = await fetch("https://api.themoviedb.org/3/trending/all/day?language=en-US", options);
       const json = await response.json();
-      console.log(json)
       let temp = json.results
       temp.forEach((item, index) => {
         item.key = index + 1;
@@ -397,12 +441,40 @@ export default function Home() {
     dataIndex: 'my_rating',
     sorter: (a, b) => a.my_rating - b.my_rating,
     render: (my_rating, data) => {
-      return my_rating !== "unrated" ? <>
-        <StarTwoTone twoToneColor="#fadb14" />
-        <> </>
-        {Number.parseFloat(my_rating).toFixed(1)}
-      </> : <>
-        <StarOutlined />
+      return <>
+        {ratingEditMode === data.key ?
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <InputNumber
+              min={1}
+              max={10}
+              // addonBefore={<StarTwoTone twoToneColor="#fadb14" />}
+              size="small"
+              defaultValue={data.my_rating}
+              // controls={false}
+              style={{ maxWidth: "75px", marginRight: "4px" }}
+              onChange={(value) => { setRatingValue(value) }}
+            />
+            <div>
+              <Button icon={<CheckOutlined />} size="small" onClick={() => { setRatingEditMode(false); onUpdate(data); }} />
+              <Button icon={<CloseOutlined />} size="small" onClick={() => { setRatingEditMode(false) }} />
+            </div>
+          </div>
+          :
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            {my_rating !== 0 ?
+              <div>
+                <StarTwoTone twoToneColor="#fadb14" />
+                <> </>
+                {Number.parseFloat(my_rating).toFixed(1)}
+              </div> : <>
+                <StarOutlined />
+              </>}
+            <Button icon={<EditOutlined />} size="small" onClick={() => {
+              setRatingEditMode(data.key);
+              setRatingValue(null);
+            }} />
+          </div>
+        }
       </>
     }
   }
@@ -484,109 +556,139 @@ export default function Home() {
       })
       return <div style={{ display: "flex" }}>
         {nameArr.map((i, index) =>
-          <div key={index} style={{ marginRight: "3px", cursor: "default", border: "1px solid #d9d9d9", width: "22px", display: "flex", alignItems: "center", justifyContent: "center", background: "#fafafa", borderRadius: "5px" }}>
+          <Block key={index}>
             <Tooltip title={i}>
               {emojiArr[index]}
             </Tooltip>
-          </div>
+          </Block>
         )}
       </div>
     }
   }
 
-  const next_episode = {
-    title: 'Next Episode',
-    // sorter: (a, b) => new Date(b.data.details.next_episode_to_air.air_date) - new Date(a.data.details.next_episode_to_air.air_date),
-    render: (data) => {
-      let temp = ""
-      let date = ""
-      if (data.media_type === "movie") {
-        return "N/A"
+  const filterOption = (input, option) =>
+    (option?.label ?? '').toLowerCase().includes(input.toLowerCase());
+
+  const episodeChange = (value) => {
+    console.log(`selected ${value} episode`);
+    setEpValue(value)
+  };
+
+  const seasonChange = (value, o) => {
+    console.log(`selected ${value} season`);
+    setSeValue(value)
+    setEpOptions(getEpOptions({}, value, o.count))
+  };
+
+  const getSeOptions = (data) => {
+    let temp = []
+    // remove specials
+    let seasons = data.details.seasons.filter((o) => { return o.season_number !== 0 })
+    seasons.forEach((o) => { temp.push({ "value": o.season_number, "label": "" + o.season_number, "count": o.episode_count }) })
+    return temp
+  }
+
+  const getEpOptions = (data, season_value, count) => {
+    let temp = []
+    let num = ""
+    if (data.is_anime) {
+      num = data.details.number_of_episodes
+    } else {
+      if (count) {
+        num = count
       } else {
-        if (data.details.next_episode_to_air === null || data.details.next_episode_to_air === undefined) {
-          date = "Finished"
-        } else {
-          temp = new Date(data.details.next_episode_to_air.air_date)
-          date = temp.toLocaleDateString('en-US', { dateStyle: "medium", })
-        }
+        num = data.details.seasons.filter((o) => { return o.season_number === season_value })[0].episode_count
       }
-      return <div>{date}</div>
     }
+    for (let i = 1; i < num + 1; i++) {
+      temp.push({ "value": i, "label": "" + i })
+    }
+    return temp
+  }
+
+  const getTotalEpisodes = (data) => {
+    let total = 0
+    for (let i = 1; i < data.my_season; i++) {
+      total = total + data.details.seasons[i].episode_count
+    }
+    // past seasons + current episode of current season
+    return total + data.my_episode
   }
 
   const progress = {
     title: 'Progress',
     render: (data) => {
       let percent = 0
+      let total_watched = data.my_episode
       if (data.media_type === "movie") {
         percent = 100
-      } else if (data.media_type === "tv") {
-        // have a x / 128 episodes which takes total episodes and episodes youve watched to make a percentage
-        if (data.details.number_of_seasons === 1) {
-          percent = data.my_episode / data.details.number_of_episodes * 100
-        } else {
-          percent = data.my_season / data.details.number_of_seasons * 100
-        }
       } else {
-        {/* for status bar, if its a tv show have status be about seasons, if anime be about episodes */ }
-        percent = data.my_episode / data.details.number_of_episodes * 100
+        if (data.is_anime === true) {
+          percent = total_watched / data.details.number_of_episodes * 100
+        } else {
+          total_watched = getTotalEpisodes(data)
+          percent = total_watched / data.details.number_of_episodes * 100
+        }
       }
+
       return <>
         {data.media_type !== "movie" ? <div>
-          {/* if u want to get really technical, find how many episodes are in a specific season */}
-          {/* include an edit buitton to edit this data */}
           {/* have an option for Completed */}
-          {/* if its an ANIME dont shoiw seasons */}
-          {data.media_type !== "anime" ? <>
-            <InputNumber
-              min={1}
-              addonBefore="S"
-              size="small"
-              defaultValue={data.my_season}
-              controls={false}
-              style={{ maxWidth: "70px" }}
-              onChange={
-                (num) => {
-                  // console.log(num),
-                  // addMedia(data, 2, "seen", num)
-                  // onRemove(false, 2)
-                }
-              }
-            />
-          </> : null}
-          <InputNumber
-            min={1}
-            addonBefore="E"
-            size="small"
-            defaultValue={data.my_episode}
-            controls={false}
-            style={{ maxWidth: "70px" }}
-            onChange={
-              (test) => {
-                console.log(test)
-              }
-            }
+          {progressEditMode === data.key ?
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <div>
+                {data.is_anime !== true ? <Select
+                  showSearch
+                  defaultValue={data.my_season}
+                  placeholder="Select a person"
+                  optionFilterProp="children"
+                  style={{ width: 70 }}
+                  onChange={seasonChange}
+                  // onSearch={seasonSearch}
+                  options={seOptions}
+                  filterOption={filterOption}
+                /> : null}
+                <Select
+                  showSearch
+                  defaultValue={data.my_episode}
+                  placeholder="Select a person"
+                  optionFilterProp="children"
+                  style={{ width: 80 }}
+                  onChange={episodeChange}
+                  // onSearch={episodeSearch}
+                  options={epOptions}
+                  filterOption={filterOption}
+                />
+              </div>
+              <div>
+                <Button icon={<CheckOutlined />} size="small" onClick={() => { setProgressEditMode(false); onUpdate(data); }}></Button>
+                <Button icon={<CloseOutlined />} size="small" onClick={() => { setProgressEditMode(false) }}></Button>
+              </div>
+            </div> : <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <>
+                {data.is_anime !== true ? <> S {data.my_season}</> : null}
+                <> E {data.my_episode}</>
+              </>
+              <Button icon={<EditOutlined />} size="small" onClick={() => {
+                setSeValue(null)
+                setEpValue(null)
+                setProgressEditMode(data.key);
+                setSeOptions(getSeOptions(data));
+                setEpOptions(getEpOptions(data, data.my_season));
+              }} />
+            </div>
+          }
+        </div> : null}
+        <Tooltip title={data.media_type === "movie" ? "Watched" : total_watched + "/" + data.details.number_of_episodes + " Episodes"}>
+          <Progress  
+          format={percent === 100 ? () => <CheckOutlined /> : () => Number.parseFloat(percent).toFixed(0) + "%"} 
+          size="small" percent={percent} 
           />
-          <Tooltip title={Number.parseFloat(percent).toFixed(0) + "% " + data.my_episode + "/" + data.details.number_of_episodes}>
-            <Progress format={percent === 100 ? () => <CheckOutlined /> : () => ""} size="small" percent={percent} />
-          </Tooltip>
-        </div> : <CheckCircleTwoTone twoToneColor="#52c41a" />}
+        </Tooltip>
+
       </>
     }
   }
-
-  // {
-  //   title: 'Edit',
-  //   render: (data) => {
-  //     return <Button
-  //       // type="link"
-  //       type="primary"
-  //       onClick={() => onRate(data)}
-  //       style={{ marginLeft: "10px" }}
-  //       icon={<EditOutlined />}
-  //     />
-  //   }
-  // },
 
   const upcoming_release = {
     title: 'Date',
@@ -594,7 +696,6 @@ export default function Home() {
     defaultSortOrder: 'descend',
     sorter: (a, b) => new Date(b.upcoming_release) - new Date(a.upcoming_release),
     render: (upcoming_release) => {
-      console.log(upcoming_release)
       const date = new Date(upcoming_release)
       return <div>{date.toLocaleDateString('en-US', { dateStyle: "medium", })}</div>
     }
@@ -604,11 +705,11 @@ export default function Home() {
     poster,
     title,
     release_date,
+    date_added,
     my_rating,
     type,
     genres,
     progress,
-    date_added,
     view
   ];
 
@@ -616,17 +717,17 @@ export default function Home() {
     poster,
     title,
     release_date,
-    next_episode,
+    date_added,
     audience_rating,
     type,
     genres,
+    view
   ];
 
   const upcomingColumns = [
     upcoming_release,
     poster,
     title,
-    // next_episode,
     type,
     genres,
   ];
@@ -644,8 +745,8 @@ export default function Home() {
       children: <MovieTable
         pagination={{ position: ["bottomCenter"], showSizeChanger: true, }}
         header={seen.length + " Items"}
-        onRemove={() => onRemove(true, 1)}
-        onMove={() => onMove(0)}
+        onRemove={() => onRemove("seen", 1)}
+        onMove={() => onMove("watchlist")}
         disableButtons={disableButtons}
         movieColumns={seenColumns}
         movies={seen.reverse()}
@@ -666,8 +767,8 @@ export default function Home() {
       children: <MovieTable
         pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
         header={watchlist.length + " Items"}
-        onRemove={() => onRemove(true, 2)}
-        onMove={() => onMove(1)}
+        onRemove={() => onRemove("watchlist", 1)}
+        onMove={() => onMove("seen")}
         disableButtons={disableButtons}
         movieColumns={watchlistColumns}
         movies={watchlist.reverse()}
@@ -687,35 +788,40 @@ export default function Home() {
       ),
       children:
         <div>
+          {/* sort by this for movie (new Date(o.release_date) > new Date()) */}
+          {/* for tv: details.next_episode_to_air !== null */}
           <MovieTable
+            showRefresh
+            onRefresh={() => console.log("Refresh")}
             pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
             header={
               <div style={{ display: "flex", alignItems: "center" }}>
-                <div>Your Upcoming Movies / Shows</div>
-                <Popover trigger="click" content={"Generated from items you have added to your watchlist. Only displays items which are still unreleased."} >
+                <div>Your Upcoming Shows</div>
+                <Popover trigger="click" content={"Generated from items you have added to your watchlist. Only displays items which haven't came out yet."} >
                   <QuestionCircleOutlined style={{ fontSize: "13px", color: "grey", margin: "6px 0px 0px 10px" }} />
                 </Popover>
               </div>
             }
-            onRemove={() => { }}
+            // onRemove={() => { }}
             disableButtons={disableButtons}
             movieColumns={upcomingColumns}
             movies={upcoming}
             rowSelection={false}
           />
 
-          <h2>Trending Movies</h2>
+          <h2>Trending Shows</h2>
           <Grid>
             {trending.slice(0, 10).map((o) =>
               <Card
                 key={o.id}
-                addToSeen={() => addMedia(o, 1, "seen")}
-                addToWatchlist={() => addMedia(o, 1, "watchlist")}
+                addToSeen={() => onAdd(o, 1, "seen")}
+                addToWatchlist={() => onAdd(o, 1, "watchlist")}
                 title={o.media_type === "movie" ? o.title : o.name}
                 src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
                 alt={o.id}
                 height={300}
                 width={200}
+                url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
               />
             )}
           </Grid>
@@ -726,13 +832,14 @@ export default function Home() {
             {viewMoreTrending ? trending.slice(10).map((o) =>
               <Card
                 key={o.id}
-                addToSeen={() => addMedia(o, 1, "seen")}
-                addToWatchlist={() => addMedia(o, 1, "watchlist")}
+                addToSeen={() => onAdd(o, 1, "seen")}
+                addToWatchlist={() => onAdd(o, 1, "watchlist")}
                 title={o.media_type === "movie" ? o.title : o.name}
                 src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
                 alt={o.id}
                 height={300}
                 width={200}
+                url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
               />)
               : null}
           </Grid>
@@ -746,12 +853,12 @@ export default function Home() {
   return (
     <>
       {contextHolder}
-      <Hero
-        onSearch={onSearch}
-        clearSearch={clearSearch}
-        disableClear={disableClear}
-      />
       <div style={{ padding: "20px 100px" }}>
+        <Hero
+          onSearch={onSearch}
+          clearSearch={clearSearch}
+          disableClear={disableClear}
+        />
         <br />
         {search ?
           <>
@@ -759,13 +866,14 @@ export default function Home() {
               {search.slice(0, 5).map((o) =>
                 <Card
                   key={o.id}
-                  addToSeen={() => addMedia(o, 1, "seen")}
-                  addToWatchlist={() => addMedia(o, 1, "watchlist")}
+                  addToSeen={() => onAdd(o, 1, "seen")}
+                  addToWatchlist={() => onAdd(o, 1, "watchlist")}
                   title={o.media_type === "movie" ? o.title : o.name}
                   src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
                   alt={o.id}
                   height={300}
                   width={200}
+                  url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
                 />
               )}
             </Grid>
@@ -776,13 +884,14 @@ export default function Home() {
               {viewMoreSearch ? search.slice(5).map((o) =>
                 <Card
                   key={o.id}
-                  addToSeen={() => addMedia(o, 1, "seen")}
-                  addToWatchlist={() => addMedia(o, 1, "watchlist")}
+                  addToSeen={() => onAdd(o, 1, "seen")}
+                  addToWatchlist={() => onAdd(o, 1, "watchlist")}
                   title={o.media_type === "movie" ? o.title : o.name}
                   src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
                   alt={o.id}
                   height={300}
                   width={200}
+                  url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
                 />)
                 : null}
             </Grid>
