@@ -30,13 +30,13 @@ import styled from "styled-components";
 //  a statistics tab, showing what is your prefered genres, average rating, what decade movies you like most, etc
 // in the future have a view button to expand and see all the details of the show. possibly a new page or maybe just accordian
 // columns, tabs, and functions should each be in their own files
+// make progress look better displaying
 
 // MOST IMPORTANT
-// edit rating
-// edit ss && ee
+// ✅ edit rating
+// ✅ edit ss && ee
 // ✅ --> update localstorage data.
-// --> update progress bar
-// --> needs to look better while displaying
+// ✅ --> update progress bar
 // hero section
 // upcoming tab
 // ✅ --> sort by release if movie, and next episode if tv 
@@ -68,7 +68,8 @@ const Block = styled.div`
   margin-right: 3px;
   cursor: default;
   border: 1px solid #d9d9d9;
-  width: 22px;
+  height: 22px;
+  min-width: 22px; 
   display: flex;
   align-items: center;
   justify-content: center;
@@ -379,7 +380,8 @@ export default function Home() {
       setMedia(localMedia);
       setSeen(localMedia.filter((o) => checkType(o, 1)));
       setWatchlist(localMedia.filter((o) => checkType(o, 2)));
-      setUpcoming(localMedia.filter((o) => new Date(o.upcoming_release) > new Date()));
+      // get shows whcih are coming out starting from the last week -> future
+      setUpcoming(localMedia.filter((o) => new Date(o.upcoming_release) > new Date(new Date().setDate(new Date().getDate() - 7))));
     }
     // console.log("RUNNING USEEFFECT")
     // fetch top movies
@@ -680,9 +682,9 @@ export default function Home() {
           }
         </div> : null}
         <Tooltip title={data.media_type === "movie" ? "Watched" : total_watched + "/" + data.details.number_of_episodes + " Episodes"}>
-          <Progress  
-          format={percent === 100 ? () => <CheckOutlined /> : () => Number.parseFloat(percent).toFixed(0) + "%"} 
-          size="small" percent={percent} 
+          <Progress
+            format={percent === 100 ? () => <CheckOutlined /> : () => Number.parseFloat(percent).toFixed(0) + "%"}
+            size="small" percent={percent}
           />
         </Tooltip>
 
@@ -698,6 +700,35 @@ export default function Home() {
     render: (upcoming_release) => {
       const date = new Date(upcoming_release)
       return <div>{date.toLocaleDateString('en-US', { dateStyle: "medium", })}</div>
+    }
+  }
+
+  const episode = {
+    title: 'Episode',
+    render: (data) => {
+      let text = ""
+      let num = ""
+      if (data.details.next_episode_to_air !== undefined && data.details.next_episode_to_air !== null) {
+        num = data.details.next_episode_to_air.episode_number
+        text = data.details.next_episode_to_air.name
+      } else if (data.details.next_episode_to_air === null) {
+        num = data.details.last_episode_to_air.episode_number
+        text = data.details.last_episode_to_air.name
+      } else {
+        // text = "N/A"
+      }
+      return <>
+        {
+          data.media_type === "movie" ? "" :
+            <div style={{display:"flex"}}>
+              {/* <div>{num}</div>
+              <div style={{padding:"0px 5px"}}>{text}</div> */}
+              <Block style={num > 9 ? {padding:"0px 5px"} : {}}>{num}</Block>
+              {/* <Block style={{padding:"0px 5px", marginLeft:"2px"}}>{text}</Block> */}
+              <div style={{marginLeft:"2px"}}>{text}</div>
+            </div>
+        }
+      </>
     }
   }
 
@@ -728,6 +759,7 @@ export default function Home() {
     upcoming_release,
     poster,
     title,
+    episode,
     type,
     genres,
   ];
