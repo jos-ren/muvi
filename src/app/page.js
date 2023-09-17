@@ -9,6 +9,7 @@ import { genreCodes } from "../../genres.js"
 import MovieTable from "../../comps/MovieTable.js"
 import Card from "../../comps/Card.js"
 import Hero from "../../comps/Hero.js"
+import Header from "../../comps/Header.js"
 import { getTodaysDate, checkType } from "../../functions.js"
 import styled from "styled-components";
 
@@ -24,13 +25,14 @@ import styled from "styled-components";
 // sticky tab bar (make your own)
 // clear selection button for tables
 // feedback when no results for search
-// bug: if you swap an item to an empty table it will be null
 // refresh button to upcoming
 // screen if something goes wrong, tell them to delete their localstorage
 //  a statistics tab, showing what is your prefered genres, average rating, what decade movies you like most, etc
 // in the future have a view button to expand and see all the details of the show. possibly a new page or maybe just accordian
 // columns, tabs, and functions should each be in their own files
 // make progress look better displaying
+// header
+// hide edit button unless hoivered
 
 // MOST IMPORTANT
 // ✅ edit rating
@@ -397,6 +399,17 @@ export default function Home() {
     fetchData();
   }, []);
 
+  const refreshClick = () => {
+    const localMedia = JSON.parse(localStorage.getItem("media"));
+    if (localMedia) {
+      setMedia(localMedia);
+      setSeen(localMedia.filter((o) => checkType(o, 1)));
+      setWatchlist(localMedia.filter((o) => checkType(o, 2)));
+      // get shows whcih are coming out starting from the last week -> future
+      setUpcoming(localMedia.filter((o) => new Date(o.upcoming_release) > new Date(new Date().setDate(new Date().getDate() - 7))));
+    }
+  }
+
   // ------------ table columns ----------------------------------------------------------------------------------------------------------
   const poster = {
     title: 'Poster',
@@ -720,12 +733,12 @@ export default function Home() {
       return <>
         {
           data.media_type === "movie" ? "" :
-            <div style={{display:"flex"}}>
+            <div style={{ display: "flex" }}>
               {/* <div>{num}</div>
               <div style={{padding:"0px 5px"}}>{text}</div> */}
-              <Block style={num > 9 ? {padding:"0px 5px"} : {}}>{num}</Block>
+              <Block style={num > 9 ? { padding: "0px 5px", fontSize: "9pt" } : { fontSize: "9pt" }}>{num}</Block>
               {/* <Block style={{padding:"0px 5px", marginLeft:"2px"}}>{text}</Block> */}
-              <div style={{marginLeft:"2px"}}>{text}</div>
+              <div style={{ marginLeft: "2px" }}>{text}</div>
             </div>
         }
       </>
@@ -824,7 +837,7 @@ export default function Home() {
           {/* for tv: details.next_episode_to_air !== null */}
           <MovieTable
             showRefresh
-            onRefresh={() => console.log("Refresh")}
+            onRefresh={() => refreshClick()}
             pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
             header={
               <div style={{ display: "flex", alignItems: "center" }}>
@@ -885,6 +898,7 @@ export default function Home() {
   return (
     <>
       {contextHolder}
+      {/* <Header /> */}
       <div style={{ padding: "20px 100px" }}>
         <Hero
           onSearch={onSearch}

@@ -9,3 +9,12 @@
 .ant-tabs-tab-active {
     color: aqua ;
 } */
+
+@font-face {
+    font-family: 'Antebas';
+    src: url('/antebas-bold.otf');
+  }
+html{
+    width: 100%;
+}
+  
