@@ -842,7 +842,7 @@ export default function Home() {
             header={
               <div style={{ display: "flex", alignItems: "center" }}>
                 <div>Your Upcoming Shows</div>
-                <Popover trigger="click" content={"Generated from items you have added to your watchlist. Only displays items which haven't came out yet."} >
+                <Popover trigger="click" content={"Generated from items you have added to your Seen & Watchlists. Displays items which are coming out soon."} >
                   <QuestionCircleOutlined style={{ fontSize: "13px", color: "grey", margin: "6px 0px 0px 10px" }} />
                 </Popover>
               </div>

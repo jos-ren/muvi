@@ -13,7 +13,7 @@ const Hero = ({ onSearch, clearSearch, disableClear }) => {
                 <h1 style={{ fontFamily: "Antebas", fontSize: "70pt", textAlign: "center" }}>Track your Favorite Shows with Ease</h1>
             </div>
             <div style={{ position: "relative", top: "-45px", fontWeight: "400", fontSize: "14pt", color: "grey" }}>
-                Just Search. Then Add. Even Rate all in one!
+                Just Search. Then Add. Even Rate all in one. this text needs to be rewritten
             </div>
             <div style={{ width: "100%", alignItems: "center", display: "flex", flexDirection: "column" }}>
                 {/* <h1>Muvi</h1> */}
