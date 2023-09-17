@@ -1,13 +1,13 @@
 import React from 'react';
 import styled from "styled-components";
 import { Table, Button } from 'antd';
-import { DeleteOutlined, SwapOutlined } from '@ant-design/icons';
+import { DeleteOutlined, SwapOutlined, ReloadOutlined } from '@ant-design/icons';
 
 const Container = styled.div`
 
 `;
 
-const MovieTable = ({ header, onRemove, disableButtons, movieColumns, movies, rowSelection, onChange, showRemove = false, showMove = false, pagination, moveKeyword, onMove, num}) => {
+const MovieTable = ({ header, onRemove, disableButtons, movieColumns, movies, rowSelection, onChange, showRemove = false, showMove = false, showRefresh = false, onRefresh, pagination, moveKeyword, onMove, }) => {
     return (
         <Container>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -22,7 +22,7 @@ const MovieTable = ({ header, onRemove, disableButtons, movieColumns, movies, ro
             </Button> */}
                     {showMove ?
                         <Button
-                        style={{marginRight:"10px"}}
+                            style={{ marginRight: "10px" }}
                             type="primary"
                             onClick={onMove}
                             disabled={disableButtons}
@@ -39,6 +39,14 @@ const MovieTable = ({ header, onRemove, disableButtons, movieColumns, movies, ro
                             icon={<DeleteOutlined />}
                         >
                             Remove
+                        </Button> : null}
+                    {showRefresh ?
+                        <Button
+                            type="primary"
+                            onClick={onRefresh}
+                            icon={<ReloadOutlined />}
+                        >
+                            Refresh
                         </Button> : null}
 
                 </div>
