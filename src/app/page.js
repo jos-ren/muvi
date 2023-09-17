@@ -447,10 +447,10 @@ export default function Home() {
             <InputNumber
               min={1}
               max={10}
-              addonBefore={<StarTwoTone twoToneColor="#fadb14" />}
+              // addonBefore={<StarTwoTone twoToneColor="#fadb14" />}
               size="small"
               defaultValue={data.my_rating}
-              controls={false}
+              // controls={false}
               style={{ maxWidth: "75px", marginRight: "4px" }}
               onChange={(value) => { setRatingValue(value) }}
             />
@@ -582,7 +582,9 @@ export default function Home() {
 
   const getSeOptions = (data) => {
     let temp = []
-    data.details.seasons.forEach((o) => { temp.push({ "value": o.season_number, "label": "" + o.season_number, "count": o.episode_count }) })
+    // remove specials
+    let seasons = data.details.seasons.filter((o) => { return o.season_number !== 0 })
+    seasons.forEach((o) => { temp.push({ "value": o.season_number, "label": "" + o.season_number, "count": o.episode_count }) })
     return temp
   }
 
@@ -604,25 +606,29 @@ export default function Home() {
     return temp
   }
 
+  const getTotalEpisodes = (data) => {
+    let total = 0
+    for (let i = 1; i < data.my_season; i++) {
+      total = total + data.details.seasons[i].episode_count
+    }
+    // past seasons + current episode of current season
+    return total + data.my_episode
+  }
+
   const progress = {
     title: 'Progress',
     render: (data) => {
       let percent = 0
-      {/* if u want to get really technical, find how many episodes are in a specific season, and calculate the percentage by episode/episode total */ }
-      // chnage inpuits to searchable dropdowns ^
-      // S1 eps + S2 eps + etc...
+      let total_watched = data.my_episode
       if (data.media_type === "movie") {
         percent = 100
-      } else if (data.media_type === "tv") {
-        // have a x / 128 episodes which takes total episodes and episodes youve watched to make a percentage
-        if (data.details.number_of_seasons === 1) {
-          percent = data.my_episode / data.details.number_of_episodes * 100
-        } else {
-          percent = data.my_season / data.details.number_of_seasons * 100
-        }
       } else {
-        {/* for status bar, if its a tv show have status be about seasons, if anime be about episodes */ }
-        percent = data.my_episode / data.details.number_of_episodes * 100
+        if (data.is_anime === true) {
+          percent = total_watched / data.details.number_of_episodes * 100
+        } else {
+          total_watched = getTotalEpisodes(data)
+          percent = total_watched / data.details.number_of_episodes * 100
+        }
       }
 
       return <>
@@ -672,28 +678,17 @@ export default function Home() {
               }} />
             </div>
           }
+        </div> : null}
+        <Tooltip title={data.media_type === "movie" ? "Watched" : total_watched + "/" + data.details.number_of_episodes + " Episodes"}>
+          <Progress  
+          format={percent === 100 ? () => <CheckOutlined /> : () => Number.parseFloat(percent).toFixed(0) + "%"} 
+          size="small" percent={percent} 
+          />
+        </Tooltip>
 
-          <Tooltip title={Number.parseFloat(percent).toFixed(0) + "% " + data.my_episode + "/" + data.details.number_of_episodes + " Episodes"}>
-            <Progress style={{ width: "100%" }} format={percent === 100 ? () => <CheckOutlined /> : () => ""} size="small" percent={percent} />
-          </Tooltip>
-        </div> : <CheckCircleTwoTone twoToneColor="#52c41a" />
-        }
       </>
     }
   }
-
-  // {
-  //   title: 'Edit',
-  //   render: (data) => {
-  //     return <Button
-  //       // type="link"
-  //       type="primary"
-  //       onClick={() => onRate(data)}
-  //       style={{ marginLeft: "10px" }}
-  //       icon={<EditOutlined />}
-  //     />
-  //   }
-  // },
 
   const upcoming_release = {
     title: 'Date',
@@ -733,7 +728,6 @@ export default function Home() {
     upcoming_release,
     poster,
     title,
-    // next_episode,
     type,
     genres,
   ];
@@ -815,7 +809,7 @@ export default function Home() {
             rowSelection={false}
           />
 
-          <h2>Trending Movies</h2>
+          <h2>Trending Shows</h2>
           <Grid>
             {trending.slice(0, 10).map((o) =>
               <Card
