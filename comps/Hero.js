@@ -7,23 +7,35 @@ import { StarTwoTone, StarOutlined, EyeOutlined, SearchOutlined, CheckOutlined, 
 import { FaRegBookmark } from "react-icons/fa6";
 const Hero = ({ onSearch, clearSearch, disableClear }) => {
     return (
-        <div>
-            <h1>Search</h1>
-            <div style={{ display: "flex", alignItems: "center" }}>
-                <Search
-                    size="large"
-                    placeholder="movie name"
-                    enterButton="Search"
-                    onSearch={onSearch}
-                />
-                <Button
-                    type="link"
-                    onClick={clearSearch}
-                    style={{ marginLeft: "10px", height: "40px" }}
-                    disabled={disableClear}
-                >
-                    Clear Results
-                </Button>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop:"50px" }}>
+            <div style={{ height: "50px" }}></div>
+            <div style={{ 
+                // maxWidth: "65vw" 
+        }}>
+                <h1 style={{ fontFamily: "Antebas", fontSize: "70pt", textAlign: "center" }}>Track your Favorite Shows with Ease</h1>
+            </div>
+            <div style={{ position: "relative", top: "-45px", fontWeight: "400", fontSize: "14pt", color: "grey" }}>
+                Search. Add. Rate. Do it all with our easy to use Application.
+            </div>
+            <div style={{ width: "100%", alignItems: "center", display: "flex", flexDirection: "column" }}>
+                {/* <h1>Muvi</h1> */}
+                <div style={{ height: "50px" }}></div>
+                <div style={{ display: "flex", alignItems: "center", width: "100%" , marginBottom:"50px"}}>
+                    <Search
+                        size="large"
+                        placeholder="Movie Name..."
+                        enterButton="Search"
+                        onSearch={onSearch}
+                    />
+                    <Button
+                        type="link"
+                        onClick={clearSearch}
+                        style={{ marginLeft: "10px", height: "40px" }}
+                        disabled={disableClear}
+                    >
+                        Clear Results
+                    </Button>
+                </div>
             </div>
         </div>
     );
