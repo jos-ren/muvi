@@ -5,7 +5,7 @@ import Head from 'next/head';
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'Muvi',
+  title: 'Movie Tracker',
   description: 'JOSREN ©2023',
   link:"muvi-icon.svg"
 }
