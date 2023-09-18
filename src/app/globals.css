@@ -14,7 +14,7 @@
     font-family: 'Antebas';
     src: url('/antebas-bold.otf');
   }
-html{
-    width: 100%;
-}
-  
+@font-face {
+    font-family: 'Atyp';
+    src: url('/AtypDisplay-Semibold.ttf');
+  }
