@@ -8,7 +8,7 @@ const Card = ({ addToSeen, addToWatchlist, title, src, alt, height = 200, width 
     return (
         <div
             style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-                <Image height={height} width={width} quality="75" src={src} alt={alt} style={{borderRadius:"6px"}}/>
+                <Image unoptimized height={height} width={width} quality="75" src={src} alt={alt} style={{borderRadius:"6px"}}/>
                 <Tooltip title={title}>
                 <div style={{
                     maxWidth: "200px",

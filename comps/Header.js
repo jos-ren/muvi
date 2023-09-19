@@ -21,7 +21,7 @@ const Header = ({ onDownload, onLogo}) => {
                 display: "flex", alignItems: "center"
             }}>
                 {/* <h1>M</h1> */}
-                <Image height="24" width="24" quality="75" src={"muvi-logo.svg"} alt={"logo"}/>
+                <Image unoptimized height="24" width="24" quality="75" src={"muvi-logo.svg"} alt={"logo"}/>
             </div>
             <Tooltip title={"Download Data"}>
             <div style={{  marginRight: "50px", display: "flex", alignItems: "center", cursor: "pointer" }} 

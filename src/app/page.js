@@ -49,6 +49,7 @@ import { useMediaQuery } from 'react-responsive'
 // add a s block to upcoming shows
 // if an upcomings episode title starts with episode, hide it
 // hide certain upcoming items
+// ability to share your watchlist with friends
 
 const Grid = styled.div`
   display: grid;
@@ -454,6 +455,7 @@ export default function Home() {
   const poster = {
     title: 'Poster',
     render: (data) => <Image
+    unoptimized
       src={"https://image.tmdb.org/t/p/original/" + data.details.poster_path}
       alt={data.title}
       width={50}
@@ -1004,7 +1006,7 @@ export default function Home() {
 
       <Footer>
         <>JOSREN ©2023 | Created using data from</>
-        <Image height="20" width="66" quality="75" src={"tmdb.svg"} alt={"tmdb"} style={{ marginLeft: "7px" }} />
+        <Image unoptimized height="20" width="66" quality="75" src={"tmdb.svg"} alt={"tmdb"} style={{ marginLeft: "7px" }} />
       </Footer>
     </div >
   );
