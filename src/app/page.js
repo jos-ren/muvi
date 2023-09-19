@@ -41,18 +41,15 @@ import { useMediaQuery } from 'react-responsive'
 // download button for data
 // upload button for restoring data
 // upcoming could include shows which are in a group like marvel with upcoming shows also in it
-// perhaps we could follow "interests" (which will actually be the groups) and any group with shows coming up can be included as well.
-
-// MOST IMPORTANT
-// ✅ edit rating
-// ✅ edit ss && ee
-// ✅ --> update localstorage data.
-// ✅ --> update progress bar
-// ✅ hero section
-// ✅ upcoming tab
-// ✅ --> sort by release if movie, and next episode if tv 
-// ✅ --> maybe a refresh button in upcoming to check for more recent dates for your media
-// --> also track items in watchlist which have unreleased episodes
+// perhaps we could follow "interests" (which will actually be the groups) and any group with shows coming up can be included as well. could also be actors that you can follow.
+// add more details when hovering on cards
+// add a filter to only show shows with incomplete progress (not s1 e1 tho)
+// movie favorites. heart icon to indicate.\
+// toggle a setting to allow anime to hvae seasons
+// add a s block to upcoming shows
+// if an upcomings episode title starts with episode, hide it
+// hide certain upcoming items
+// ability to share your watchlist with friends
 
 const Grid = styled.div`
   display: grid;
@@ -458,6 +455,7 @@ export default function Home() {
   const poster = {
     title: 'Poster',
     render: (data) => <Image
+    unoptimized
       src={"https://image.tmdb.org/t/p/original/" + data.details.poster_path}
       alt={data.title}
       width={50}
@@ -1008,7 +1006,7 @@ export default function Home() {
 
       <Footer>
         <>JOSREN ©2023 | Created using data from</>
-        <Image height="20" width="66" quality="75" src={"tmdb.svg"} alt={"tmdb"} style={{ marginLeft: "7px" }} />
+        <Image unoptimized height="20" width="66" quality="75" src={"tmdb.svg"} alt={"tmdb"} style={{ marginLeft: "7px" }} />
       </Footer>
     </div >
   );
