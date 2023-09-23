@@ -28,7 +28,7 @@ import { useMediaQuery } from 'react-responsive'
 // feedback when no results for search
 // refresh button to upcoming
 // screen if something goes wrong, tell them to delete their localstorage
-//  a statistics tab, showing what is your prefered genres, average rating, what decade movies you like most, etc
+// a statistics tab, showing what is your prefered genres, average rating, what decade movies you like most, etc
 // in the future have a view button to expand and see all the details of the show. possibly a new page or maybe just accordian
 // columns, tabs, and functions should each be in their own files
 // make progress look better displaying
@@ -139,12 +139,14 @@ export default function Home() {
       <div
         style={{
           padding: 8,
+          position:"relative",
+          // top:"-10px"
         }}
         onKeyDown={(e) => e.stopPropagation()}
       >
         <Input
           ref={searchInput}
-          placeholder={`Search ${dataIndex}`}
+          placeholder={`Search Title...`}
           value={selectedKeys[0]}
           onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
           onPressEnter={() => handleSearch(selectedKeys, confirm, dataIndex)}
@@ -166,7 +168,7 @@ export default function Home() {
             Filter
           </Button>
           <Button
-            onClick={() => clearFilters && handleReset(clearFilters)}
+            onClick={() => {clearFilters && handleReset(clearFilters), handleSearch(selectedKeys, confirm, dataIndex)}}
             size="small"
             style={{
               width: 95,
@@ -915,7 +917,8 @@ export default function Home() {
               />
             )}
           </Grid>
-          <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
+          <div style={{ marginTop: "10px", display: "flex", justifyContent: "center", flexDirection:"column" }}>
+          {/* <div style={{width:"100%", borderBottom:"1px solid #e0e0e0"}}></div> */}
             {viewMoreTrending === false ? <Button style={{ marginTop: "10px" }} type="primary" onClick={() => setViewMoreTrending(true)}>Load More</Button> : null}
           </div>
           <Grid>
