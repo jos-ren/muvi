@@ -13,9 +13,9 @@ import Header from "../../comps/Header.js"
 import { getTodaysDate, checkType } from "../../functions.js"
 import styled from "styled-components";
 import { useMediaQuery } from 'react-responsive'
+const dayjs = require('dayjs')
 
 // --- NOTES --- 
-// skeleton for grid when searching
 // hide poster button (will hide or show a column based on if true or not)
 // make title filter inline with column name
 // move tab bar to top? change color to dark blue
@@ -50,6 +50,26 @@ import { useMediaQuery } from 'react-responsive'
 // if an upcomings episode title starts with episode, hide it
 // hide certain upcoming items
 // ability to share your watchlist with friends
+
+// export / import movie data
+// have a weekday for upcoming
+// add season to upcoming
+// fix upcoming dates
+// sync data between devices (firebase?) use this instead of localstorage perhaps. might need accounts then (maybe google accounts?)
+// allow audience rating sort (watchlist)
+// add a "times seen" column with plus and minuses
+// if on mobile display:"please use on a device with bigger display (ipad, or computer)"
+// hover over search item to view details
+// upcoming episode title not updating whenm clicking refrsesh button
+// use (redux) to organize your calls / functions outside of this main page
+// make components
+// make a view all details mode where it scrolls horizontally with all columns
+// change details to view imdb
+
+// statistics tab
+// have average rating
+// have total watchtime
+// have totals of how many tv, animes, movies
 
 const Grid = styled.div`
   display: grid;
@@ -115,10 +135,10 @@ export default function Home() {
   const isVeryWide = useMediaQuery({ query: '(max-width: 1600px)' })
 
 
-  console.log("MEDIA", media)
+  // console.log("MEDIA", media)
   // console.log("SEEN", seen)
   // console.log("WATCHLIST", watchlist)
-  console.log("up", upcoming)
+  // console.log("up", upcoming)
   // console.log("---")
 
   // --------------------------------- Functions -----------------------------------------------------------------------------------------
@@ -139,7 +159,7 @@ export default function Home() {
       <div
         style={{
           padding: 8,
-          position:"relative",
+          position: "relative",
           // top:"-10px"
         }}
         onKeyDown={(e) => e.stopPropagation()}
@@ -168,7 +188,7 @@ export default function Home() {
             Filter
           </Button>
           <Button
-            onClick={() => {clearFilters && handleReset(clearFilters), handleSearch(selectedKeys, confirm, dataIndex)}}
+            onClick={() => { clearFilters && handleReset(clearFilters), handleSearch(selectedKeys, confirm, dataIndex) }}
             size="small"
             style={{
               width: 95,
@@ -211,12 +231,10 @@ export default function Home() {
 
   const rowSelection = {
     onChange: (selectedRowKeys, selectedRows) => {
-      console.log(`selectedRowKeys: ${selectedRowKeys}`, 'selectedRows: ', selectedRows);
       setSelected(selectedRowKeys)
       selectedRows.length !== 0 ? setDisableButtons(false) : setDisableButtons(true)
     }
   };
-  // console.log(rowSelection.selectedRowKeys)
 
   const onMessage = (message, type) => {
     messageApi.open({
@@ -277,7 +295,6 @@ export default function Home() {
         details = o.details
       }
 
-      console.log(changes, "changes")
       // these values change when editing
       let my_season = 1;
       let my_episode = 1;
@@ -444,6 +461,7 @@ export default function Home() {
     async function fetchData() {
       const response = await fetch("https://api.themoviedb.org/3/trending/all/day?language=en-US", options);
       const json = await response.json();
+      console.log(json)
       let temp = json.results
       temp.forEach((item, index) => {
         item.key = index + 1;
@@ -457,7 +475,7 @@ export default function Home() {
   const poster = {
     title: 'Poster',
     render: (data) => <Image
-    unoptimized
+      unoptimized
       src={"https://image.tmdb.org/t/p/original/" + data.details.poster_path}
       alt={data.title}
       width={50}
@@ -756,8 +774,7 @@ export default function Home() {
     defaultSortOrder: 'descend',
     sorter: (a, b) => new Date(b.upcoming_release) - new Date(a.upcoming_release),
     render: (upcoming_release) => {
-      const date = new Date(upcoming_release)
-      return <div>{date.toLocaleDateString('en-US', { dateStyle: "medium", })}</div>
+      return <div>{dayjs(upcoming_release).format('ddd D MMM YYYY')}</div >
     }
   }
 
@@ -765,25 +782,24 @@ export default function Home() {
     title: 'Episode',
     render: (data) => {
       let text = ""
-      let num = ""
+      let episode = ""
+      let season = ""
       if (data.details.next_episode_to_air !== undefined && data.details.next_episode_to_air !== null) {
-        num = data.details.next_episode_to_air.episode_number
+        season = data.details.next_episode_to_air.season_number
+        episode = data.details.next_episode_to_air.episode_number
         text = data.details.next_episode_to_air.name
       } else if (data.details.next_episode_to_air === null) {
-        num = data.details.last_episode_to_air.episode_number
+        season = data.details.last_episode_to_air.season_number
+        episode = data.details.last_episode_to_air.episode_number
         text = data.details.last_episode_to_air.name
-      } else {
-        // text = "N/A"
       }
       return <>
         {
           data.media_type === "movie" ? "" :
             <div style={{ display: "flex" }}>
-              {/* <div>{num}</div>
-              <div style={{padding:"0px 5px"}}>{text}</div> */}
-              <Block style={num > 9 ? { padding: "0px 5px", fontSize: "9pt" } : { fontSize: "9pt" }}>{num}</Block>
-              {/* <Block style={{padding:"0px 5px", marginLeft:"2px"}}>{text}</Block> */}
-              <div style={{ marginLeft: "2px" }}>{text}</div>
+              <Block style={{ padding: "0px 5px", fontSize: "9pt" }}>S : {season}</Block>
+              <Block style={{ padding: "0px 5px", fontSize: "9pt" }}>E : {episode}</Block>
+              <div style={{ marginLeft: "2px" }}>{text.slice(0, 7) === "Episode" ? "" : text}</div>
             </div>
         }
       </>
@@ -917,8 +933,8 @@ export default function Home() {
               />
             )}
           </Grid>
-          <div style={{ marginTop: "10px", display: "flex", justifyContent: "center", flexDirection:"column" }}>
-          {/* <div style={{width:"100%", borderBottom:"1px solid #e0e0e0"}}></div> */}
+          <div style={{ marginTop: "10px", display: "flex", justifyContent: "center", flexDirection: "column" }}>
+            {/* <div style={{width:"100%", borderBottom:"1px solid #e0e0e0"}}></div> */}
             {viewMoreTrending === false ? <Button style={{ marginTop: "10px" }} type="primary" onClick={() => setViewMoreTrending(true)}>Load More</Button> : null}
           </div>
           <Grid>
