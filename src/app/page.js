@@ -52,9 +52,6 @@ const dayjs = require('dayjs')
 // ability to share your watchlist with friends
 
 // export / import movie data
-// have a weekday for upcoming
-// add season to upcoming
-// fix upcoming dates
 // sync data between devices (firebase?) use this instead of localstorage perhaps. might need accounts then (maybe google accounts?)
 // allow audience rating sort (watchlist)
 // add a "times seen" column with plus and minuses
@@ -65,6 +62,7 @@ const dayjs = require('dayjs')
 // make components
 // make a view all details mode where it scrolls horizontally with all columns
 // change details to view imdb
+// genres filter
 
 // statistics tab
 // have average rating
@@ -560,13 +558,14 @@ export default function Home() {
     title: 'Audience Rating',
     // dataIndex: 'data.details.vote_average',
     // sorter: (a, b) => a.data.details.vote_average - b.data.details.vote_average,
-    render: (data) => <>
-      <StarTwoTone twoToneColor="#fadb14" />
-      <> </>
-      <Tooltip title={data.details.vote_count + " Ratings"}>
-        {Number.parseFloat(data.details.vote_average).toFixed(1)}
-      </Tooltip>
-    </>
+    render: (data) => 
+      <>
+        <StarTwoTone twoToneColor="#fadb14" />
+        <> </>
+        <Tooltip title={data.details.vote_count + " Ratings"}>
+          {Number.parseFloat(data.details.vote_average).toFixed(1)}
+        </Tooltip>
+      </>
   }
 
   const view = {
@@ -581,7 +580,6 @@ export default function Home() {
 
   const type = {
     title: 'Type',
-    // dataIndex: 'media_type',
     filters: [
       {
         text: 'Movie',
@@ -597,7 +595,6 @@ export default function Home() {
       },
     ],
     onFilter: (value, record) => record.media_type.indexOf(value) === 0,
-    // render: (media_type) => media_type.charAt(0).toUpperCase() + media_type.slice(1)
     render: (data) => {
       let color = ""
       let text = ""
@@ -621,14 +618,17 @@ export default function Home() {
 
   const genres = {
     title: 'Genres',
+    filters: genreCodes,
+    onFilter: (value, record) => {console.log(record, "record"), record.genre.indexOf(value) === 0},
+    // left off here ^^^
     render: (data) => {
       let nameArr = []
       let emojiArr = []
       data.details.genres.map((i) => {
         genreCodes.forEach(myFunction)
         function myFunction(i2) {
-          if (i.id === i2.id) {
-            nameArr.push(i2.name)
+          if (i.id === i2.value) {
+            nameArr.push(i2.text)
             emojiArr.push(i2.emoji)
           }
         }
@@ -806,6 +806,16 @@ export default function Home() {
     }
   }
 
+  const times_seen = {
+    title: 'Times Seen',
+    dataIndex: 'times_seen',
+    defaultSortOrder: 'descend',
+    sorter: (a, b) => new Date(b.times_seen) - new Date(a.times_seen),
+    render: (times_seen) => {
+      return {times_seen}
+    }
+  }
+
   const seenColumns = [
     poster,
     title,
@@ -816,7 +826,8 @@ export default function Home() {
     type,
     genres,
     progress,
-    view
+    times_seen,
+    view,
   ];
 
   const watchlistColumns = [
