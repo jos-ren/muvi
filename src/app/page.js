@@ -1,11 +1,11 @@
 "use client";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
-import { message, Input, Button, Tag, Tabs, InputNumber, Space, Tooltip, Skeleton, Progress, Popover, Select } from 'antd';
+import { message, Input, Button, Tag, Tabs, InputNumber, Space, Tooltip, Skeleton, Progress, Popover, Select, Divider } from 'antd';
 import { StarTwoTone, StarOutlined, EyeOutlined, SearchOutlined, CheckOutlined, RiseOutlined, EditOutlined, CheckCircleTwoTone, QuestionCircleOutlined, CloseOutlined } from '@ant-design/icons';
 import { FaRegBookmark } from "react-icons/fa6";
 import Highlighter from 'react-highlight-words';
-import { genreCodes } from "../../genres.js"
+import { genreCodes, tabs } from "../../data.js"
 import MovieTable from "../../comps/MovieTable.js"
 import Card from "../../comps/Card.js"
 import Hero from "../../comps/Hero.js"
@@ -16,14 +16,8 @@ import { useMediaQuery } from 'react-responsive'
 const dayjs = require('dayjs')
 
 // --- NOTES --- 
-// hide poster button (will hide or show a column based on if true or not)
-// make title filter inline with column name
-// move tab bar to top? change color to dark blue
-// sort progress by percentage complete
-// have a guide for first time user that shows how upcoming works - set a const to true in localstorage if they have clicked it already (Tour comp)
 // find a way to update the data for your items as next episodes dont update localstorage dynamically
 // make view more, more stylish
-// sticky tab bar (make your own)
 // clear selection button for tables
 // feedback when no results for search
 // refresh button to upcoming
@@ -52,9 +46,6 @@ const dayjs = require('dayjs')
 // ability to share your watchlist with friends
 
 // export / import movie data
-// have a weekday for upcoming
-// add season to upcoming
-// fix upcoming dates
 // sync data between devices (firebase?) use this instead of localstorage perhaps. might need accounts then (maybe google accounts?)
 // allow audience rating sort (watchlist)
 // add a "times seen" column with plus and minuses
@@ -65,11 +56,18 @@ const dayjs = require('dayjs')
 // make components
 // make a view all details mode where it scrolls horizontally with all columns
 // change details to view imdb
+// genres filter
 
 // statistics tab
 // have average rating
 // have total watchtime
 // have totals of how many tv, animes, movies
+
+const Body = styled.div`
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+`;
 
 const Grid = styled.div`
   display: grid;
@@ -85,10 +83,11 @@ const Footer = styled.div`
   justify-content: center;
   align-items: center;
   position: relative;
-  bottom: -10px;
   background: #fafafa;
   font-size: 10pt;
   width:100%;
+  position: relative;
+  bottom: 0;
 `;
 
 const Block = styled.div`
@@ -103,6 +102,43 @@ const Block = styled.div`
   background: #fafafa;
   border-radius: 5px;
 `;
+
+const Tabbar = styled.div`
+  background: #001529;
+  color: #bbc0c4;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 60px;
+  font-size: 11pt;
+  border-bottom: 2px solid #001529;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 100;
+`;
+
+const Tab = styled.div`
+  padding:0px 10px;
+  display: flex;
+  height:60px;
+  align-items: center;
+  cursor:pointer;
+
+  ${({ active }) => active &&
+    `
+    border-bottom: 2px solid white;
+    opacity: 1;
+    color:white;
+  `}
+  &:hover{
+    color:white;
+  }
+  > * {
+    margin:5px;
+  }
+`;
+
 
 
 export default function Home() {
@@ -133,7 +169,9 @@ export default function Home() {
   const [ratingValue, setRatingValue] = useState(null);
   const isWide = useMediaQuery({ query: '(max-width: 1300px)' })
   const isVeryWide = useMediaQuery({ query: '(max-width: 1600px)' })
+  const [active, setActive] = useState(0);
 
+  console.log(active)
 
   // console.log("MEDIA", media)
   // console.log("SEEN", seen)
@@ -395,6 +433,7 @@ export default function Home() {
 
   const refreshUpdate = () => {
     // if the current release date is less than todays, check for next episode
+    // instead of todays date, it needs to be last checked date.
     let tv = upcoming.filter((o) => o.media_type === "tv" && new Date(o.upcoming_release) < new Date())
     tv.forEach((item) => {
       let details = []
@@ -409,7 +448,7 @@ export default function Home() {
       getDetails()
     })
     if (tv.length === 0) {
-      console.log("none need updating")
+      console.log("no updates made")
     }
     onMessage("Refreshed List", "success")
   }
@@ -456,12 +495,10 @@ export default function Home() {
       // get shows whcih are coming out starting from the last week -> future
       setUpcoming(localMedia.filter((o) => new Date(o.upcoming_release) > new Date(new Date().setDate(new Date().getDate() - 7))));
     }
-    // console.log("RUNNING USEEFFECT")
     // fetch top movies
     async function fetchData() {
       const response = await fetch("https://api.themoviedb.org/3/trending/all/day?language=en-US", options);
       const json = await response.json();
-      console.log(json)
       let temp = json.results
       temp.forEach((item, index) => {
         item.key = index + 1;
@@ -560,13 +597,14 @@ export default function Home() {
     title: 'Audience Rating',
     // dataIndex: 'data.details.vote_average',
     // sorter: (a, b) => a.data.details.vote_average - b.data.details.vote_average,
-    render: (data) => <>
-      <StarTwoTone twoToneColor="#fadb14" />
-      <> </>
-      <Tooltip title={data.details.vote_count + " Ratings"}>
-        {Number.parseFloat(data.details.vote_average).toFixed(1)}
-      </Tooltip>
-    </>
+    render: (data) =>
+      <>
+        <StarTwoTone twoToneColor="#fadb14" />
+        <> </>
+        <Tooltip title={data.details.vote_count + " Ratings"}>
+          {Number.parseFloat(data.details.vote_average).toFixed(1)}
+        </Tooltip>
+      </>
   }
 
   const view = {
@@ -581,7 +619,6 @@ export default function Home() {
 
   const type = {
     title: 'Type',
-    // dataIndex: 'media_type',
     filters: [
       {
         text: 'Movie',
@@ -597,7 +634,6 @@ export default function Home() {
       },
     ],
     onFilter: (value, record) => record.media_type.indexOf(value) === 0,
-    // render: (media_type) => media_type.charAt(0).toUpperCase() + media_type.slice(1)
     render: (data) => {
       let color = ""
       let text = ""
@@ -621,14 +657,17 @@ export default function Home() {
 
   const genres = {
     title: 'Genres',
+    filters: genreCodes,
+    onFilter: (value, record) => { console.log(record, "record"), record.genre.indexOf(value) === 0 },
+    // left off here ^^^
     render: (data) => {
       let nameArr = []
       let emojiArr = []
       data.details.genres.map((i) => {
         genreCodes.forEach(myFunction)
         function myFunction(i2) {
-          if (i.id === i2.id) {
-            nameArr.push(i2.name)
+          if (i.id === i2.value) {
+            nameArr.push(i2.text)
             emojiArr.push(i2.emoji)
           }
         }
@@ -806,6 +845,16 @@ export default function Home() {
     }
   }
 
+  const times_seen = {
+    title: 'Times Seen',
+    dataIndex: 'times_seen',
+    defaultSortOrder: 'descend',
+    sorter: (a, b) => new Date(b.times_seen) - new Date(a.times_seen),
+    render: (times_seen) => {
+      return { times_seen }
+    }
+  }
+
   const seenColumns = [
     poster,
     title,
@@ -816,7 +865,8 @@ export default function Home() {
     type,
     genres,
     progress,
-    view
+    // times_seen,
+    view,
   ];
 
   const watchlistColumns = [
@@ -839,85 +889,54 @@ export default function Home() {
     genres,
   ];
 
-  // --------- tabs ----------------------------------------------------------------------
-  const tabItems = [
-    {
-      key: '1',
-      label: (
-        <span style={{ display: "flex", alignItems: "center" }}>
-          <CheckOutlined style={{ marginRight: "7px" }} />
-          <div>Seen</div>
-        </span>
-      ),
-      children: <MovieTable
-        pagination={{ position: ["bottomCenter"], showSizeChanger: true, }}
-        header={seen.length + " Items"}
-        onRemove={() => onRemove("seen", 1)}
-        onMove={() => onMove("watchlist")}
-        disableButtons={disableButtons}
-        movieColumns={seenColumns}
-        movies={seen.reverse()}
-        rowSelection={rowSelection}
-        showMove={true}
-        moveKeyword={"Watchlist"}
-        showRemove={true}
-      />,
-    },
-    {
-      key: '2',
-      label: (
-        <span style={{ display: "flex", alignItems: "center" }}>
-          <FaRegBookmark />
-          <div style={{ marginLeft: "6px" }}>Watchlist</div>
-        </span>
-      ),
-      children: <MovieTable
-        pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
-        header={watchlist.length + " Items"}
-        onRemove={() => onRemove("watchlist", 1)}
-        onMove={() => onMove("seen")}
-        disableButtons={disableButtons}
-        movieColumns={watchlistColumns}
-        movies={watchlist.reverse()}
-        rowSelection={rowSelection}
-        showMove={true}
-        moveKeyword={"Seen"}
-        showRemove={true}
-      />,
-    },
-    {
-      key: '3',
-      label: (
-        <span style={{ display: "flex", alignItems: "center" }}>
-          <RiseOutlined />
-          <div>Upcoming</div>
-        </span>
-      ),
-      children:
-        <div>
-          {/* sort by this for movie (new Date(o.release_date) > new Date()) */}
-          {/* for tv: details.next_episode_to_air !== null */}
-          <MovieTable
-            showRefresh
-            onRefresh={() => {
-              refreshUpdate();
-            }}
-            pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
-            header={
-              <div style={{ display: "flex", alignItems: "center" }}>
-                <div>Your Upcoming Shows</div>
-                <Popover trigger="click" content={"Generated from items you have added to your Seen & Watchlists. Displays items which are coming out soon."} >
-                  <QuestionCircleOutlined style={{ fontSize: "13px", color: "grey", margin: "6px 0px 0px 10px" }} />
-                </Popover>
-              </div>
-            }
-            disableButtons={disableButtons}
-            movieColumns={upcomingColumns}
-            movies={upcoming}
-            rowSelection={false}
-          />
+  return (
+    <Body>
+      {contextHolder}
 
-          <h2 style={{ marginTop: "100px" }}>Trending Shows</h2>
+      <Tabbar>
+        {tabs.map(o => (
+          <Tab
+            key={o.id}
+            active={active === o.id}
+            onClick={() => setActive(o.id)}
+          >
+            {o.icon}
+            {o.name}
+          </Tab>
+        ))}
+      </Tabbar>
+
+
+      <div style={isWide ? { margin: "0px 50px", flex:1 } : isVeryWide ? { margin: "0px 10vw", flex:1 } : { margin: "0px 15vw", flex:1 }}>
+        {active === 0 ? <div>
+          <Hero
+            onSearch={onSearch}
+            clearSearch={clearSearch}
+            disableClear={disableClear}
+          />
+          <br />
+          {search ?
+            <>
+              <Grid>
+                {search.map((o) =>
+                  <Card
+                    key={o.id}
+                    addToSeen={() => onAdd(o, 1, "seen")}
+                    addToWatchlist={() => onAdd(o, 1, "watchlist")}
+                    title={o.media_type === "movie" ? o.title : o.name}
+                    src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
+                    alt={o.id}
+                    height={300}
+                    width={200}
+                    url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
+                  />
+                )}
+              </Grid>
+              <Divider />
+            </> : <></>}
+          
+
+          <h2 style={{}}>Trending Shows</h2>
           <Grid>
             {trending.slice(0, 10).map((o) =>
               <Card
@@ -933,6 +952,7 @@ export default function Home() {
               />
             )}
           </Grid>
+
           <div style={{ marginTop: "10px", display: "flex", justifyContent: "center", flexDirection: "column" }}>
             {/* <div style={{width:"100%", borderBottom:"1px solid #e0e0e0"}}></div> */}
             {viewMoreTrending === false ? <Button style={{ marginTop: "10px" }} type="primary" onClick={() => setViewMoreTrending(true)}>Load More</Button> : null}
@@ -955,78 +975,71 @@ export default function Home() {
           <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
             {viewMoreTrending === true ? <Button style={{ marginTop: "10px" }} type="primary" onClick={() => setViewMoreTrending(false)}>Load Less</Button> : null}
           </div>
-        </div >
-    },
-  ];
+        </div>
+          : <></>}
+        {active === 1 ?
+          <MovieTable
+            pagination={{ position: ["bottomCenter"], showSizeChanger: true, }}
+            header={"Seen | " + seen.length + " Items"}
+            onRemove={() => onRemove("seen", 1)}
+            onMove={() => onMove("watchlist")}
+            disableButtons={disableButtons}
+            movieColumns={seenColumns}
+            movies={seen.reverse()}
+            rowSelection={rowSelection}
+            showMove={true}
+            moveKeyword={"Watchlist"}
+            showRemove={true}
+          />
+          : <></>}
+        {active === 2 ?
+          <MovieTable
+            pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
+            header={"Watchlist | " + watchlist.length + " Items"}
+            onRemove={() => onRemove("watchlist", 1)}
+            onMove={() => onMove("seen")}
+            disableButtons={disableButtons}
+            movieColumns={watchlistColumns}
+            movies={watchlist.reverse()}
+            rowSelection={rowSelection}
+            showMove={true}
+            moveKeyword={"Seen"}
+            showRemove={true}
+          />
+          : <></>}
+        {active === 3 ?
+          <div>
+            {/* sort by this for movie (new Date(o.release_date) > new Date()) */}
+            {/* for tv: details.next_episode_to_air !== null */}
+            <MovieTable
+              showRefresh
+              onRefresh={() => {
+                refreshUpdate();
+              }}
+              pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
+              header={
+                <div style={{ display: "flex", alignItems: "center" }}>
+                  <div>Your Upcoming Shows</div>
+                  <Popover trigger="click" content={"Generated from items you have added to your Seen & Watchlists. Displays items which are coming out soon."} >
+                    <QuestionCircleOutlined style={{ fontSize: "13px", color: "grey", margin: "6px 0px 0px 10px" }} />
+                  </Popover>
+                </div>
+              }
+              disableButtons={disableButtons}
+              movieColumns={upcomingColumns}
+              movies={upcoming}
+              rowSelection={false}
+            />
+          </div >
+          : <></>}
 
-  return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
-      {contextHolder}
-      {/* <Header
-        onDownload={() => { console.log(JSON.parse(localStorage.getItem('media'))) }}
-        onLogo={() => {
-          window.scrollTo({
-            top: 0,
-            left: 0,
-            behavior: 'smooth'
-          });
-        }}
-      /> */}
-      <div style={isWide ? { margin: "0px 50px" } : isVeryWide ? { margin: "0px 10vw" } : { margin: "0px 15vw" }}>
-        <Hero
-          onSearch={onSearch}
-          clearSearch={clearSearch}
-          disableClear={disableClear}
-        />
-        <br />
-        {search ?
-          <>
-            <Grid>
-              {search.slice(0, 5).map((o) =>
-                <Card
-                  key={o.id}
-                  addToSeen={() => onAdd(o, 1, "seen")}
-                  addToWatchlist={() => onAdd(o, 1, "watchlist")}
-                  title={o.media_type === "movie" ? o.title : o.name}
-                  src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
-                  alt={o.id}
-                  height={300}
-                  width={200}
-                  url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
-                />
-              )}
-            </Grid>
-            <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
-              {viewMoreSearch === false && disableClear === false ? <Button type="primary" style={{ marginTop: "10px" }} onClick={() => setViewMoreSearch(true)}>Load More</Button> : null}
-            </div>
-            <Grid>
-              {viewMoreSearch ? search.slice(5).map((o) =>
-                <Card
-                  key={o.id}
-                  addToSeen={() => onAdd(o, 1, "seen")}
-                  addToWatchlist={() => onAdd(o, 1, "watchlist")}
-                  title={o.media_type === "movie" ? o.title : o.name}
-                  src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
-                  alt={o.id}
-                  height={300}
-                  width={200}
-                  url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
-                />)
-                : null}
-            </Grid>
-            <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
-              {viewMoreSearch === true && disableClear === false ? <Button style={{ marginTop: "10px" }} type="primary" onClick={() => setViewMoreSearch(false)}>Load Less</Button> : null}
-            </div>
-          </> : null}
-        <br />
-        <br />
-        <Tabs rootClassName="tabClass" defaultActiveKey="1" items={tabItems} size={"large"} centered />
+
       </div>
 
       <Footer>
         <>JOSREN ©2023 | Created using data from</>
         <Image unoptimized height="20" width="66" quality="75" src={"tmdb.svg"} alt={"tmdb"} style={{ marginLeft: "7px" }} />
       </Footer>
-    </div >
+    </Body >
   );
 }
