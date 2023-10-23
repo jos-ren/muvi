@@ -4,7 +4,7 @@ import { Table, Button } from 'antd';
 import { DeleteOutlined, SwapOutlined, ReloadOutlined } from '@ant-design/icons';
 
 const Container = styled.div`
-    margin-top:50px;
+    margin-top:125px;
 `;
 
 const MovieTable = ({ header, onRemove, disableButtons, movieColumns, movies, rowSelection, onChange, showRemove = false, showMove = false, showRefresh = false, onRefresh, pagination, moveKeyword, onMove, }) => {

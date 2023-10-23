@@ -18,7 +18,6 @@ const dayjs = require('dayjs')
 // --- NOTES --- 
 // find a way to update the data for your items as next episodes dont update localstorage dynamically
 // make view more, more stylish
-// sticky tab bar (make your own)
 // clear selection button for tables
 // feedback when no results for search
 // refresh button to upcoming
@@ -64,6 +63,12 @@ const dayjs = require('dayjs')
 // have total watchtime
 // have totals of how many tv, animes, movies
 
+const Body = styled.div`
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+`;
+
 const Grid = styled.div`
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -78,10 +83,11 @@ const Footer = styled.div`
   justify-content: center;
   align-items: center;
   position: relative;
-  bottom: -10px;
   background: #fafafa;
   font-size: 10pt;
   width:100%;
+  position: relative;
+  bottom: 0;
 `;
 
 const Block = styled.div`
@@ -105,8 +111,11 @@ const Tabbar = styled.div`
   align-items: center;
   height: 60px;
   font-size: 11pt;
-  width: 100%;
   border-bottom: 2px solid #001529;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 100;
 `;
 
 const Tab = styled.div`
@@ -116,8 +125,7 @@ const Tab = styled.div`
   align-items: center;
   cursor:pointer;
 
-  ${({ active }) =>
-    active &&
+  ${({ active }) => active &&
     `
     border-bottom: 2px solid white;
     opacity: 1;
@@ -881,43 +889,8 @@ export default function Home() {
     genres,
   ];
 
-  // --------- tabs ----------------------------------------------------------------------
-  const tabItems = [
-    {
-      key: '1',
-      label: (
-        <span style={{ display: "flex", alignItems: "center" }}>
-          <CheckOutlined style={{ marginRight: "7px" }} />
-          <div>Seen</div>
-        </span>
-      ),
-      children: <></>,
-    },
-    {
-      key: '2',
-      label: (
-        <span style={{ display: "flex", alignItems: "center" }}>
-          <FaRegBookmark />
-          <div style={{ marginLeft: "6px" }}>Watchlist</div>
-        </span>
-      ),
-      children: <></>,
-    },
-    {
-      key: '3',
-      label: (
-        <span style={{ display: "flex", alignItems: "center" }}>
-          <RiseOutlined />
-          <div>Upcoming</div>
-        </span>
-      ),
-      children: <></>
-
-    },
-  ];
-
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
+    <Body>
       {contextHolder}
 
       <Tabbar>
@@ -934,7 +907,7 @@ export default function Home() {
       </Tabbar>
 
 
-      <div style={isWide ? { margin: "0px 50px" } : isVeryWide ? { margin: "0px 10vw" } : { margin: "0px 15vw" }}>
+      <div style={isWide ? { margin: "0px 50px", flex:1 } : isVeryWide ? { margin: "0px 10vw", flex:1 } : { margin: "0px 15vw", flex:1 }}>
         {active === 0 ? <div>
           <Hero
             onSearch={onSearch}
@@ -1007,7 +980,7 @@ export default function Home() {
         {active === 1 ?
           <MovieTable
             pagination={{ position: ["bottomCenter"], showSizeChanger: true, }}
-            header={seen.length + " Items"}
+            header={"Seen | " + seen.length + " Items"}
             onRemove={() => onRemove("seen", 1)}
             onMove={() => onMove("watchlist")}
             disableButtons={disableButtons}
@@ -1022,7 +995,7 @@ export default function Home() {
         {active === 2 ?
           <MovieTable
             pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
-            header={watchlist.length + " Items"}
+            header={"Watchlist | " + watchlist.length + " Items"}
             onRemove={() => onRemove("watchlist", 1)}
             onMove={() => onMove("seen")}
             disableButtons={disableButtons}
@@ -1067,6 +1040,6 @@ export default function Home() {
         <>JOSREN ©2023 | Created using data from</>
         <Image unoptimized height="20" width="66" quality="75" src={"tmdb.svg"} alt={"tmdb"} style={{ marginLeft: "7px" }} />
       </Footer>
-    </div >
+    </Body >
   );
 }
