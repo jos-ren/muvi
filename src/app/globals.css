@@ -1,20 +1,13 @@
-/* .ant-tabs-nav {
-    background: #022946;
-    color: white;
-    position: absolute;
-    right: 100px;
-    width:calc(100% + 200px)
+@font-face {
+  font-family: 'Antebas';
+  src: url('/antebas-bold.otf');
 }
 
-.ant-tabs-tab-active {
-    color: aqua ;
-} */
+@font-face {
+  font-family: 'Atyp';
+  src: url('/AtypDisplay-Semibold.ttf');
+}
 
-@font-face {
-    font-family: 'Antebas';
-    src: url('/antebas-bold.otf');
-  }
-@font-face {
-    font-family: 'Atyp';
-    src: url('/AtypDisplay-Semibold.ttf');
-  }
+body {
+  margin: 0px;
+}

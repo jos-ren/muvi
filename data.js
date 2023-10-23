@@ -1,3 +1,6 @@
+import { SearchOutlined, CheckOutlined, RiseOutlined } from '@ant-design/icons';
+import { FaRegBookmark } from "react-icons/fa6";
+
 export const genreCodes = [
     {
         "value": 28,
@@ -133,5 +136,28 @@ export const genreCodes = [
         "value": 10752,
         "text": "War",
         "emoji": "💣"
+    },
+]
+
+export const tabs = [
+    {
+        id:0,
+        name: "Search",
+        icon: <SearchOutlined />
+    },
+    {
+        id:1,
+        name: "Seen",
+        icon: <CheckOutlined />
+    },
+    {
+        id:2,
+        name: "Watchlist",
+        icon: <RiseOutlined />
+    },
+    {
+        id:3,
+        name: "Upcoming",
+        icon: <FaRegBookmark />
     },
 ]
