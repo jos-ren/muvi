@@ -4,10 +4,12 @@
 }
 
 @font-face {
-  font-family: 'Atyp';
-  src: url('/AtypDisplay-Semibold.ttf');
+  font-family: 'Int';
+  src: url('/Inter.ttf');
 }
+
 
 body {
   margin: 0px;
+  font-family: 'Int';
 }
