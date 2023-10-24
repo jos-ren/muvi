@@ -1,17 +1,11 @@
 import React from 'react';
-import styled from "styled-components";
-import Image from "next/image";
 import { Button, Input } from 'antd';
 const { Search } = Input;
-import { StarTwoTone, StarOutlined, EyeOutlined, SearchOutlined, CheckOutlined, RiseOutlined, EditOutlined, CheckCircleTwoTone } from '@ant-design/icons';
-import { FaRegBookmark } from "react-icons/fa6";
+
 const Hero = ({ onSearch, clearSearch, disableClear }) => {
     return (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop:"50px" }}>
-            <div style={{ height: "50px" }}></div>
-            <div style={{ 
-                // maxWidth: "65vw" 
-        }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop:"100px" }}>
+            <div>
                 <h1 style={{ fontFamily: "Antebas", fontSize: "70pt", textAlign: "center" }}>Track your Favorite Shows with Ease</h1>
             </div>
             <div style={{ position: "relative", top: "-45px", fontWeight: "400", fontSize: "14pt", color: "grey" }}>

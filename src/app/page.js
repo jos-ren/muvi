@@ -9,11 +9,11 @@ import { genreCodes, tabs } from "../../data.js"
 import MovieTable from "../../comps/MovieTable.js"
 import Card from "../../comps/Card.js"
 import Hero from "../../comps/Hero.js"
-import Header from "../../comps/Header.js"
 import { getTodaysDate, checkType } from "../../functions.js"
 import styled from "styled-components";
 import { useMediaQuery } from 'react-responsive'
 const dayjs = require('dayjs')
+import Link from 'next/link'
 
 // --- NOTES --- 
 // find a way to update the data for your items as next episodes dont update localstorage dynamically
@@ -26,11 +26,8 @@ const dayjs = require('dayjs')
 // in the future have a view button to expand and see all the details of the show. possibly a new page or maybe just accordian
 // columns, tabs, and functions should each be in their own files
 // make progress look better displaying
-// header
 // hide edit button unless hoivered
-// move tabs to header
 // hide hero when search.
-// move search into header too
 // maybe add the acordian to see more details in taABle
 // download button for data
 // upload button for restoring data
@@ -46,7 +43,6 @@ const dayjs = require('dayjs')
 // ability to share your watchlist with friends
 
 // export / import movie data
-// sync data between devices (firebase?) use this instead of localstorage perhaps. might need accounts then (maybe google accounts?)
 // allow audience rating sort (watchlist)
 // add a "times seen" column with plus and minuses
 // if on mobile display:"please use on a device with bigger display (ipad, or computer)"
@@ -55,13 +51,6 @@ const dayjs = require('dayjs')
 // use (redux) to organize your calls / functions outside of this main page
 // make components
 // make a view all details mode where it scrolls horizontally with all columns
-// change details to view imdb
-// genres filter
-
-// statistics tab
-// have average rating
-// have total watchtime
-// have totals of how many tv, animes, movies
 
 const Body = styled.div`
   display: flex;
@@ -77,9 +66,9 @@ const Grid = styled.div`
 `;
 
 const Footer = styled.div`
-  margin-top: 75px;
+  margin-top: 60px;
   display: flex;
-  height: 75px;
+  height: 60px;
   justify-content: center;
   align-items: center;
   position: relative;
@@ -87,7 +76,7 @@ const Footer = styled.div`
   font-size: 10pt;
   width:100%;
   position: relative;
-  bottom: 0;
+  bottom: 0px;
 `;
 
 const Block = styled.div`
@@ -171,8 +160,8 @@ export default function Home() {
   const isVeryWide = useMediaQuery({ query: '(max-width: 1600px)' })
   const [active, setActive] = useState(0);
 
-  console.log(active)
 
+  // console.log(active)
   // console.log("MEDIA", media)
   // console.log("SEEN", seen)
   // console.log("WATCHLIST", watchlist)
@@ -278,6 +267,7 @@ export default function Home() {
     messageApi.open({
       type: type,
       content: message,
+      className: "message"
     });
   };
 
@@ -478,6 +468,15 @@ export default function Home() {
     setDisableButtons(true);
   };
 
+  const filterGenres = (value, record) => {
+    for (let i = 0; i < record.details.genres.length; i++) {
+      if (record.details.genres[i].id === value) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   const options = {
     method: "GET",
     headers: {
@@ -658,8 +657,7 @@ export default function Home() {
   const genres = {
     title: 'Genres',
     filters: genreCodes,
-    onFilter: (value, record) => { console.log(record, "record"), record.genre.indexOf(value) === 0 },
-    // left off here ^^^
+    onFilter: (value, record) => filterGenres(value, record),
     render: (data) => {
       let nameArr = []
       let emojiArr = []
@@ -898,7 +896,7 @@ export default function Home() {
           <Tab
             key={o.id}
             active={active === o.id}
-            onClick={() => setActive(o.id)}
+            onClick={() => { setActive(o.id) }}
           >
             {o.icon}
             {o.name}
@@ -906,8 +904,7 @@ export default function Home() {
         ))}
       </Tabbar>
 
-
-      <div style={isWide ? { margin: "0px 50px", flex:1 } : isVeryWide ? { margin: "0px 10vw", flex:1 } : { margin: "0px 15vw", flex:1 }}>
+      <div style={isWide ? { margin: "0px 50px", flex: 1 } : isVeryWide ? { margin: "0px 10vw", flex: 1 } : { margin: "0px 15vw", flex: 1 }}>
         {active === 0 ? <div>
           <Hero
             onSearch={onSearch}
@@ -934,7 +931,7 @@ export default function Home() {
               </Grid>
               <Divider />
             </> : <></>}
-          
+
 
           <h2 style={{}}>Trending Shows</h2>
           <Grid>
@@ -953,8 +950,7 @@ export default function Home() {
             )}
           </Grid>
 
-          <div style={{ marginTop: "10px", display: "flex", justifyContent: "center", flexDirection: "column" }}>
-            {/* <div style={{width:"100%", borderBottom:"1px solid #e0e0e0"}}></div> */}
+          <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
             {viewMoreTrending === false ? <Button style={{ marginTop: "10px" }} type="primary" onClick={() => setViewMoreTrending(true)}>Load More</Button> : null}
           </div>
           <Grid>
@@ -1030,6 +1026,11 @@ export default function Home() {
               movies={upcoming}
               rowSelection={false}
             />
+          </div >
+          : <></>}
+        {active === 4 ?
+          <div style={{}}>
+            Stats
           </div >
           : <></>}
 

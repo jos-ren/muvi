@@ -11,5 +11,14 @@
 
 body {
   margin: 0px;
-  font-family: 'Int';
+  font-family:'Int';
+  /* padding-top:60px; */
+}
+
+.message{
+  /* display: flex; */
+  /* justify-content: end; */
+  position:relative;
+  top:60px;
+  /* border: 1px solid red; */
 }
