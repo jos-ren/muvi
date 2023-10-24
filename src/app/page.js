@@ -477,6 +477,19 @@ export default function Home() {
     return false;
   };
 
+  const filterType = (value, record) => {
+    console.log(value, record)
+    if (value === "anime"){
+      if(record.is_anime === true){
+        return true
+      }
+    }
+    if(value === record.media_type && record.is_anime === false){
+      return true
+    }
+    return false;
+  };
+
   const options = {
     method: "GET",
     headers: {
@@ -632,7 +645,7 @@ export default function Home() {
         value: 'anime',
       },
     ],
-    onFilter: (value, record) => record.media_type.indexOf(value) === 0,
+    onFilter: (value, record) => filterType(value, record),
     render: (data) => {
       let color = ""
       let text = ""
