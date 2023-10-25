@@ -12,8 +12,29 @@ import Hero from "../../comps/Hero.js"
 import { getTodaysDate, checkType } from "../../functions.js"
 import styled from "styled-components";
 import { useMediaQuery } from 'react-responsive'
+
 const dayjs = require('dayjs')
-import Link from 'next/link'
+
+// import firebase from 'firebase/compat/app';
+// import * as firebaseui from 'firebaseui'
+// import 'firebaseui/dist/firebaseui.css'
+
+// import { initializeApp } from "firebase/app";
+// import { getAnalytics } from "firebase/analytics";
+
+// const firebaseConfig = {
+//   apiKey: "AIzaSyBp941xwMHijzUbeF2InHGnUTd7eEoTKaE",
+//   authDomain: "muvi-9fce0.firebaseapp.com",
+//   projectId: "muvi-9fce0",
+//   storageBucket: "muvi-9fce0.appspot.com",
+//   messagingSenderId: "378829729747",
+//   appId: "1:378829729747:web:9a89da8b3e075ce8394926",
+//   measurementId: "G-B6E6DMB770"
+// };
+
+
+// const app = initializeApp(firebaseConfig);
+// const analytics = getAnalytics(app);
 
 // --- NOTES --- 
 // find a way to update the data for your items as next episodes dont update localstorage dynamically
@@ -65,19 +86,6 @@ const Grid = styled.div`
   grid-row-gap: 10px;
 `;
 
-const Footer = styled.div`
-  margin-top: 60px;
-  display: flex;
-  height: 60px;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-  background: #fafafa;
-  font-size: 10pt;
-  width:100%;
-  position: relative;
-  bottom: 0px;
-`;
 
 const Block = styled.div`
   margin-right: 3px;
@@ -91,44 +99,6 @@ const Block = styled.div`
   background: #fafafa;
   border-radius: 5px;
 `;
-
-const Tabbar = styled.div`
-  background: #001529;
-  color: #bbc0c4;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 60px;
-  font-size: 11pt;
-  border-bottom: 2px solid #001529;
-  position: fixed;
-  top: 0;
-  width: 100%;
-  z-index: 100;
-`;
-
-const Tab = styled.div`
-  padding:0px 10px;
-  display: flex;
-  height:60px;
-  align-items: center;
-  cursor:pointer;
-
-  ${({ active }) => active &&
-    `
-    border-bottom: 2px solid white;
-    opacity: 1;
-    color:white;
-  `}
-  &:hover{
-    color:white;
-  }
-  > * {
-    margin:5px;
-  }
-`;
-
-
 
 export default function Home() {
   const fetch = require("node-fetch");
@@ -479,12 +449,12 @@ export default function Home() {
 
   const filterType = (value, record) => {
     console.log(value, record)
-    if (value === "anime"){
-      if(record.is_anime === true){
+    if (value === "anime") {
+      if (record.is_anime === true) {
         return true
       }
     }
-    if(value === record.media_type && record.is_anime === false){
+    if (value === record.media_type && record.is_anime === false) {
       return true
     }
     return false;
@@ -903,157 +873,70 @@ export default function Home() {
   return (
     <Body>
       {contextHolder}
-
-      <Tabbar>
-        {tabs.map(o => (
-          <Tab
-            key={o.id}
-            active={active === o.id}
-            onClick={() => { setActive(o.id) }}
-          >
-            {o.icon}
-            {o.name}
-          </Tab>
-        ))}
-      </Tabbar>
-
       <div style={isWide ? { margin: "0px 50px", flex: 1 } : isVeryWide ? { margin: "0px 10vw", flex: 1 } : { margin: "0px 15vw", flex: 1 }}>
-        {active === 0 ? <div>
-          <Hero
-            onSearch={onSearch}
-            clearSearch={clearSearch}
-            disableClear={disableClear}
-          />
-          <br />
-          {search ?
-            <>
-              <Grid>
-                {search.map((o) =>
-                  <Card
-                    key={o.id}
-                    addToSeen={() => onAdd(o, 1, "seen")}
-                    addToWatchlist={() => onAdd(o, 1, "watchlist")}
-                    title={o.media_type === "movie" ? o.title : o.name}
-                    src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
-                    alt={o.id}
-                    height={300}
-                    width={200}
-                    url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
-                  />
-                )}
-              </Grid>
-              <Divider />
-            </> : <></>}
-
-
-          <h2 style={{}}>Trending Shows</h2>
-          <Grid>
-            {trending.slice(0, 10).map((o) =>
-              <Card
-                key={o.id}
-                addToSeen={() => onAdd(o, 1, "seen")}
-                addToWatchlist={() => onAdd(o, 1, "watchlist")}
-                title={o.media_type === "movie" ? o.title : o.name}
-                src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
-                alt={o.id}
-                height={300}
-                width={200}
-                url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
-              />
-            )}
-          </Grid>
-
-          <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
-            {viewMoreTrending === false ? <Button style={{ marginTop: "10px" }} type="primary" onClick={() => setViewMoreTrending(true)}>Load More</Button> : null}
-          </div>
-          <Grid>
-            {viewMoreTrending ? trending.slice(10).map((o) =>
-              <Card
-                key={o.id}
-                addToSeen={() => onAdd(o, 1, "seen")}
-                addToWatchlist={() => onAdd(o, 1, "watchlist")}
-                title={o.media_type === "movie" ? o.title : o.name}
-                src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
-                alt={o.id}
-                height={300}
-                width={200}
-                url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
-              />)
-              : null}
-          </Grid>
-          <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
-            {viewMoreTrending === true ? <Button style={{ marginTop: "10px" }} type="primary" onClick={() => setViewMoreTrending(false)}>Load Less</Button> : null}
-          </div>
-        </div>
-          : <></>}
-        {active === 1 ?
-          <MovieTable
-            pagination={{ position: ["bottomCenter"], showSizeChanger: true, }}
-            header={"Seen | " + seen.length + " Items"}
-            onRemove={() => onRemove("seen", 1)}
-            onMove={() => onMove("watchlist")}
-            disableButtons={disableButtons}
-            movieColumns={seenColumns}
-            movies={seen.reverse()}
-            rowSelection={rowSelection}
-            showMove={true}
-            moveKeyword={"Watchlist"}
-            showRemove={true}
-          />
-          : <></>}
-        {active === 2 ?
-          <MovieTable
-            pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
-            header={"Watchlist | " + watchlist.length + " Items"}
-            onRemove={() => onRemove("watchlist", 1)}
-            onMove={() => onMove("seen")}
-            disableButtons={disableButtons}
-            movieColumns={watchlistColumns}
-            movies={watchlist.reverse()}
-            rowSelection={rowSelection}
-            showMove={true}
-            moveKeyword={"Seen"}
-            showRemove={true}
-          />
-          : <></>}
-        {active === 3 ?
-          <div>
-            {/* sort by this for movie (new Date(o.release_date) > new Date()) */}
-            {/* for tv: details.next_episode_to_air !== null */}
-            <MovieTable
-              showRefresh
-              onRefresh={() => {
-                refreshUpdate();
-              }}
-              pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
-              header={
-                <div style={{ display: "flex", alignItems: "center" }}>
-                  <div>Your Upcoming Shows</div>
-                  <Popover trigger="click" content={"Generated from items you have added to your Seen & Watchlists. Displays items which are coming out soon."} >
-                    <QuestionCircleOutlined style={{ fontSize: "13px", color: "grey", margin: "6px 0px 0px 10px" }} />
-                  </Popover>
-                </div>
-              }
-              disableButtons={disableButtons}
-              movieColumns={upcomingColumns}
-              movies={upcoming}
-              rowSelection={false}
+        <Hero
+          onSearch={onSearch}
+          clearSearch={clearSearch}
+          disableClear={disableClear}
+        />
+        <br />
+        {search ?
+          <>
+            <Grid>
+              {search.map((o) =>
+                <Card
+                  key={o.id}
+                  addToSeen={() => onAdd(o, 1, "seen")}
+                  addToWatchlist={() => onAdd(o, 1, "watchlist")}
+                  title={o.media_type === "movie" ? o.title : o.name}
+                  src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
+                  alt={o.id}
+                  height={300}
+                  width={200}
+                  url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
+                />
+              )}
+            </Grid>
+            <Divider />
+          </> : <></>}
+        <h2 style={{}}>Trending Shows</h2>
+        <Grid>
+          {trending.slice(0, 10).map((o) =>
+            <Card
+              key={o.id}
+              addToSeen={() => onAdd(o, 1, "seen")}
+              addToWatchlist={() => onAdd(o, 1, "watchlist")}
+              title={o.media_type === "movie" ? o.title : o.name}
+              src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
+              alt={o.id}
+              height={300}
+              width={200}
+              url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
             />
-          </div >
-          : <></>}
-        {active === 4 ?
-          <div style={{}}>
-            Stats
-          </div >
-          : <></>}
-
-
+          )}
+        </Grid>
+        <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
+          {viewMoreTrending === false ? <Button style={{ marginTop: "10px" }} type="primary" onClick={() => setViewMoreTrending(true)}>Load More</Button> : null}
+        </div>
+        <Grid>
+          {viewMoreTrending ? trending.slice(10).map((o) =>
+            <Card
+              key={o.id}
+              addToSeen={() => onAdd(o, 1, "seen")}
+              addToWatchlist={() => onAdd(o, 1, "watchlist")}
+              title={o.media_type === "movie" ? o.title : o.name}
+              src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
+              alt={o.id}
+              height={300}
+              width={200}
+              url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
+            />)
+            : null}
+        </Grid>
+        <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
+          {viewMoreTrending === true ? <Button style={{ marginTop: "10px" }} type="primary" onClick={() => setViewMoreTrending(false)}>Load Less</Button> : null}
+        </div>
       </div>
-
-      <Footer>
-        <>JOSREN ©2023 | Created using data from</>
-        <Image unoptimized height="20" width="66" quality="75" src={"tmdb.svg"} alt={"tmdb"} style={{ marginLeft: "7px" }} />
-      </Footer>
     </Body >
   );
 }
