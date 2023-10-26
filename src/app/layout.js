@@ -84,7 +84,9 @@ export default function RootLayout({ children }) {
             </Link>
           ))}
         </Tabbar>
+        <div style={{flex:"1"}}>
         {children}
+        </div>
         <Footer>
           <>JOSREN ©2023 | Created using data from</>
           <Image unoptimized height="20" width="66" quality="75" src={"tmdb.svg"} alt={"tmdb"} style={{ marginLeft: "7px" }} />
