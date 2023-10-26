@@ -12,6 +12,8 @@ import Hero from "../../comps/Hero.js"
 import { getTodaysDate, checkType } from "../../functions.js"
 import styled from "styled-components";
 import { useMediaQuery } from 'react-responsive'
+import Footer from "../../comps/Footer.js"
+import { poster, date_added, release_date, audience_rating, type, episode, upcoming_release, genres, view } from "../../columns.js"
 
 const dayjs = require('dayjs')
 
@@ -86,19 +88,40 @@ const Grid = styled.div`
   grid-row-gap: 10px;
 `;
 
-
-const Block = styled.div`
-  margin-right: 3px;
-  cursor: default;
-  border: 1px solid #d9d9d9;
-  height: 22px;
-  min-width: 22px; 
+const Tabbar = styled.div`
+  background: #001529;
+  color: #bbc0c4;
   display: flex;
-  align-items: center;
   justify-content: center;
-  background: #fafafa;
-  border-radius: 5px;
+  align-items: center;
+  height: 60px;
+  font-size: 11pt;
+  border-bottom: 2px solid #001529;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 100;
 `;
+
+const Tab = styled.div`
+  padding:0px 10px;
+  display: flex;
+  height:60px;
+  align-items: center;
+  cursor:pointer;
+  &:hover{
+    color:white;
+  }
+  > * {
+    margin:5px;
+  }
+    ${({ active }) => active &&
+    `
+    border-bottom: 2px solid white;
+    opacity: 1;
+    color:white;
+  `}
+  `
 
 export default function Home() {
   const fetch = require("node-fetch");
@@ -114,9 +137,11 @@ export default function Home() {
   const [loaded, setLoaded] = useState(true);
   const [page, setPage] = useState(1);
   const [messageApi, contextHolder] = message.useMessage();
+
   const [searchText, setSearchText] = useState('');
   const [searchedColumn, setSearchedColumn] = useState('');
   const searchInput = useRef(null);
+
   const [viewMoreSearch, setViewMoreSearch] = useState(false);
   const [viewMoreTrending, setViewMoreTrending] = useState(false);
   const [progressEditMode, setProgressEditMode] = useState();
@@ -131,7 +156,7 @@ export default function Home() {
   const [active, setActive] = useState(0);
 
 
-  // console.log(active)
+  console.log(active)
   // console.log("MEDIA", media)
   // console.log("SEEN", seen)
   // console.log("WATCHLIST", watchlist)
@@ -139,7 +164,6 @@ export default function Home() {
   // console.log("---")
 
   // --------------------------------- Functions -----------------------------------------------------------------------------------------
-
   const handleSearch = (selectedKeys, confirm, dataIndex) => {
     confirm();
     setSearchText(selectedKeys[0]);
@@ -226,6 +250,13 @@ export default function Home() {
       ),
   });
 
+  const title = {
+    title: 'Title',
+    dataIndex: 'title',
+    key: 'title',
+    ...getColumnSearchProps('title'),
+  }
+
   const rowSelection = {
     onChange: (selectedRowKeys, selectedRows) => {
       setSelected(selectedRowKeys)
@@ -254,10 +285,6 @@ export default function Home() {
     setSearch([])
     setDisableClear(true)
   };
-
-  // track tv shows that are currently airing
-  // movies that are coming out in the future on watchlist
-  // seperate by day of release
 
   const onAdd = async (o, method, lType, changes) => {
     // first check seen, then watchlist for the movie. ELSE add the movie
@@ -353,7 +380,6 @@ export default function Home() {
           }
         }
       }
-
     }
   };
 
@@ -438,28 +464,6 @@ export default function Home() {
     setDisableButtons(true);
   };
 
-  const filterGenres = (value, record) => {
-    for (let i = 0; i < record.details.genres.length; i++) {
-      if (record.details.genres[i].id === value) {
-        return true;
-      }
-    }
-    return false;
-  };
-
-  const filterType = (value, record) => {
-    console.log(value, record)
-    if (value === "anime") {
-      if (record.is_anime === true) {
-        return true
-      }
-    }
-    if (value === record.media_type && record.is_anime === false) {
-      return true
-    }
-    return false;
-  };
-
   const options = {
     method: "GET",
     headers: {
@@ -491,46 +495,6 @@ export default function Home() {
   }, []);
 
   // ------------ table columns ----------------------------------------------------------------------------------------------------------
-  const poster = {
-    title: 'Poster',
-    render: (data) => <Image
-      unoptimized
-      src={"https://image.tmdb.org/t/p/original/" + data.details.poster_path}
-      alt={data.title}
-      width={50}
-      height={75}
-      style={{ objectFit: "cover" }}
-    />
-  }
-
-  const title = {
-    title: 'Title',
-    dataIndex: 'title',
-    key: 'title',
-    ...getColumnSearchProps('title'),
-  }
-
-  const date_added = {
-    title: 'Date Added',
-    dataIndex: 'date_added',
-    // defaultSortOrder: 'ascend',
-    sorter: (a, b) => new Date(b.date_added) - new Date(a.date_added),
-    render: (date_added) => {
-      const date = new Date(date_added)
-      return <div>{date.toLocaleDateString('en-US', { dateStyle: "medium", })}</div>
-    }
-  }
-
-  const release_date = {
-    title: 'Release Date',
-    dataIndex: 'release_date',
-    // defaultSortOrder: 'descend',
-    sorter: (a, b) => new Date(b.release_date) - new Date(a.release_date),
-    render: (release_date) => {
-      const date = new Date(release_date)
-      return <div>{date.toLocaleDateString('en-US', { dateStyle: "medium", })}</div>
-    }
-  }
 
   const my_rating = {
     title: 'My Rating',
@@ -572,96 +536,6 @@ export default function Home() {
           </div>
         }
       </>
-    }
-  }
-
-  const audience_rating = {
-    title: 'Audience Rating',
-    // dataIndex: 'data.details.vote_average',
-    // sorter: (a, b) => a.data.details.vote_average - b.data.details.vote_average,
-    render: (data) =>
-      <>
-        <StarTwoTone twoToneColor="#fadb14" />
-        <> </>
-        <Tooltip title={data.details.vote_count + " Ratings"}>
-          {Number.parseFloat(data.details.vote_average).toFixed(1)}
-        </Tooltip>
-      </>
-  }
-
-  const view = {
-    title: 'Details',
-    // dataIndex: 'data.details.vote_average',
-    // sorter: (a, b) => a.data.details.vote_average - b.data.details.vote_average,
-    render: (data) => {
-      let link = data.media_type === "movie" ? "https://www.imdb.com/title/" + data.details.imdb_id : "https://www.themoviedb.org/tv/" + data.details.id
-      return <Button type="link" href={link} target="_blank">View</Button>
-    }
-  }
-
-  const type = {
-    title: 'Type',
-    filters: [
-      {
-        text: 'Movie',
-        value: 'movie',
-      },
-      {
-        text: 'TV',
-        value: 'tv',
-      },
-      {
-        text: 'Anime',
-        value: 'anime',
-      },
-    ],
-    onFilter: (value, record) => filterType(value, record),
-    render: (data) => {
-      let color = ""
-      let text = ""
-      if (data.is_anime === true && data.media_type !== "movie") {
-        color = "geekblue"
-        text = "anime"
-      } else if (data.media_type === "tv") {
-        color = "green"
-        text = "tv"
-      } else {
-        color = "volcano"
-        text = "movie"
-      }
-      return (
-        <Tag color={color}>
-          {text.toUpperCase()}
-        </Tag>
-      )
-    }
-  }
-
-  const genres = {
-    title: 'Genres',
-    filters: genreCodes,
-    onFilter: (value, record) => filterGenres(value, record),
-    render: (data) => {
-      let nameArr = []
-      let emojiArr = []
-      data.details.genres.map((i) => {
-        genreCodes.forEach(myFunction)
-        function myFunction(i2) {
-          if (i.id === i2.value) {
-            nameArr.push(i2.text)
-            emojiArr.push(i2.emoji)
-          }
-        }
-      })
-      return <div style={{ display: "flex" }}>
-        {nameArr.map((i, index) =>
-          <Block key={index}>
-            <Tooltip title={i}>
-              {emojiArr[index]}
-            </Tooltip>
-          </Block>
-        )}
-      </div>
     }
   }
 
@@ -783,56 +657,7 @@ export default function Home() {
             size="small" percent={percent}
           />
         </Tooltip>
-
       </>
-    }
-  }
-
-  const upcoming_release = {
-    title: 'Date',
-    dataIndex: 'upcoming_release',
-    defaultSortOrder: 'descend',
-    sorter: (a, b) => new Date(b.upcoming_release) - new Date(a.upcoming_release),
-    render: (upcoming_release) => {
-      return <div>{dayjs(upcoming_release).format('ddd D MMM YYYY')}</div >
-    }
-  }
-
-  const episode = {
-    title: 'Episode',
-    render: (data) => {
-      let text = ""
-      let episode = ""
-      let season = ""
-      if (data.details.next_episode_to_air !== undefined && data.details.next_episode_to_air !== null) {
-        season = data.details.next_episode_to_air.season_number
-        episode = data.details.next_episode_to_air.episode_number
-        text = data.details.next_episode_to_air.name
-      } else if (data.details.next_episode_to_air === null) {
-        season = data.details.last_episode_to_air.season_number
-        episode = data.details.last_episode_to_air.episode_number
-        text = data.details.last_episode_to_air.name
-      }
-      return <>
-        {
-          data.media_type === "movie" ? "" :
-            <div style={{ display: "flex" }}>
-              <Block style={{ padding: "0px 5px", fontSize: "9pt" }}>S : {season}</Block>
-              <Block style={{ padding: "0px 5px", fontSize: "9pt" }}>E : {episode}</Block>
-              <div style={{ marginLeft: "2px" }}>{text.slice(0, 7) === "Episode" ? "" : text}</div>
-            </div>
-        }
-      </>
-    }
-  }
-
-  const times_seen = {
-    title: 'Times Seen',
-    dataIndex: 'times_seen',
-    defaultSortOrder: 'descend',
-    sorter: (a, b) => new Date(b.times_seen) - new Date(a.times_seen),
-    render: (times_seen) => {
-      return { times_seen }
     }
   }
 
@@ -842,11 +667,9 @@ export default function Home() {
     release_date,
     date_added,
     my_rating,
-    // audience_rating,
     type,
     genres,
     progress,
-    // times_seen,
     view,
   ];
 
@@ -873,17 +696,50 @@ export default function Home() {
   return (
     <Body>
       {contextHolder}
+      <Tabbar>
+        {tabs.map(o => (
+          <Tab
+            onClick={() => setActive(o.id)}
+            key={o.id}
+          >
+            {o.icon}
+            {o.name}
+          </Tab>
+        ))}
+      </Tabbar>
       <div style={isWide ? { margin: "0px 50px", flex: 1 } : isVeryWide ? { margin: "0px 10vw", flex: 1 } : { margin: "0px 15vw", flex: 1 }}>
-        <Hero
-          onSearch={onSearch}
-          clearSearch={clearSearch}
-          disableClear={disableClear}
-        />
-        <br />
-        {search ?
+
+        {/* 0 */}
+        {active === 0 ?
           <>
+            <Hero
+              onSearch={onSearch}
+              clearSearch={clearSearch}
+              disableClear={disableClear}
+            />
+            <br />
+            {search ?
+              <>
+                <Grid>
+                  {search.map((o) =>
+                    <Card
+                      key={o.id}
+                      addToSeen={() => onAdd(o, 1, "seen")}
+                      addToWatchlist={() => onAdd(o, 1, "watchlist")}
+                      title={o.media_type === "movie" ? o.title : o.name}
+                      src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
+                      alt={o.id}
+                      height={300}
+                      width={200}
+                      url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
+                    />
+                  )}
+                </Grid>
+                <Divider />
+              </> : <></>}
+            <h2 style={{}}>Trending Shows</h2>
             <Grid>
-              {search.map((o) =>
+              {trending.slice(0, 10).map((o) =>
                 <Card
                   key={o.id}
                   addToSeen={() => onAdd(o, 1, "seen")}
@@ -897,46 +753,94 @@ export default function Home() {
                 />
               )}
             </Grid>
-            <Divider />
-          </> : <></>}
-        <h2 style={{}}>Trending Shows</h2>
-        <Grid>
-          {trending.slice(0, 10).map((o) =>
-            <Card
-              key={o.id}
-              addToSeen={() => onAdd(o, 1, "seen")}
-              addToWatchlist={() => onAdd(o, 1, "watchlist")}
-              title={o.media_type === "movie" ? o.title : o.name}
-              src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
-              alt={o.id}
-              height={300}
-              width={200}
-              url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
+            <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
+              {viewMoreTrending === false ? <Button style={{ marginTop: "10px" }} type="primary" onClick={() => setViewMoreTrending(true)}>Load More</Button> : null}
+            </div>
+            <Grid>
+              {viewMoreTrending ? trending.slice(10).map((o) =>
+                <Card
+                  key={o.id}
+                  addToSeen={() => onAdd(o, 1, "seen")}
+                  addToWatchlist={() => onAdd(o, 1, "watchlist")}
+                  title={o.media_type === "movie" ? o.title : o.name}
+                  src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
+                  alt={o.id}
+                  height={300}
+                  width={200}
+                  url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
+                />)
+                : null}
+            </Grid>
+            <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
+              {viewMoreTrending === true ? <Button style={{ marginTop: "10px" }} type="primary" onClick={() => setViewMoreTrending(false)}>Load Less</Button> : null}
+            </div>
+          </>
+          : <></>}
+
+        {active === 1 ?
+          <MovieTable
+            pagination={{ position: ["bottomCenter"], showSizeChanger: true, }}
+            header={"Seen | " + seen.length + " Items"}
+            onRemove={() => onRemove("seen", 1)}
+            onMove={() => onMove("watchlist")}
+            disableButtons={disableButtons}
+            movieColumns={seenColumns}
+            movies={seen.reverse()}
+            rowSelection={rowSelection}
+            showMove={true}
+            moveKeyword={"Watchlist"}
+            showRemove={true}
+          />
+          : <></>}
+
+        {active === 2 ?
+          <MovieTable
+            pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
+            header={"Watchlist | " + watchlist.length + " Items"}
+            onRemove={() => onRemove("watchlist", 1)}
+            onMove={() => onMove("seen")}
+            disableButtons={disableButtons}
+            movieColumns={watchlistColumns}
+            movies={watchlist.reverse()}
+            rowSelection={rowSelection}
+            showMove={true}
+            moveKeyword={"Seen"}
+            showRemove={true}
+          />
+          : <></>}
+        {active === 3 ?
+          <div>
+            {/* sort by this for movie (new Date(o.release_date) > new Date()) */}
+            {/* for tv: details.next_episode_to_air !== null */}
+            <MovieTable
+              showRefresh
+              onRefresh={() => {
+                refreshUpdate();
+              }}
+              pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
+              header={
+                <div style={{ display: "flex", alignItems: "center" }}>
+                  <div>Your Upcoming Shows</div>
+                  <Popover trigger="click" content={"Generated from items you have added to your Seen & Watchlists. Displays items which are coming out soon."} >
+                    <QuestionCircleOutlined style={{ fontSize: "13px", color: "grey", margin: "6px 0px 0px 10px" }} />
+                  </Popover>
+                </div>
+              }
+              disableButtons={disableButtons}
+              movieColumns={upcomingColumns}
+              movies={upcoming}
+              rowSelection={false}
             />
-          )}
-        </Grid>
-        <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
-          {viewMoreTrending === false ? <Button style={{ marginTop: "10px" }} type="primary" onClick={() => setViewMoreTrending(true)}>Load More</Button> : null}
-        </div>
-        <Grid>
-          {viewMoreTrending ? trending.slice(10).map((o) =>
-            <Card
-              key={o.id}
-              addToSeen={() => onAdd(o, 1, "seen")}
-              addToWatchlist={() => onAdd(o, 1, "watchlist")}
-              title={o.media_type === "movie" ? o.title : o.name}
-              src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
-              alt={o.id}
-              height={300}
-              width={200}
-              url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
-            />)
-            : null}
-        </Grid>
-        <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
-          {viewMoreTrending === true ? <Button style={{ marginTop: "10px" }} type="primary" onClick={() => setViewMoreTrending(false)}>Load Less</Button> : null}
-        </div>
+          </div >
+          : <></>}
+        {active === 4 ?
+          <div style={{ marginTop: "100px" }}>
+            Stats
+          </div >
+          : <></>}
       </div>
+      <Footer />
     </Body >
+
   );
 }
