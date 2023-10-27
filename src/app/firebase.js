@@ -4,14 +4,14 @@ import "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyBp941xwMHijzUbeF2InHGnUTd7eEoTKaE",
-    authDomain: "muvi-9fce0.firebaseapp.com",
-    databaseURL: "https://muvi-9fce0-default-rtdb.firebaseio.com",
-    projectId: "muvi-9fce0",
-    storageBucket: "muvi-9fce0.appspot.com",
-    messagingSenderId: "378829729747",
-    appId: "1:378829729747:web:9a89da8b3e075ce8394926",
-    measurementId: "G-B6E6DMB770"
+    apiKey: process.env.NEXT_PUBLIC_API_KEY,
+    authDomain: process.env.NEXT_PUBLIC_AUTH_DOMAIN,
+    databaseURL: process.env.NEXT_PUBLIC_DATABASE_URL,
+    projectId: process.env.NEXT_PUBLIC_PROJECT_ID,
+    storageBucket: process.env.NEXT_PUBLIC_STORAGE_BUCKET,
+    messagingSenderId: process.env.NEXT_PUBLIC_MESSAGING_SENDER_ID,
+    appId: process.env.NEXT_PUBLIC_APP_ID,
+    measurementId: process.env.NEXT_PUBLIC_MEASUREMENT_ID
 };
 
 export const firebaseApp = initializeApp(firebaseConfig);
