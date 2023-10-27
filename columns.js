@@ -1,10 +1,10 @@
 import Image from "next/image";
 // import {getColumnSearchProps} from "./src/app/page"
-import { StarTwoTone, StarOutlined, EyeOutlined, SearchOutlined, CheckOutlined, RiseOutlined, EditOutlined, CheckCircleTwoTone, QuestionCircleOutlined, CloseOutlined } from '@ant-design/icons';
-import { message, Input, Button, Tag, Tabs, InputNumber, Space, Tooltip, Skeleton, Progress, Popover, Select, Divider } from 'antd';
+import { StarTwoTone } from '@ant-design/icons';
+import { Button, Tag, Tooltip } from 'antd';
 const dayjs = require('dayjs')
 import styled from "styled-components";
-import { genreCodes, tabs } from "./data.js"
+import { genreCodes } from "./data.js"
 
 const Block = styled.div`
   margin-right: 3px;
@@ -70,15 +70,15 @@ export const audience_rating = {
 const filterType = (value, record) => {
     console.log(value, record)
     if (value === "anime") {
-      if (record.is_anime === true) {
-        return true
-      }
+        if (record.is_anime === true) {
+            return true
+        }
     }
     if (value === record.media_type && record.is_anime === false) {
-      return true
+        return true
     }
     return false;
-  };
+};
 
 export const type = {
     title: 'Type',
@@ -158,47 +158,47 @@ export const episode = {
 
 const filterGenres = (value, record) => {
     for (let i = 0; i < record.details.genres.length; i++) {
-      if (record.details.genres[i].id === value) {
-        return true;
-      }
+        if (record.details.genres[i].id === value) {
+            return true;
+        }
     }
     return false;
-  };
+};
 
 export const genres = {
     title: 'Genres',
     filters: genreCodes,
     onFilter: (value, record) => filterGenres(value, record),
     render: (data) => {
-      let nameArr = []
-      let emojiArr = []
-      data.details.genres.map((i) => {
-        genreCodes.forEach(myFunction)
-        function myFunction(i2) {
-          if (i.id === i2.value) {
-            nameArr.push(i2.text)
-            emojiArr.push(i2.emoji)
-          }
-        }
-      })
-      return <div style={{ display: "flex" }}>
-        {nameArr.map((i, index) =>
-          <Block key={index}>
-            <Tooltip title={i}>
-              {emojiArr[index]}
-            </Tooltip>
-          </Block>
-        )}
-      </div>
+        let nameArr = []
+        let emojiArr = []
+        data.details.genres.map((i) => {
+            genreCodes.forEach(myFunction)
+            function myFunction(i2) {
+                if (i.id === i2.value) {
+                    nameArr.push(i2.text)
+                    emojiArr.push(i2.emoji)
+                }
+            }
+        })
+        return <div style={{ display: "flex" }}>
+            {nameArr.map((i, index) =>
+                <Block key={index}>
+                    <Tooltip title={i}>
+                        {emojiArr[index]}
+                    </Tooltip>
+                </Block>
+            )}
+        </div>
     }
-  }
+}
 
-  export const view = {
+export const view = {
     title: 'Details',
     // dataIndex: 'data.details.vote_average',
     // sorter: (a, b) => a.data.details.vote_average - b.data.details.vote_average,
     render: (data) => {
-      let link = data.media_type === "movie" ? "https://www.imdb.com/title/" + data.details.imdb_id : "https://www.themoviedb.org/tv/" + data.details.id
-      return <Button type="link" href={link} target="_blank">View</Button>
+        let link = data.media_type === "movie" ? "https://www.imdb.com/title/" + data.details.imdb_id : "https://www.themoviedb.org/tv/" + data.details.id
+        return <Button type="link" href={link} target="_blank">View</Button>
     }
-  }
+}
