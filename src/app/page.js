@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
-import { message, Input, Button, InputNumber, Space, Tooltip, Progress, Popover, Select, Divider } from 'antd';
+import { message, Input, Button, InputNumber, Space, Tooltip, Progress, Select } from 'antd';
 import { StarTwoTone, StarOutlined, SearchOutlined, CheckOutlined, EditOutlined, QuestionCircleOutlined, CloseOutlined } from '@ant-design/icons';
 import Highlighter from 'react-highlight-words';
 import { tabs } from "../../data.js"
@@ -13,46 +13,7 @@ import styled from "styled-components";
 import { useMediaQuery } from 'react-responsive'
 import Footer from "../../comps/Footer.js"
 import { poster, date_added, release_date, audience_rating, type, episode, upcoming_release, genres, view } from "../../columns.js"
-import app from "./firebase.js"
-import { collection, getDocs } from "firebase/firestore";
-import {firestore, firebaseApp} from './firebase.js'
-
-// --- NOTES --- 
-// find a way to update the data for your items as next episodes dont update localstorage dynamically
-// make view more, more stylish
-// clear selection button for tables
-// feedback when no results for search
-// refresh button to upcoming
-// screen if something goes wrong, tell them to delete their localstorage
-// a statistics tab, showing what is your prefered genres, average rating, what decade movies you like most, etc
-// in the future have a view button to expand and see all the details of the show. possibly a new page or maybe just accordian
-// columns, tabs, and functions should each be in their own files
-// make progress look better displaying
-// hide edit button unless hoivered
-// hide hero when search.
-// maybe add the acordian to see more details in taABle
-// download button for data
-// upload button for restoring data
-// upcoming could include shows which are in a group like marvel with upcoming shows also in it
-// perhaps we could follow "interests" (which will actually be the groups) and any group with shows coming up can be included as well. could also be actors that you can follow.
-// add more details when hovering on cards
-// add a filter to only show shows with incomplete progress (not s1 e1 tho)
-// movie favorites. heart icon to indicate.\
-// toggle a setting to allow anime to hvae seasons
-// add a s block to upcoming shows
-// if an upcomings episode title starts with episode, hide it
-// hide certain upcoming items
-// ability to share your watchlist with friends
-
-// export / import movie data
-// allow audience rating sort (watchlist)
-// add a "times seen" column with plus and minuses
-// if on mobile display:"please use on a device with bigger display (ipad, or computer)"
-// hover over search item to view details
-// upcoming episode title not updating whenm clicking refrsesh button
-// use (redux) to organize your calls / functions outside of this main page
-// make components
-// make a view all details mode where it scrolls horizontally with all columns
+import Auth from "../../comps/Auth.js"
 
 const Body = styled.div`
   display: flex;
@@ -115,11 +76,9 @@ export default function Home() {
   const [disableButtons, setDisableButtons] = useState(true);
   const [page, setPage] = useState(1);
   const [messageApi, contextHolder] = message.useMessage();
-
   const [searchText, setSearchText] = useState('');
   const [searchedColumn, setSearchedColumn] = useState('');
   const searchInput = useRef(null);
-
   const [viewMoreSearch, setViewMoreSearch] = useState(false);
   const [viewMoreTrending, setViewMoreTrending] = useState(false);
   const [progressEditMode, setProgressEditMode] = useState();
@@ -132,14 +91,8 @@ export default function Home() {
   const isWide = useMediaQuery({ query: '(max-width: 1300px)' })
   const isVeryWide = useMediaQuery({ query: '(max-width: 1600px)' })
   const [active, setActive] = useState(0);
-
-  const [loading, setLoading] = useState(true);
-  const [testMedia, setTestMedia] = useState([]);
-
-
-
-
-
+  const [loading, setLoading] = useState(false);
+  // const [testMedia, setTestMedia] = useState([]);
 
   console.log(active)
   console.log("MEDIA", media)
@@ -623,23 +576,7 @@ export default function Home() {
     },
   };
 
-  async function getFirebaseData() {
-    setLoading(false)
-    const usersCollection = collection(firestore, "media");
-    const querySnapshot = await getDocs(usersCollection);
-    const usersArray = [];
-
-    querySnapshot.forEach((doc) => {
-      // Access the document data and add it to the array
-      usersArray.push(doc.data());
-    });
-  
-    setTestMedia(usersArray)
-  }
-  
-
   useEffect(() => {
-    getFirebaseData();
     // const localMedia = JSON.parse(localStorage.getItem("media"));
     // if (localMedia) {
     //   setMedia(localMedia);
@@ -660,9 +597,8 @@ export default function Home() {
     // }
     // fetchData();
   }, []);
-  
+
   console.log(loading)
-  console.log(testMedia)
 
   const seenColumns = [
     poster,
@@ -708,169 +644,163 @@ export default function Home() {
       <h1 style={{
         textAlign: 'center',
         fontSize: '36px',
-        color: 'blue',
       }}>Loading</h1>
+      {/* <ReactLoading type={'spin'} color={'blue'} height={30} width={30} /> */}
     </div>
   }
 
-  return (
-    <div>
-      {testMedia.map((item) => {console.log(item.title),
-        <div key={item.title}>
-          
-            <div>{item.title} 1</div>
-            <div>2</div>
-        </div>
-      })
-      }
-      <div>hello</div>
-    </div>
-    // <Body>
-    //   {contextHolder}
-    //   <Tabbar>
-    //     {tabs.map(o => (
-    //       <Tab
-    //         onClick={() => setActive(o.id)}
-    //         key={o.id}
-    //       >
-    //         {o.icon}
-    //         {o.name}
-    //       </Tab>
-    //     ))}
-    //   </Tabbar>
-    //   <div style={isWide ? { margin: "0px 50px", flex: 1 } : isVeryWide ? { margin: "0px 10vw", flex: 1 } : { margin: "0px 15vw", flex: 1 }}>
+  if (!loading) {
+    return (
+      <div>
+        {contextHolder}
+        <Auth />
+      </div>
+      // <Body>
+      //   <Tabbar>
+      //     {tabs.map(o => (
+      //       <Tab
+      //         onClick={() => setActive(o.id)}
+      //         key={o.id}
+      //       >
+      //         {o.icon}
+      //         {o.name}
+      //       </Tab>
+      //     ))}
+      //   </Tabbar>
+      //   <div style={isWide ? { margin: "0px 50px", flex: 1 } : isVeryWide ? { margin: "0px 10vw", flex: 1 } : { margin: "0px 15vw", flex: 1 }}>
 
-    //     {/* 0 */}
-    //     {active === 0 ?
-    //       <>
-    //         <Hero
-    //           onSearch={onSearch}
-    //           clearSearch={clearSearch}
-    //           disableClear={disableClear}
-    //         />
-    //         <br />
-    //         {search ?
-    //           <>
-    //             <Grid>
-    //               {search.map((o) =>
-    //                 <Card
-    //                   key={o.id}
-    //                   addToSeen={() => onAdd(o, 1, "seen")}
-    //                   addToWatchlist={() => onAdd(o, 1, "watchlist")}
-    //                   title={o.media_type === "movie" ? o.title : o.name}
-    //                   src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
-    //                   alt={o.id}
-    //                   height={300}
-    //                   width={200}
-    //                   url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
-    //                 />
-    //               )}
-    //             </Grid>
-    //             <Divider />
-    //           </> : <></>}
-    //         <h2 style={{}}>Trending Shows</h2>
-    //         <Grid>
-    //           {trending.slice(0, 10).map((o) =>
-    //             <Card
-    //               key={o.id}
-    //               addToSeen={() => onAdd(o, 1, "seen")}
-    //               addToWatchlist={() => onAdd(o, 1, "watchlist")}
-    //               title={o.media_type === "movie" ? o.title : o.name}
-    //               src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
-    //               alt={o.id}
-    //               height={300}
-    //               width={200}
-    //               url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
-    //             />
-    //           )}
-    //         </Grid>
-    //         <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
-    //           {viewMoreTrending === false ? <Button style={{ marginTop: "10px" }} type="primary" onClick={() => setViewMoreTrending(true)}>Load More</Button> : null}
-    //         </div>
-    //         <Grid>
-    //           {viewMoreTrending ? trending.slice(10).map((o) =>
-    //             <Card
-    //               key={o.id}
-    //               addToSeen={() => onAdd(o, 1, "seen")}
-    //               addToWatchlist={() => onAdd(o, 1, "watchlist")}
-    //               title={o.media_type === "movie" ? o.title : o.name}
-    //               src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
-    //               alt={o.id}
-    //               height={300}
-    //               width={200}
-    //               url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
-    //             />)
-    //             : null}
-    //         </Grid>
-    //         <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
-    //           {viewMoreTrending === true ? <Button style={{ marginTop: "10px" }} type="primary" onClick={() => setViewMoreTrending(false)}>Load Less</Button> : null}
-    //         </div>
-    //       </>
-    //       : <></>}
+      //     {/* 0 */}
+      //     {active === 0 ?
+      //       <>
+      //         <Hero
+      //           onSearch={onSearch}
+      //           clearSearch={clearSearch}
+      //           disableClear={disableClear}
+      //         />
+      //         <br />
+      //         {search ?
+      //           <>
+      //             <Grid>
+      //               {search.map((o) =>
+      //                 <Card
+      //                   key={o.id}
+      //                   addToSeen={() => onAdd(o, 1, "seen")}
+      //                   addToWatchlist={() => onAdd(o, 1, "watchlist")}
+      //                   title={o.media_type === "movie" ? o.title : o.name}
+      //                   src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
+      //                   alt={o.id}
+      //                   height={300}
+      //                   width={200}
+      //                   url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
+      //                 />
+      //               )}
+      //             </Grid>
+      //             <Divider />
+      //           </> : <></>}
+      //         <h2 style={{}}>Trending Shows</h2>
+      //         <Grid>
+      //           {trending.slice(0, 10).map((o) =>
+      //             <Card
+      //               key={o.id}
+      //               addToSeen={() => onAdd(o, 1, "seen")}
+      //               addToWatchlist={() => onAdd(o, 1, "watchlist")}
+      //               title={o.media_type === "movie" ? o.title : o.name}
+      //               src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
+      //               alt={o.id}
+      //               height={300}
+      //               width={200}
+      //               url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
+      //             />
+      //           )}
+      //         </Grid>
+      //         <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
+      //           {viewMoreTrending === false ? <Button style={{ marginTop: "10px" }} type="primary" onClick={() => setViewMoreTrending(true)}>Load More</Button> : null}
+      //         </div>
+      //         <Grid>
+      //           {viewMoreTrending ? trending.slice(10).map((o) =>
+      //             <Card
+      //               key={o.id}
+      //               addToSeen={() => onAdd(o, 1, "seen")}
+      //               addToWatchlist={() => onAdd(o, 1, "watchlist")}
+      //               title={o.media_type === "movie" ? o.title : o.name}
+      //               src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
+      //               alt={o.id}
+      //               height={300}
+      //               width={200}
+      //               url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
+      //             />)
+      //             : null}
+      //         </Grid>
+      //         <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
+      //           {viewMoreTrending === true ? <Button style={{ marginTop: "10px" }} type="primary" onClick={() => setViewMoreTrending(false)}>Load Less</Button> : null}
+      //         </div>
+      //       </>
+      //       : <></>}
 
-    //     {active === 1 ?
-    //       <MovieTable
-    //         pagination={{ position: ["bottomCenter"], showSizeChanger: true, }}
-    //         header={"Seen | " + seen.length + " Items"}
-    //         onRemove={() => onRemove("seen", 1)}
-    //         onMove={() => onMove("watchlist")}
-    //         disableButtons={disableButtons}
-    //         movieColumns={seenColumns}
-    //         movies={seen.reverse()}
-    //         rowSelection={rowSelection}
-    //         showMove={true}
-    //         moveKeyword={"Watchlist"}
-    //         showRemove={true}
-    //       />
-    //       : <></>}
+      //     {active === 1 ?
+      //       <MovieTable
+      //         pagination={{ position: ["bottomCenter"], showSizeChanger: true, }}
+      //         header={"Seen | " + seen.length + " Items"}
+      //         onRemove={() => onRemove("seen", 1)}
+      //         onMove={() => onMove("watchlist")}
+      //         disableButtons={disableButtons}
+      //         movieColumns={seenColumns}
+      //         movies={seen.reverse()}
+      //         rowSelection={rowSelection}
+      //         showMove={true}
+      //         moveKeyword={"Watchlist"}
+      //         showRemove={true}
+      //       />
+      //       : <></>}
 
-    //     {active === 2 ?
-    //       <MovieTable
-    //         pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
-    //         header={"Watchlist | " + watchlist.length + " Items"}
-    //         onRemove={() => onRemove("watchlist", 1)}
-    //         onMove={() => onMove("seen")}
-    //         disableButtons={disableButtons}
-    //         movieColumns={watchlistColumns}
-    //         movies={watchlist.reverse()}
-    //         rowSelection={rowSelection}
-    //         showMove={true}
-    //         moveKeyword={"Seen"}
-    //         showRemove={true}
-    //       />
-    //       : <></>}
-    //     {active === 3 ?
-    //       <div>
-    //         {/* sort by this for movie (new Date(o.release_date) > new Date()) */}
-    //         {/* for tv: details.next_episode_to_air !== null */}
-    //         <MovieTable
-    //           showRefresh
-    //           onRefresh={() => {
-    //             refreshUpdate();
-    //           }}
-    //           pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
-    //           header={
-    //             <div style={{ display: "flex", alignItems: "center" }}>
-    //               <div>Your Upcoming Shows</div>
-    //               <Popover trigger="click" content={"Generated from items you have added to your Seen & Watchlists. Displays items which are coming out soon."} >
-    //                 <QuestionCircleOutlined style={{ fontSize: "13px", color: "grey", margin: "6px 0px 0px 10px" }} />
-    //               </Popover>
-    //             </div>
-    //           }
-    //           disableButtons={disableButtons}
-    //           movieColumns={upcomingColumns}
-    //           movies={upcoming}
-    //           rowSelection={false}
-    //         />
-    //       </div >
-    //       : <></>}
-    //     {active === 4 ?
-    //       <div style={{ marginTop: "100px" }}>
-    //         Stats
-    //       </div >
-    //       : <></>}
-    //   </div>
-    //   <Footer />
-    // </Body >
-  );
+      //     {active === 2 ?
+      //       <MovieTable
+      //         pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
+      //         header={"Watchlist | " + watchlist.length + " Items"}
+      //         onRemove={() => onRemove("watchlist", 1)}
+      //         onMove={() => onMove("seen")}
+      //         disableButtons={disableButtons}
+      //         movieColumns={watchlistColumns}
+      //         movies={watchlist.reverse()}
+      //         rowSelection={rowSelection}
+      //         showMove={true}
+      //         moveKeyword={"Seen"}
+      //         showRemove={true}
+      //       />
+      //       : <></>}
+      //     {active === 3 ?
+      //       <div>
+      //         {/* sort by this for movie (new Date(o.release_date) > new Date()) */}
+      //         {/* for tv: details.next_episode_to_air !== null */}
+      //         <MovieTable
+      //           showRefresh
+      //           onRefresh={() => {
+      //             refreshUpdate();
+      //           }}
+      //           pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
+      //           header={
+      //             <div style={{ display: "flex", alignItems: "center" }}>
+      //               <div>Your Upcoming Shows</div>
+      //               <Popover trigger="click" content={"Generated from items you have added to your Seen & Watchlists. Displays items which are coming out soon."} >
+      //                 <QuestionCircleOutlined style={{ fontSize: "13px", color: "grey", margin: "6px 0px 0px 10px" }} />
+      //               </Popover>
+      //             </div>
+      //           }
+      //           disableButtons={disableButtons}
+      //           movieColumns={upcomingColumns}
+      //           movies={upcoming}
+      //           rowSelection={false}
+      //         />
+      //       </div >
+      //       : <></>}
+      //     {active === 4 ?
+      //       <div style={{ marginTop: "100px" }}>
+      //         Stats
+      //       </div >
+      //       : <></>}
+      //   </div>
+      //   <Footer />
+      // </Body >
+    );
+  }
 }
