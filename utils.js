@@ -1,4 +1,4 @@
-export function getTodaysDate() {
+export function getCurrentTimestamp() {
   var date = new Date();
   var dateStr =
     ("00" + (date.getMonth() + 1)).slice(-2) + "/" +

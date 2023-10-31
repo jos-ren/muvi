@@ -16,8 +16,8 @@ body {
 }
 
 .message{
-  /* display: flex; */
-  /* justify-content: end; */
+  display: flex;
+  justify-content: end;
   position:relative;
   top:60px;
   /* border: 1px solid red; */
