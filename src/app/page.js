@@ -14,8 +14,9 @@ import { useMediaQuery } from 'react-responsive'
 import Footer from "../../comps/Footer.js"
 import { poster, date_added, release_date, audience_rating, type, episode, upcoming_release, genres, view } from "../../columns.js"
 import Auth from "../../comps/Auth.js"
-import { auth } from "./config/firebase"
+import { auth, db } from "./config/firebase"
 import { onAuthStateChanged, signOut } from "firebase/auth";
+import { getDocs, collection, addDoc, deleteDoc, doc } from "firebase/firestore"
 
 const Body = styled.div`
   display: flex;
@@ -102,6 +103,12 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(false);
   // const [testMedia, setTestMedia] = useState([]);
+
+  const [newTitle, setNewTitle] = useState("")
+  const [newDate, setNewDate] = useState(0)
+  const [isNewAnime, setIsNewAnime] = useState(false)
+
+  const mediaCollectionRef = collection(db, "media")
 
   console.log(active)
   // console.log("MEDIA", media)
@@ -588,6 +595,8 @@ export default function Home() {
     },
   };
 
+  console.log(media)
+
   useEffect(() => {
     // monitors login status
     onAuthStateChanged(auth, (u) => {
@@ -601,8 +610,7 @@ export default function Home() {
         setLoading(false)
       }
     })
-
-    // const localMedia = JSON.parse(localStorage.getItem("media"));
+    getMedia()
     // if (localMedia) {
     //   setMedia(localMedia);
     //   setSeen(localMedia.filter((o) => checkType(o, 1)));
@@ -622,6 +630,39 @@ export default function Home() {
     // }
     // fetchData();
   }, []);
+
+  const getMedia = async () => {
+    // READ DATA
+    try {
+      const data = await getDocs(mediaCollectionRef)
+      const filteredData = data.docs.map((doc) => ({ ...doc.data(), id: doc.id }))
+      setMedia(filteredData)
+    } catch (err) {
+      onMessage(`${err.name + ": " + err.code}`, "error")
+    }
+    // SET LIST TO EQUAL STATE
+  };
+
+  const createMedia = async () => {
+    try {
+      await addDoc(mediaCollectionRef, { title: newTitle, release_date: newDate, is_anime: isNewAnime })
+      // after the data is added, get media again
+      getMedia()
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const deleteMedia = async (id) => {
+    try {
+      const movieDoc = doc(db, "media", id)
+      await deleteDoc(movieDoc)
+      // after the data is added, get media again
+      getMedia()
+    } catch (err) {
+      console.error(err)
+    }
+  }
 
   const seenColumns = [
     poster,
@@ -680,10 +721,26 @@ export default function Home() {
     }
   };
 
+  const downloadData = () => {
+    const jsonContent = localStorage.getItem("media");
+    const blob = new Blob([jsonContent], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'data.json';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+
+    a.click();
+
+    URL.revokeObjectURL(url);
+  };
+
   if (loading) {
-    return <div style={{display:"flex", alignItems:"center", justifyContent:"center", height:"95vh"}}>
+    return <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "95vh" }}>
       <h1>Loading...</h1>
-      </div>
+    </div>
   } else return (
     <div>
       {contextHolder}
@@ -701,10 +758,36 @@ export default function Home() {
             ))}
           </Tabs>
           <div style={{ display: "flex", alignItems: "center", position: "absolute", right: "0px" }}>
-            <Image unoptimized height={30} width={30} quality="100" src={user.photoURL} alt={user.photoURL} style={{ borderRadius: "50%" }} />
+            <Image unoptimized height={30} width={30} quality="100" src={user.photoURL ? user.photoURL : "default_avatar.jpg"} alt={"profile_pic"} style={{ borderRadius: "50%" }} />
             <Button style={{ margin: "0px 10px" }} onClick={logOut}>Logout</Button>
           </div>
         </Tabbar>
+        <div style={{ marginTop: "70px" }}></div>
+        <div>
+          <input placeholder="title"
+            onChange={(e) => setNewTitle(e.target.value)}
+          />
+          <input placeholder="release" type="number"
+            onChange={(e) => setNewDate(Number(e.target.value))}
+          />
+          <input type='checkbox'
+            checked={isNewAnime}
+            onChange={(e) => setIsNewAnime(e.target.checked)}
+          />
+          <label>Is Anime</label>
+          <Button type="primary" onClick={createMedia}>Submit</Button>
+        </div>
+        <div style={{ marginTop: "30px" }}>
+          <ul>
+            {media.map((item) => (
+              <div style={{ display: "flex" }}>
+                <li>{item.title}</li>
+                <button onClick={() => deleteMedia(item.id)}>Delete</button>
+              </div >
+            ))}
+          </ul>
+        </div>
+        {/* <Button style={{marginTop:"100px"}} onClick={downloadData}>Download Data</Button> */}
         {/* <div style={isWide ? { margin: "0px 50px", flex: 1 } : isVeryWide ? { margin: "0px 10vw", flex: 1 } : { margin: "0px 15vw", flex: 1 }}>
             {active === 0 ?
               <>
