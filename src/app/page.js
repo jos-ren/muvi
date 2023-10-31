@@ -75,6 +75,7 @@ const Tab = styled.div`
 export default function Home() {
   const fetch = require("node-fetch");
   const [media, setMedia] = useState([]);
+  const [userMedia, setUserMedia] = useState([]);
   const [seen, setSeen] = useState([]);
   const [watchlist, setWatchlist] = useState([]);
   const [upcoming, setUpcoming] = useState([]);
@@ -103,8 +104,6 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(false);
   const mediaCollectionRef = collection(db, "Media")
-
-
 
   // console.log(user.uid)
   // console.log(active)
@@ -496,24 +495,24 @@ export default function Home() {
         // so data has a chance to load before page does
         setTimeout(function () {
           setUser(u)
+          updateUser(u)
+          getUserMedia(u.uid);
           setLoading(false)
-          updateUser(u.uid)
         }, 100);
       } else {
         setUser(false)
         setLoading(false)
       }
     })
-    getMedia()
+
     getTrending();
   }, []);
 
   // ==================== REFACTORED FUNCS =====================
 
-
-  const updateUser = async (uid) => {
-    const userRef = doc(db, 'Users', uid); // Reference to the specific user document
-    const dataToUpdate = { lastLoginTime: new Date() }
+  const updateUser = async (user) => {
+    const userRef = doc(db, 'Users', user.uid); // Reference to the specific user document
+    const dataToUpdate = { lastLoginTime: new Date(), email: user.email }
     try {
       const userDoc = await getDoc(userRef);
       if (userDoc.exists()) {
@@ -559,29 +558,58 @@ export default function Home() {
       onMessage(`${err.name + ": " + err.code}`, "error")
     }
   };
+  // console.log(userMedia)
+
+  const getUserMedia = async (uid) => {
+    // READ DATA
+    try {
+      const userDocRef = doc(db, 'Users', uid); // Replace 'userId' with the actual user ID
+      const mediaListCollectionRef = collection(userDocRef, 'MediaList');
+      // // Query the subcollection if needed
+      // combine the two collection here to make one object of data
+      // const movieListQuery = query(movieListCollectionRef, where('someField', '==', 'someValue'));
+      // Fetch documents from the subcollection
+      const mediaListSnapshot = await getDocs(mediaListCollectionRef);
+      const filteredData = mediaListSnapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }))
+      // // SET LIST TO EQUAL STATE
+      setUserMedia(filteredData)
+    } catch (err) {
+      onMessage(`${err.name + ": " + err.code}`, "error")
+    }
+  };
 
   const createUserMedia = async (o, list_type) => {
     // check if already Users' subcollection
     // if (media.some((e) => e.key === o.id)) {
     // if already in, matching your uuid, give message
     // onMessage("Already Added", "warning")
-    
-    // createMedia()
 
-    // // // then make a request to add reference in your subcollection
-    // // let sub_obj = {
-    // //   media_uuid: "/Media/movieuuid",
-    // //   date_added: getCurrentTimestamp(),
-    // //   list_type: list_type,
-    // //   my_season: 1,
-    // //   my_episode: 1,
-    // //   my_rating: 0,
-    // // }
+    // createMedia(o)
+    const userRef = doc(db, 'Users', user.uid);
+    const subCollectionRef = collection(userRef, 'MediaList');
+    let obj = {
+      media_uid: "test",
+      tmdb_id: o.id,
+      date_added: new Date(),
+      list_type: list_type,
+      my_season: 1,
+      my_episode: 1,
+      my_rating: 0,
+    }
+    // then make a request to add reference in your subcollection
+    try {
+      await addDoc(subCollectionRef, obj);
+      // after the data is added, get media again
+      // getMedia()
+      // onMessage("Added " + title + " to " + list_type, "success")
+    } catch (err) {
+      console.error(err)
+    }
 
-    
+
   }
 
-  const createMedia = async (o, list_type) => {
+  const createMedia = async (o) => {
     // check if already in media collection 
     const querySnapshot = await getDocs(query(mediaCollectionRef, where('key', '==', o.id)));
     //  if movie does not exists in you Media collection yet
@@ -643,7 +671,14 @@ export default function Home() {
     }
   }
 
-  // ======================= ^^ REFACTORED ^^ =============
+  const logOut = async () => {
+    try {
+      await signOut(auth)
+    } catch (err) {
+      onMessage(`${err.name + ": " + err.code}`, "error")
+    }
+  };
+  // ======================= ^^ NEW REFACTORED STUFF ^^ =============
 
   const seenColumns = [
     poster,
@@ -677,30 +712,6 @@ export default function Home() {
     genres,
   ];
 
-  // if loading
-  // if (loading) {
-  //   return <div style={{
-  //     display: 'flex',
-  //     justifyContent: 'center',
-  //     alignItems: 'center',
-  //     minHeight: '100vh',
-  //     margin: 0,
-  //   }}>
-  //     <h1 style={{
-  //       textAlign: 'center',
-  //       fontSize: '36px',
-  //     }}>Loading</h1>
-  //     {/* <ReactLoading type={'spin'} color={'blue'} height={30} width={30} /> */}
-  //   </div>
-  // }
-
-  const logOut = async () => {
-    try {
-      await signOut(auth)
-    } catch (err) {
-      onMessage(`${err.name + ": " + err.code}`, "error")
-    }
-  };
 
   const downloadData = () => {
     const jsonContent = localStorage.getItem("media");
@@ -744,32 +755,18 @@ export default function Home() {
             <Button style={{ margin: "0px 10px" }} onClick={logOut}>Logout</Button>
           </div>
         </Tabbar>
-        {/* <div style={{ marginTop: "70px" }}></div>
-        <div>
-          <input placeholder="title"
-            onChange={(e) => setNewTitle(e.target.value)}
-          />
-          <input placeholder="release" type="number"
-            onChange={(e) => setNewDate(Number(e.target.value))}
-          />
-          <input type='checkbox'
-            checked={isNewAnime}
-            onChange={(e) => setIsNewAnime(e.target.checked)}
-          />
-          <label>Is Anime</label>
-          <Button type="primary" onClick={createMedia}>Submit</Button>
-        </div> */}
         <div style={{ marginTop: "70px" }}>
           <ul>
-            {media.map((item) => (
-              <div style={{ display: "flex" }} key={item.id}>
-                <li>{item.title}</li>
-                <button onClick={() => deleteMedia(item.id)}>Delete</button>
+            {userMedia.map((item) => (
+              <div style={{ display: "flex" }} key={item.tmdb_id}>
+                <li>{item.tmdb_id}</li>
+                {/* <button onClick={() => deleteMedia(item.id)}>Delete</button> */}
               </div >
             ))}
           </ul>
         </div>
 
+        <Button style={{marginTop:"100px"}} onClick={getUserMedia}>get media</Button>
         {/* <Button style={{marginTop:"100px"}} onClick={downloadData}>Download Data</Button> */}
         <div style={isWide ? { margin: "0px 50px", flex: 1 } : isVeryWide ? { margin: "0px 10vw", flex: 1 } : { margin: "0px 15vw", flex: 1 }}>
           {active === 0 ?

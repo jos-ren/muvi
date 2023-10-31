@@ -1,3 +1,4 @@
+// should change this to manipulate date objecdts instead
 export function getCurrentTimestamp() {
   var date = new Date();
   var dateStr =
