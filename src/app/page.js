@@ -951,7 +951,7 @@ export default function Home() {
               <Divider />
             </> : <></>}
           
-<button onClick={downloadData)>Download data</button>
+          <button onClick={downloadData}>Download data</button>
           <h2 style={{}}>Trending Shows</h2>
           <Grid>
             {trending.slice(0, 10).map((o) =>
