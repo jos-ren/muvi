@@ -547,18 +547,7 @@ export default function Home() {
     setTrending(temp)
   }
 
-  const getMedia = async () => {
-    // READ DATA
-    try {
-      const data = await getDocs(mediaCollectionRef)
-      const filteredData = data.docs.map((doc) => ({ ...doc.data(), id: doc.id }))
-      // SET LIST TO EQUAL STATE
-      setMedia(filteredData)
-    } catch (err) {
-      onMessage(`${err.name + ": " + err.code}`, "error")
-    }
-  };
-  // console.log(userMedia)
+  console.log(userMedia)
 
   const getUserMedia = async (uid) => {
     // READ DATA
@@ -566,47 +555,77 @@ export default function Home() {
       const userDocRef = doc(db, 'Users', uid); // Replace 'userId' with the actual user ID
       const mediaListCollectionRef = collection(userDocRef, 'MediaList');
       // // Query the subcollection if needed
-      // combine the two collection here to make one object of data
-      // const movieListQuery = query(movieListCollectionRef, where('someField', '==', 'someValue'));
-      // Fetch documents from the subcollection
+      // const movieListQuery = query(mediaListCollectionRef, where('media_uid', '==', ));
+      // // combine the two collection here to make one object of data
+      // // Fetch documents from the subcollection
       const mediaListSnapshot = await getDocs(mediaListCollectionRef);
       const filteredData = mediaListSnapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }))
-      // // SET LIST TO EQUAL STATE
-      setUserMedia(filteredData)
+      console.log("=====")
+
+      // console.log(filteredData, "data")
+
+      // for (const i of filteredData) {
+      //   console.log(i)
+      // }
+      // const a = doc(db, 'Users', uid); // Replace 'userId' with the actual user ID
+      // const b = collection(a, 'MediaList');
+      // const c = await getDocs(b);
+      // const d = c.docs.map((doc) => ({ ...doc.data(), id: doc.id }))
+      // console.log(d, "D")
+      // d.forEach((e) => console.log(e.media_uid));
+
+      const movieListQuery = query(mediaCollectionRef, where('id', '==', i.media_uid));
+
+      // async function processFilteredData(filteredData) {
+      //   for (const i of filteredData) {
+      //     console.log("media_uid:", i.media_uid);
+      //     const mediaCollectionRef = collection(db, 'Media');
+      //   }
+      // }
+      // processFilteredData(filteredData)
+      // // // SET LIST TO EQUAL STATE
+      // setUserMedia(filteredData)
     } catch (err) {
       onMessage(`${err.name + ": " + err.code}`, "error")
     }
   };
 
+  // adds to a Users/uid/MediaList
   const createUserMedia = async (o, list_type) => {
-    // check if already Users' subcollection
-    // if (media.some((e) => e.key === o.id)) {
-    // if already in, matching your uuid, give message
-    // onMessage("Already Added", "warning")
-
-    // createMedia(o)
+    // o = movie object data
     const userRef = doc(db, 'Users', user.uid);
     const subCollectionRef = collection(userRef, 'MediaList');
-    let obj = {
-      media_uid: "test",
-      tmdb_id: o.id,
-      date_added: new Date(),
-      list_type: list_type,
-      my_season: 1,
-      my_episode: 1,
-      my_rating: 0,
-    }
-    // then make a request to add reference in your subcollection
-    try {
-      await addDoc(subCollectionRef, obj);
-      // after the data is added, get media again
-      // getMedia()
-      // onMessage("Added " + title + " to " + list_type, "success")
-    } catch (err) {
-      console.error(err)
-    }
 
+    // check if already in Users' subcollection
+    const querySnapshot = await getDocs(query(subCollectionRef, where('tmdb_id', '==', o.id)));
+    const notAdded = querySnapshot.empty
+    if (notAdded) {
+      try {
+        const media_uid = await createMedia(o);
+        console.log(media_uid, "media")
+        // media_uid = undefined, need to go to db and pull it
 
+        let obj = {
+          media_uid: media_uid,
+          tmdb_id: o.id,
+          date_added: new Date(),
+          list_type: list_type,
+          my_season: 1,
+          my_episode: 1,
+          my_rating: 0,
+        };
+
+        await addDoc(subCollectionRef, obj);
+        // after the data is added, get media again
+        getUserMedia(user.uid)
+        onMessage("Added " + title + " to " + list_type, "success")
+      } catch (err) {
+        console.error(err)
+      }
+    } else {
+      // warning if already added to your list
+      onMessage("Already Added", "warning")
+    }
   }
 
   const createMedia = async (o) => {
@@ -628,7 +647,6 @@ export default function Home() {
       // get details
       const response = await fetch("https://api.themoviedb.org/3/" + o.media_type + "/" + o.id + "?language=en-US", options);
       let details = await response.json();
-
       let upcoming_release = o.media_type === "movie" ? details.release_date : (details.next_episode_to_air !== null ? details.next_episode_to_air.air_date : details.last_air_date)
 
       // need to seperate what need to be added to subcollection vs main media collection
@@ -644,16 +662,14 @@ export default function Home() {
         details: details
       }
       try {
-        await addDoc(mediaCollectionRef, obj)
-        // after the data is added, get media again
-        getMedia()
-        // onMessage("Added " + title + " to " + list_type, "success")
+        const docRef = await addDoc(mediaCollectionRef, obj)
+        const newDocId = docRef.id;
+        return newDocId
       } catch (err) {
         console.error(err)
       }
-      console.log("added new media")
     } else {
-      console.log("already added")
+      console.log("already created media document", o.title)
     }
   }
 
@@ -766,7 +782,7 @@ export default function Home() {
           </ul>
         </div>
 
-        <Button style={{marginTop:"100px"}} onClick={getUserMedia}>get media</Button>
+        <Button style={{ marginTop: "100px" }} onClick={() => { getUserMedia(user.uid) }}>get media</Button>
         {/* <Button style={{marginTop:"100px"}} onClick={downloadData}>Download Data</Button> */}
         <div style={isWide ? { margin: "0px 50px", flex: 1 } : isVeryWide ? { margin: "0px 10vw", flex: 1 } : { margin: "0px 15vw", flex: 1 }}>
           {active === 0 ?
