@@ -889,6 +889,22 @@ export default function Home() {
     genres,
   ];
 
+  const downloadData = () => {
+    const jsonContent = localStorage.getItem("media");
+    const blob = new Blob([jsonContent], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'data.json';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+
+    a.click();
+
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <Body>
       {contextHolder}
@@ -935,7 +951,7 @@ export default function Home() {
               <Divider />
             </> : <></>}
           
-
+<button onClick={downloadData)>Download data</button>
           <h2 style={{}}>Trending Shows</h2>
           <Grid>
             {trending.slice(0, 10).map((o) =>
