@@ -1,3 +1,6 @@
+<h1>Link</h1>
+<a href="https://josren-muvi.vercel.app/" target="_blank">View Here</a>
+
 <h1>Description</h1>
 <div>Track your favourite shows with ease. Muvi is for the analytical movie lover who wants to keep track of shows watched, rate them, as well as discover when the next episode will air.</div>
 
@@ -10,3 +13,7 @@
   ![Ant-Design](https://img.shields.io/badge/-AntDesign-%230170FE?style=for-the-badge&logo=ant-design&logoColor=white)
   ![Firebase](https://img.shields.io/badge/Firebase-039BE5?style=for-the-badge&logo=Firebase&logoColor=white)
 </div>
+
+<h1>Screenshot</h1>
+
+![image](https://github.com/jos-ren/muvi/assets/60946895/80b17e41-83c7-46e9-925e-35075b332202)
