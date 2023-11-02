@@ -76,8 +76,6 @@ export default function Home() {
   const fetch = require("node-fetch");
   const [media, setMedia] = useState([]);
   const [userMedia, setUserMedia] = useState([]);
-  const [seen, setSeen] = useState([]);
-  const [watchlist, setWatchlist] = useState([]);
   const [upcoming, setUpcoming] = useState([]);
   const [trending, setTrending] = useState([]);
   const [search, setSearch] = useState([]);
@@ -238,34 +236,6 @@ export default function Home() {
     setDisableClear(true)
   };
 
-  const onMove = (lType) => {
-    // lType = the list destination
-    // remove item, read it with list_type changed
-    selected.forEach((i) => {
-      let data = media.find((e) => e.key == i)
-      onAdd(data, 2, lType)
-    })
-    onRemove(lType, 2)
-    onMessage("Moved " + selected.length + ' items to ' + lType, 'success')
-  };
-
-  const onUpdate = (data, new_upcoming) => {
-    let changes = {
-      my_season: seValue,
-      my_episode: epValue,
-      my_rating: ratingValue,
-      upcoming_release: new_upcoming
-    }
-    // if at least one value is changed, update items data
-    if (seValue !== null || epValue !== null || ratingValue !== null || new_upcoming !== undefined) {
-      onAdd(data, 3, data.list_type, changes)
-      onRemove(data.list_type, 3, data.key)
-    } else {
-      console.log("no changes")
-    }
-    setNull()
-  }
-
   const setNull = () => {
     setSeValue(null);
     setEpValue(null);
@@ -294,30 +264,7 @@ export default function Home() {
     onMessage("Refreshed List", "success")
   }
 
-  const onRemove = (lType, method, key) => {
-    // method 1 = pressing remove button directly. method 2 = onMove. method 3 = onUpdate.
-    let filtered = ""
-    if (method !== 3) {
-      // filter out all "selected" items
-      filtered = JSON.parse(localStorage.getItem("media")).filter(item => !selected.includes(item.key))
-    } else {
-      filtered = JSON.parse(localStorage.getItem("media")).filter(item => item.key !== key)
-    }
-    if (method === 2) {
-      let addition = JSON.parse(localStorage.getItem("media")).filter(item => selected.includes(item.key) && item.list_type === lType)
-      filtered = filtered.concat(addition)
-    } else if (method === 3) {
-      let addition = JSON.parse(localStorage.getItem("media")).filter(item => item.key === key)
-      filtered = filtered.concat(addition[1])
-    }
-    setSeen(filtered.filter((o) => checkType(o, 1)))
-    setWatchlist(filtered.filter((o) => checkType(o, 2)))
-    setUpcoming(filtered.filter((o) => new Date(o.upcoming_release) > new Date(new Date().setDate(new Date().getDate() - 7))));
-    setMedia(filtered)
-    localStorage.setItem("media", JSON.stringify(filtered));
-    method === 1 ? onMessage('Successfully Removed ' + selected.length + ' Items', 'success') : null;
-    setDisableButtons(true);
-  };
+
 
   const my_rating = {
     title: 'My Rating',
@@ -526,12 +473,11 @@ export default function Home() {
   }
 
   const getUserMedia = async (uid) => {
-    console.log("GOT USERMEDIA")
     try {
       const userDocRef = doc(db, 'Users', uid);
       const mediaListCollectionRef = collection(userDocRef, 'MediaList');
       const mediaListSnapshot = await getDocs(mediaListCollectionRef);
-      const userData = mediaListSnapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+      const userData = mediaListSnapshot.docs.map((doc) => ({ ...doc.data(), key: doc.id }));
 
       const combinedData = await processFilteredData(userData);
       setUserMedia(combinedData);
@@ -539,6 +485,8 @@ export default function Home() {
       onMessage(`${err.name + ": " + err.code}`, "error");
     }
   };
+
+  console.log(userMedia, "UM")
 
   async function processFilteredData(userData) {
     const fetchPromises = userData.map(async (i) => {
@@ -624,7 +572,6 @@ export default function Home() {
       // need to seperate what need to be added to subcollection vs main media collection
       // basically anything unique to the user will go in the sub
       let obj = {
-        key: o.id,
         title: title,
         release_date: release_date,
         media_type: o.media_type,
@@ -654,19 +601,40 @@ export default function Home() {
     }
   }
 
+
   // updateMedia
   // to change list type, rating, progress, etc
-
-  const deleteMedia = async (id) => {
-    try {
-      const movieDoc = doc(db, "media", id)
-      await deleteDoc(movieDoc)
-      // after the data is added, get media again
-      getMedia()
-    } catch (err) {
-      console.error(err)
+  const updateUserMedia = async (location) => {
+    let userID = user.uid
+    const updatedData = {
+      list_type: location,
+    };
+    // maybe batch updates, maybe do this for deletes too?
+    for (const docId of selected) {
+      try {
+        await updateDoc(doc(db, 'Users', userID, 'MediaList', docId), updatedData)
+      } catch (err) {
+        console.error(err);
+      }
     }
+    onMessage("Moved " + selected.length + " Items to " + capitalizeFirstLetter(location), "success")
+    // after the data is deleted, get media again
+    getUserMedia(userID);
   }
+
+  const deleteUserMedia = async () => {
+    let userID = user.uid
+    for (const docId of selected) {
+      try {
+        await deleteDoc(doc(db, 'Users', userID, "MediaList", docId));
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    onMessage("Deleted " + selected.length + " Items", "success")
+    // after the data is deleted, get media again
+    getUserMedia(userID);
+  };
 
   const logOut = async () => {
     try {
@@ -839,15 +807,17 @@ export default function Home() {
             </>
             : <></>}
 
+            {/* ==============tables ========== */}
+
           {active === 1 ?
             <MovieTable
               pagination={{ position: ["bottomCenter"], showSizeChanger: true, }}
-              header={"Seen | " + userMedia.length + " Items"}
-              onRemove={() => onRemove("seen", 1)}
-              onMove={() => onMove("watchlist")}
+              header={"Seen | " + userMedia.filter((item) => item.list_type === "seen").length + " Items"}
+              onRemove={() => deleteUserMedia()}
+              onMove={() => updateUserMedia("watchlist")}
               disableButtons={disableButtons}
-              movieColumns={seenColumns}
-              movies={userMedia}
+              columns={seenColumns}
+              data={userMedia.filter((item) => item.list_type === "seen")}
               rowSelection={rowSelection}
               showMove={true}
               moveKeyword={"Watchlist"}
@@ -855,22 +825,22 @@ export default function Home() {
             />
             : <></>}
 
-          {/* {active === 2 ?
-              <MovieTable
-                pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
-                header={"Watchlist | " + watchlist.length + " Items"}
-                onRemove={() => onRemove("watchlist", 1)}
-                onMove={() => onMove("seen")}
-                disableButtons={disableButtons}
-                movieColumns={watchlistColumns}
-                movies={watchlist.reverse()}
-                rowSelection={rowSelection}
-                showMove={true}
-                moveKeyword={"Seen"}
-                showRemove={true}
-              />
+          {active === 2 ?
+            <MovieTable
+            pagination={{ position: ["bottomCenter"], showSizeChanger: true, }}
+            header={"Watchlist | " + userMedia.filter((item) => item.list_type === "watchlist").length + " Items"}
+            onRemove={() => deleteUserMedia()}
+            onMove={() => updateUserMedia("seen")}
+            disableButtons={disableButtons}
+            columns={watchlistColumns}
+            data={userMedia.filter((item) => item.list_type === "watchlist")}
+            rowSelection={rowSelection}
+            showMove={true}
+            moveKeyword={"Seen"}
+            showRemove={true}
+          />
               : <></>}
-            {active === 3 ?
+            {/* {active === 3 ?
               <div>
                 // {/* sort by this for movie (new Date(o.release_date) > new Date()) 
                 // {/* for tv: details.next_episode_to_air !== null 

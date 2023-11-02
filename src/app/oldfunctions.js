@@ -88,3 +88,56 @@ const onAdd = async (o, method, lType, changes) => {
         }
     }
 }
+
+const onRemove = (lType, method) => {
+    // method 1 = pressing remove button directly. method 2 = onMove. method 3 = onUpdate.
+    let filtered = ""
+    if (method !== 3) {
+      // filter out all "selected" items
+      filtered = JSON.parse(localStorage.getItem("media")).filter(item => !selected.includes(item.key))
+    } else {
+      filtered = JSON.parse(localStorage.getItem("media")).filter(item => item.key !== key)
+    }
+    if (method === 2) {
+      let addition = JSON.parse(localStorage.getItem("media")).filter(item => selected.includes(item.key) && item.list_type === lType)
+      filtered = filtered.concat(addition)
+    } else if (method === 3) {
+      let addition = JSON.parse(localStorage.getItem("media")).filter(item => item.key === key)
+      filtered = filtered.concat(addition[1])
+    }
+    setSeen(filtered.filter((o) => checkType(o, 1)))
+    setWatchlist(filtered.filter((o) => checkType(o, 2)))
+    setUpcoming(filtered.filter((o) => new Date(o.upcoming_release) > new Date(new Date().setDate(new Date().getDate() - 7))));
+    setMedia(filtered)
+    localStorage.setItem("media", JSON.stringify(filtered));
+    method === 1 ? onMessage('Successfully Removed ' + selected.length + ' Items', 'success') : null;
+    setDisableButtons(true);
+  };
+
+  const onUpdate = (data, new_upcoming) => {
+    let changes = {
+      my_season: seValue,
+      my_episode: epValue,
+      my_rating: ratingValue,
+      upcoming_release: new_upcoming
+    }
+    // if at least one value is changed, update items data
+    if (seValue !== null || epValue !== null || ratingValue !== null || new_upcoming !== undefined) {
+      onAdd(data, 3, data.list_type, changes)
+      onRemove(data.list_type, 3, data.key)
+    } else {
+      console.log("no changes")
+    }
+    setNull()
+  }
+
+  const onMove = (lType) => {
+    // lType = the list destination
+    // remove item, read it with list_type changed
+    selected.forEach((i) => {
+      let data = media.find((e) => e.key == i)
+      onAdd(data, 2, lType)
+    })
+    onRemove(lType, 2)
+    onMessage("Moved " + selected.length + ' items to ' + lType, 'success')
+  };

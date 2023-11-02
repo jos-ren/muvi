@@ -9,6 +9,7 @@ const CustomButton = ({
     onClick,
     text = "Button Text",
     background = "white",
+    hoverColor = "#f9f8f8",
     color = "black",
     borderColor = "grey",
     icon = false,
@@ -16,11 +17,23 @@ const CustomButton = ({
     fontSize = '12pt',
     width = '100%'
 }) => {
+    const [isHovered, setIsHovered] = useState(false);
+
+    const handleMouseEnter = () => {
+        setIsHovered(true);
+    };
+
+    const handleMouseLeave = () => {
+        setIsHovered(false);
+    };
+
 
     return (<div
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
         onClick={onClick}
         style={{
-            cursor:"pointer",
+            cursor: "pointer",
             border: `1px solid ${borderColor}`,
             borderRadius: "8px",
             width: width,
@@ -28,7 +41,7 @@ const CustomButton = ({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            background: background,
+            background: isHovered ? hoverColor : background,
             color: color,
             fontSize: fontSize,
             margin: '10px 0px'

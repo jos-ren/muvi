@@ -96,6 +96,7 @@ const Auth = () => {
                 {/* these need to swap depending on a state */}
                 <CustomButton
                     background="#1677ff"
+                    hoverColor='#004bb5'
                     borderColor="#1677ff"
                     color="white"
                     text={isCreate ? "Create Account" : "Sign In"}
