@@ -98,7 +98,7 @@ export default function Home() {
   const [ratingValue, setRatingValue] = useState(null);
   const isWide = useMediaQuery({ query: '(max-width: 1300px)' })
   const isVeryWide = useMediaQuery({ query: '(max-width: 1600px)' })
-  const [active, setActive] = useState(1);
+  const [active, setActive] = useState(0);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(false);
   const mediaCollectionRef = collection(db, "Media")
