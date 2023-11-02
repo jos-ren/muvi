@@ -5,6 +5,7 @@ import { Button, Tag, Tooltip } from 'antd';
 const dayjs = require('dayjs')
 import styled from "styled-components";
 import { genreCodes } from "./data.js"
+import {formatFSTimestamp} from "./utils.js"
 
 const Block = styled.div`
   margin-right: 3px;
@@ -35,10 +36,9 @@ export const date_added = {
     title: 'Date Added',
     dataIndex: 'date_added',
     // defaultSortOrder: 'ascend',
-    sorter: (a, b) => new Date(b.date_added) - new Date(a.date_added),
+    sorter: (a, b) => b.date_added - a.date_added,
     render: (date_added) => {
-        const date = new Date(date_added)
-        return <div>{date.toLocaleDateString('en-US', { dateStyle: "medium", })}</div>
+        return formatFSTimestamp(date_added, 2)
     }
 }
 

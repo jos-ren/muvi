@@ -17,8 +17,17 @@ body {
 
 .message{
   display: flex;
-  justify-content: end;
+  justify-content: flex-end;
   position:relative;
   top:60px;
+  right:5px;
+  /* border: 1px solid red; */
+}
+
+.login-message{
+  display: flex;
+  justify-content: flex-end;
+  position:relative;
+  right:5px;
   /* border: 1px solid red; */
 }

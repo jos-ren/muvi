@@ -8,7 +8,7 @@ import { tabs } from "../../data.js"
 import MovieTable from "../../comps/MovieTable.js"
 import Card from "../../comps/Card.js"
 import Hero from "../../comps/Hero.js"
-import { getCurrentTimestamp, checkType } from "../../utils.js"
+import { checkType, capitalizeFirstLetter } from "../../utils.js"
 import styled from "styled-components";
 import { useMediaQuery } from 'react-responsive'
 import Footer from "../../comps/Footer.js"
@@ -100,7 +100,7 @@ export default function Home() {
   const [ratingValue, setRatingValue] = useState(null);
   const isWide = useMediaQuery({ query: '(max-width: 1300px)' })
   const isVeryWide = useMediaQuery({ query: '(max-width: 1600px)' })
-  const [active, setActive] = useState(0);
+  const [active, setActive] = useState(1);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(false);
   const mediaCollectionRef = collection(db, "Media")
@@ -486,28 +486,6 @@ export default function Home() {
     }
   }
 
-  // console.log(media)
-
-  useEffect(() => {
-    // monitors login status
-    onAuthStateChanged(auth, (u) => {
-      if (u) {
-        // so data has a chance to load before page does
-        setTimeout(function () {
-          setUser(u)
-          updateUser(u)
-          getUserMedia(u.uid);
-          setLoading(false)
-        }, 100);
-      } else {
-        setUser(false)
-        setLoading(false)
-      }
-    })
-
-    getTrending();
-  }, []);
-
   // ==================== REFACTORED FUNCS =====================
 
   const updateUser = async (user) => {
@@ -547,48 +525,42 @@ export default function Home() {
     setTrending(temp)
   }
 
-  console.log(userMedia)
-
   const getUserMedia = async (uid) => {
-    // READ DATA
+    console.log("GOT USERMEDIA")
     try {
-      const userDocRef = doc(db, 'Users', uid); // Replace 'userId' with the actual user ID
+      const userDocRef = doc(db, 'Users', uid);
       const mediaListCollectionRef = collection(userDocRef, 'MediaList');
-      // // Query the subcollection if needed
-      // const movieListQuery = query(mediaListCollectionRef, where('media_uid', '==', ));
-      // // combine the two collection here to make one object of data
-      // // Fetch documents from the subcollection
       const mediaListSnapshot = await getDocs(mediaListCollectionRef);
-      const filteredData = mediaListSnapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }))
-      console.log("=====")
+      const userData = mediaListSnapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
 
-      // console.log(filteredData, "data")
-
-      // for (const i of filteredData) {
-      //   console.log(i)
-      // }
-      // const a = doc(db, 'Users', uid); // Replace 'userId' with the actual user ID
-      // const b = collection(a, 'MediaList');
-      // const c = await getDocs(b);
-      // const d = c.docs.map((doc) => ({ ...doc.data(), id: doc.id }))
-      // console.log(d, "D")
-      // d.forEach((e) => console.log(e.media_uid));
-
-      const movieListQuery = query(mediaCollectionRef, where('id', '==', i.media_uid));
-
-      // async function processFilteredData(filteredData) {
-      //   for (const i of filteredData) {
-      //     console.log("media_uid:", i.media_uid);
-      //     const mediaCollectionRef = collection(db, 'Media');
-      //   }
-      // }
-      // processFilteredData(filteredData)
-      // // // SET LIST TO EQUAL STATE
-      // setUserMedia(filteredData)
+      const combinedData = await processFilteredData(userData);
+      setUserMedia(combinedData);
     } catch (err) {
-      onMessage(`${err.name + ": " + err.code}`, "error")
+      onMessage(`${err.name + ": " + err.code}`, "error");
     }
   };
+
+  async function processFilteredData(userData) {
+    const fetchPromises = userData.map(async (i) => {
+      const documentRef = doc(db, 'Media', i.media_uid);
+      try {
+        const documentSnapshot = await getDoc(documentRef);
+        if (documentSnapshot.exists()) {
+          const mediaData = documentSnapshot.data();
+          return { ...mediaData, ...i };
+        } else {
+          console.log('Document not found.');
+          return null;
+        }
+      } catch (err) {
+        console.error('Error fetching document:', err);
+        return null;
+      }
+    });
+
+    const combinedData = await Promise.all(fetchPromises);
+    return combinedData.filter((data) => data !== null);
+  }
 
   // adds to a Users/uid/MediaList
   const createUserMedia = async (o, list_type) => {
@@ -601,9 +573,9 @@ export default function Home() {
     const notAdded = querySnapshot.empty
     if (notAdded) {
       try {
-        const media_uid = await createMedia(o);
-        console.log(media_uid, "media")
-        // media_uid = undefined, need to go to db and pull it
+        const { media_uid, title } = await createMedia(o);
+
+        console.log(media_uid, title, "HERE")
 
         let obj = {
           media_uid: media_uid,
@@ -618,7 +590,7 @@ export default function Home() {
         await addDoc(subCollectionRef, obj);
         // after the data is added, get media again
         getUserMedia(user.uid)
-        onMessage("Added " + title + " to " + list_type, "success")
+        onMessage("Added " + title + " to " + capitalizeFirstLetter(list_type), "success")
       } catch (err) {
         console.error(err)
       }
@@ -631,9 +603,9 @@ export default function Home() {
   const createMedia = async (o) => {
     // check if already in media collection 
     const querySnapshot = await getDocs(query(mediaCollectionRef, where('key', '==', o.id)));
+    let title = o.media_type === "movie" ? o.title : o.name;
     //  if movie does not exists in you Media collection yet
     if (querySnapshot.empty) {
-      let title = o.media_type === "movie" ? o.title : o.name;
       let release_date = o.media_type === "movie" ? o.release_date : o.first_air_date;
       // determine if anime. animation genre + japanese language = true
       let animation = false
@@ -664,12 +636,21 @@ export default function Home() {
       try {
         const docRef = await addDoc(mediaCollectionRef, obj)
         const newDocId = docRef.id;
-        return newDocId
+        if (newDocId) {
+          return { media_uid: newDocId, title };
+        } else {
+          throw new Error('Failed to create media.');
+        }
       } catch (err) {
         console.error(err)
       }
     } else {
-      console.log("already created media document", o.title)
+      const oldDocId = querySnapshot.docs[0].id;
+      if (oldDocId) {
+        return { media_uid: oldDocId, title };
+      } else {
+        throw new Error('Failed to create media.');
+      }
     }
   }
 
@@ -728,6 +709,24 @@ export default function Home() {
     genres,
   ];
 
+  useEffect(() => {
+    // monitors login status
+    onAuthStateChanged(auth, (u) => {
+      if (u) {
+        setUser(u)
+        updateUser(u)
+        getUserMedia(u.uid);
+        setLoading(false)
+      } else {
+        setUser(false)
+        setLoading(false)
+      }
+    })
+
+    getTrending();
+  }, []);
+
+
 
   const downloadData = () => {
     const jsonContent = localStorage.getItem("media");
@@ -771,18 +770,6 @@ export default function Home() {
             <Button style={{ margin: "0px 10px" }} onClick={logOut}>Logout</Button>
           </div>
         </Tabbar>
-        <div style={{ marginTop: "70px" }}>
-          <ul>
-            {userMedia.map((item) => (
-              <div style={{ display: "flex" }} key={item.tmdb_id}>
-                <li>{item.tmdb_id}</li>
-                {/* <button onClick={() => deleteMedia(item.id)}>Delete</button> */}
-              </div >
-            ))}
-          </ul>
-        </div>
-
-        <Button style={{ marginTop: "100px" }} onClick={() => { getUserMedia(user.uid) }}>get media</Button>
         {/* <Button style={{marginTop:"100px"}} onClick={downloadData}>Download Data</Button> */}
         <div style={isWide ? { margin: "0px 50px", flex: 1 } : isVeryWide ? { margin: "0px 10vw", flex: 1 } : { margin: "0px 15vw", flex: 1 }}>
           {active === 0 ?
@@ -855,12 +842,12 @@ export default function Home() {
           {active === 1 ?
             <MovieTable
               pagination={{ position: ["bottomCenter"], showSizeChanger: true, }}
-              header={"Seen | " + media.length + " Items"}
+              header={"Seen | " + userMedia.length + " Items"}
               onRemove={() => onRemove("seen", 1)}
               onMove={() => onMove("watchlist")}
               disableButtons={disableButtons}
               movieColumns={seenColumns}
-              movies={media}
+              movies={userMedia}
               rowSelection={rowSelection}
               showMove={true}
               moveKeyword={"Watchlist"}

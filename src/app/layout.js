@@ -10,9 +10,7 @@ const inter = Inter({ subsets: ['latin'] })
 //   link: "muvi-icon.svg"
 // }
 
-
 export default function RootLayout({ children }) {
-  // const router = useRouter()
 
   return (
     <html lang="en">
