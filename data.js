@@ -26,12 +26,12 @@ export const tabs = [
         icon: <FaRegBookmark />,
         path: "/upcoming"
     },
-    {
-        id: 4,
-        name: "Stats",
-        icon: <PieChartOutlined />,
-        path: "/statistics"
-    },
+    // {
+    //     id: 4,
+    //     name: "Stats",
+    //     icon: <PieChartOutlined />,
+    //     path: "/statistics"
+    // },
 ]
 
 export const genreCodes = [

@@ -60,21 +60,13 @@ export function transformErrorMessage(errorMessage) {
   }
 }
 
-export function checkType(o, method) {
-  if (method === 1) {
-    if (o.list_type === "seen") {
-      return true
-    }
-    return false;
-  } else {
-    if (o.list_type === "watchlist") {
-      return true
-    }
-    return false;
-  }
-}
-
 export function capitalizeFirstLetter(string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+export function getDateWeekAgo() {
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  return sevenDaysAgo
 }
 

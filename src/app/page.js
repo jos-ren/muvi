@@ -8,7 +8,7 @@ import { tabs } from "../../data.js"
 import MovieTable from "../../comps/MovieTable.js"
 import Card from "../../comps/Card.js"
 import Hero from "../../comps/Hero.js"
-import { checkType, capitalizeFirstLetter } from "../../utils.js"
+import { capitalizeFirstLetter, getDateWeekAgo } from "../../utils.js"
 import styled from "styled-components";
 import { useMediaQuery } from 'react-responsive'
 import Footer from "../../comps/Footer.js"
@@ -16,7 +16,7 @@ import { poster, date_added, release_date, audience_rating, type, episode, upcom
 import Auth from "../../comps/Auth.js"
 import { auth, db } from "./config/firebase"
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { getDocs, collection, getDoc, setDoc, addDoc, deleteDoc, updateDoc, doc, where, query } from "firebase/firestore"
+import { getDocs, collection, getDoc, setDoc, addDoc, deleteDoc, deleteDocs, updateDoc, doc, where, query, writeBatch } from "firebase/firestore"
 
 const Body = styled.div`
   display: flex;
@@ -103,6 +103,7 @@ export default function Home() {
   const [user, setUser] = useState(false);
   const mediaCollectionRef = collection(db, "Media")
 
+  console.log(userMedia)
   // console.log(user.uid)
   // console.log(active)
   // console.log("MEDIA", media)
@@ -285,7 +286,7 @@ export default function Home() {
               onChange={(value) => { setRatingValue(value) }}
             />
             <div>
-              <Button icon={<CheckOutlined />} size="small" onClick={() => { setRatingEditMode(false); onUpdate(data); }} />
+              <Button icon={<CheckOutlined />} size="small" onClick={() => { setRatingEditMode(false); updateUserMedia(data); }} />
               <Button icon={<CloseOutlined />} size="small" onClick={() => { setRatingEditMode(false) }} />
             </div>
           </div>
@@ -406,7 +407,7 @@ export default function Home() {
                 />
               </div>
               <div>
-                <Button icon={<CheckOutlined />} size="small" onClick={() => { setProgressEditMode(false); onUpdate(data); }}></Button>
+                <Button icon={<CheckOutlined />} size="small" onClick={() => { setProgressEditMode(false); updateUserMedia(data); }}></Button>
                 <Button icon={<CloseOutlined />} size="small" onClick={() => { setProgressEditMode(false) }}></Button>
               </div>
             </div> : <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -485,8 +486,6 @@ export default function Home() {
       onMessage(`${err.name + ": " + err.code}`, "error");
     }
   };
-
-  console.log(userMedia, "UM")
 
   async function processFilteredData(userData) {
     const fetchPromises = userData.map(async (i) => {
@@ -601,39 +600,69 @@ export default function Home() {
     }
   }
 
-
-  // updateMedia
-  // to change list type, rating, progress, etc
-  const updateUserMedia = async (location) => {
-    let userID = user.uid
+  // to change list type
+  const moveItemList = async (location) => {
+    const userID = user.uid;
     const updatedData = {
       list_type: location,
     };
-    // maybe batch updates, maybe do this for deletes too?
+    const batch = writeBatch(db);
+
     for (const docId of selected) {
-      try {
-        await updateDoc(doc(db, 'Users', userID, 'MediaList', docId), updatedData)
-      } catch (err) {
-        console.error(err);
-      }
+      const docRef = doc(db, 'Users', userID, 'MediaList', docId);
+      batch.update(docRef, updatedData);
     }
-    onMessage("Moved " + selected.length + " Items to " + capitalizeFirstLetter(location), "success")
-    // after the data is deleted, get media again
+
+    try {
+      await batch.commit();
+      onMessage("Moved " + selected.length + " Items to " + capitalizeFirstLetter(location), "success");
+      getUserMedia(userID);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // to change rating, progress, etc
+  const updateUserMedia = async (data) => {
+    console.log(data.key, ratingValue)
+    let userID = user.uid
+    let updatedData = {};
+
+    if (ratingEditMode) {
+      updatedData.my_rating = ratingValue;
+    } else if (progressEditMode) {
+      updatedData.my_season = seValue;
+      updatedData.my_episode = epValue;
+    }
+    console.log(updatedData)
+
+    try {
+      await updateDoc(doc(db, 'Users', userID, 'MediaList', data.key), updatedData)
+    } catch (err) {
+      console.error(err);
+    }
+
+    onMessage("Updated " + data.title, "success")
     getUserMedia(userID);
   }
 
   const deleteUserMedia = async () => {
-    let userID = user.uid
+    const userID = user.uid;
+    const batch = writeBatch(db);
+
     for (const docId of selected) {
-      try {
-        await deleteDoc(doc(db, 'Users', userID, "MediaList", docId));
-      } catch (err) {
-        console.error(err);
-      }
+      const docRef = doc(db, 'Users', userID, 'MediaList', docId);
+      batch.delete(docRef);
     }
-    onMessage("Deleted " + selected.length + " Items", "success")
-    // after the data is deleted, get media again
-    getUserMedia(userID);
+
+    try {
+      await batch.commit();
+      onMessage("Deleted " + selected.length + " Items", "success");
+      // After the data is deleted, get media again
+      getUserMedia(userID);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const logOut = async () => {
@@ -693,24 +722,6 @@ export default function Home() {
 
     getTrending();
   }, []);
-
-
-
-  const downloadData = () => {
-    const jsonContent = localStorage.getItem("media");
-    const blob = new Blob([jsonContent], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'data.json';
-    a.style.display = 'none';
-    document.body.appendChild(a);
-
-    a.click();
-
-    URL.revokeObjectURL(url);
-  };
 
   if (loading) {
     return <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "95vh" }}>
@@ -807,14 +818,14 @@ export default function Home() {
             </>
             : <></>}
 
-            {/* ==============tables ========== */}
+          {/* ==============tables ========== */}
 
           {active === 1 ?
             <MovieTable
               pagination={{ position: ["bottomCenter"], showSizeChanger: true, }}
               header={"Seen | " + userMedia.filter((item) => item.list_type === "seen").length + " Items"}
               onRemove={() => deleteUserMedia()}
-              onMove={() => updateUserMedia("watchlist")}
+              onMove={() => moveItemList("watchlist")}
               disableButtons={disableButtons}
               columns={seenColumns}
               data={userMedia.filter((item) => item.list_type === "seen")}
@@ -827,50 +838,49 @@ export default function Home() {
 
           {active === 2 ?
             <MovieTable
-            pagination={{ position: ["bottomCenter"], showSizeChanger: true, }}
-            header={"Watchlist | " + userMedia.filter((item) => item.list_type === "watchlist").length + " Items"}
-            onRemove={() => deleteUserMedia()}
-            onMove={() => updateUserMedia("seen")}
-            disableButtons={disableButtons}
-            columns={watchlistColumns}
-            data={userMedia.filter((item) => item.list_type === "watchlist")}
-            rowSelection={rowSelection}
-            showMove={true}
-            moveKeyword={"Seen"}
-            showRemove={true}
-          />
-              : <></>}
-            {/* {active === 3 ?
-              <div>
-                // {/* sort by this for movie (new Date(o.release_date) > new Date()) 
-                // {/* for tv: details.next_episode_to_air !== null 
-                <MovieTable
-                  showRefresh
-                  onRefresh={() => {
-                    refreshUpdate();
-                  }}
-                  pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
-                  header={
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                      <div>Your Upcoming Shows</div>
-                      <Popover trigger="click" content={"Generated from items you have added to your Seen & Watchlists. Displays items which are coming out soon."} >
-                        <QuestionCircleOutlined style={{ fontSize: "13px", color: "grey", margin: "6px 0px 0px 10px" }} />
-                      </Popover>
-                    </div>
-                  }
-                  disableButtons={disableButtons}
-                  movieColumns={upcomingColumns}
-                  movies={upcoming}
-                  rowSelection={false}
-                />
-              </div >
-              : <></>}
-            {active === 4 ?
-              <div style={{ marginTop: "100px" }}>
-                Stats
-              </div >
-              : <></>}
-           */}
+              pagination={{ position: ["bottomCenter"], showSizeChanger: true, }}
+              header={"Watchlist | " + userMedia.filter((item) => item.list_type === "watchlist").length + " Items"}
+              onRemove={() => deleteUserMedia()}
+              onMove={() => moveItemList("seen")}
+              disableButtons={disableButtons}
+              columns={watchlistColumns}
+              data={userMedia.filter((item) => item.list_type === "watchlist")}
+              rowSelection={rowSelection}
+              showMove={true}
+              moveKeyword={"Seen"}
+              showRemove={true}
+            />
+            : <></>}
+          {active === 3 ?
+            <div>
+              {/* sort by this for movie (new Date(o.release_date) > new Date()) 
+                for tv: details.next_episode_to_air !== null  */}
+              <MovieTable
+                showRefresh
+                onRefresh={() => { refreshUpdate() }}
+                pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
+                header={
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    <div>Your Upcoming Shows</div>
+                    <Popover trigger="click" content={"Generated from items you have added to your Seen & Watchlists. Displays items which are coming out soon."} >
+                      <QuestionCircleOutlined style={{ fontSize: "13px", color: "grey", margin: "6px 0px 0px 10px" }} />
+                    </Popover>
+                  </div>
+                }
+                disableButtons={disableButtons}
+                columns={upcomingColumns}
+                data={userMedia.filter(item => new Date(item.upcoming_release) > getDateWeekAgo())}
+                rowSelection={false}
+              />
+            </div >
+            : <></>}
+
+          {active === 4 ?
+            <div style={{ marginTop: "100px" }}>
+              Stats
+            </div >
+            : <></>}
+
         </div>
         <Footer />
       </Body > : <Auth />

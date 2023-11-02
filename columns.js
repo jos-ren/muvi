@@ -147,7 +147,7 @@ export const episode = {
             {
                 data.media_type === "movie" ? "" :
                     <div style={{ display: "flex" }}>
-                        <Block style={{ padding: "0px 5px", fontSize: "9pt" }}>S : {season}</Block>
+                        {!data.is_anime ? <Block style={{ padding: "0px 5px", fontSize: "9pt" }}>S : {season}</Block> : <></>}
                         <Block style={{ padding: "0px 5px", fontSize: "9pt" }}>E : {episode}</Block>
                         <div style={{ marginLeft: "2px" }}>{text.slice(0, 7) === "Episode" ? "" : text}</div>
                     </div>
