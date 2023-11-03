@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Button, Input, message, Divider } from "antd"
-import { auth, googleProvider } from "../src/app/config/firebase"
+import { auth, googleProvider } from "../config/firebase"
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth'
 import { GoogleOutlined } from '@ant-design/icons';
 import CustomButton from "./CustomButton.js"
-import { transformErrorMessage } from "../utils"
+import { transformErrorMessage } from "../../../utils"
 
 const Auth = () => {
     const [email, setEmail] = useState("")

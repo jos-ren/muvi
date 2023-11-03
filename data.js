@@ -3,35 +3,35 @@ import { FaRegBookmark } from "react-icons/fa6";
 
 export const tabs = [
     {
-        id: 0,
+        id: 1,
         name: "Search",
         icon: <SearchOutlined />,
         path: "/"
     },
     {
-        id: 1,
+        id: 2,
         name: "Seen",
         icon: <CheckOutlined />,
         path: "/seen"
     },
     {
-        id: 2,
+        id: 3,
         name: "Watchlist",
         icon: <RiseOutlined />,
         path: "/watchlist"
     },
     {
-        id: 3,
+        id: 4,
         name: "Upcoming",
         icon: <FaRegBookmark />,
         path: "/upcoming"
     },
-    // {
-    //     id: 4,
-    //     name: "Stats",
-    //     icon: <PieChartOutlined />,
-    //     path: "/statistics"
-    // },
+    {
+        id: 5,
+        name: "Stats",
+        icon: <PieChartOutlined />,
+        path: "/statistics"
+    },
 ]
 
 export const genreCodes = [

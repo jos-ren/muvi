@@ -5,15 +5,15 @@ import { message, Input, Button, InputNumber, Space, Tooltip, Progress, Select, 
 import { StarTwoTone, StarOutlined, SearchOutlined, CheckOutlined, EditOutlined, QuestionCircleOutlined, CloseOutlined } from '@ant-design/icons';
 import Highlighter from 'react-highlight-words';
 import { tabs } from "../../data.js"
-import MovieTable from "../../comps/MovieTable.js"
-import Card from "../../comps/Card.js"
-import Hero from "../../comps/Hero.js"
+import MovieTable from "./components/MovieTable.js"
+import Card from "./components/Card.js"
+import Hero from "./components/Hero.js"
 import { capitalizeFirstLetter, getDateWeekAgo } from "../../utils.js"
 import styled from "styled-components";
 import { useMediaQuery } from 'react-responsive'
-import Footer from "../../comps/Footer.js"
+import Footer from "./components/Footer.js"
 import { poster, date_added, release_date, audience_rating, type, episode, upcoming_release, genres, view } from "../../columns.js"
-import Auth from "../../comps/Auth.js"
+import Auth from "./components/Auth.js"
 import { auth, db } from "./config/firebase"
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { getDocs, collection, getDoc, setDoc, addDoc, deleteDoc, deleteDocs, updateDoc, doc, where, query, writeBatch } from "firebase/firestore"
@@ -53,28 +53,30 @@ const Tabs = styled.div`
 `;
 
 const Tab = styled.div`
-  padding:0px 10px;
-  display: flex;
-  height:60px;
-  align-items: center;
-  cursor:pointer;
-  &:hover{
-    color:white;
-  }
-  > * {
-    margin:5px;
-  }
-  ${({ active }) => active &&
-    `
+padding:0px 10px 0px 5px;
+display: flex;
+height:60px;
+align-items: center;
+cursor:pointer;
+// border:1px solid red;
+&:hover{
+  color:white;
+}
+> * {
+  margin:5px;
+}
+${({ active }) => {
+    return active &&
+      `
     border-bottom: 2px solid white;
     opacity: 1;
     color:white;
-`}
   `
+  }}
+`
 
 export default function Home() {
   const fetch = require("node-fetch");
-  const [media, setMedia] = useState([]);
   const [userMedia, setUserMedia] = useState([]);
   const [upcoming, setUpcoming] = useState([]);
   const [trending, setTrending] = useState([]);
@@ -82,7 +84,6 @@ export default function Home() {
   const [selected, setSelected] = useState([]);
   const [disableClear, setDisableClear] = useState(true);
   const [disableButtons, setDisableButtons] = useState(true);
-  const [page, setPage] = useState(1);
   const [messageApi, contextHolder] = message.useMessage();
   const [searchText, setSearchText] = useState('');
   const [searchedColumn, setSearchedColumn] = useState('');
@@ -98,14 +99,14 @@ export default function Home() {
   const [ratingValue, setRatingValue] = useState(null);
   const isWide = useMediaQuery({ query: '(max-width: 1300px)' })
   const isVeryWide = useMediaQuery({ query: '(max-width: 1600px)' })
-  const [active, setActive] = useState(0);
+  const [active, setActive] = useState(1);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(false);
   const mediaCollectionRef = collection(db, "Media")
 
   console.log(userMedia)
   // console.log(user.uid)
-  // console.log(active)
+  // console.log(active, "AC")
   // console.log("MEDIA", media)
   // console.log("SEEN", seen)
   // console.log("WATCHLIST", watchlist)
@@ -522,8 +523,6 @@ export default function Home() {
       try {
         const { media_uid, title } = await createMedia(o);
 
-        console.log(media_uid, title, "HERE")
-
         let obj = {
           media_uid: media_uid,
           tmdb_id: o.id,
@@ -732,10 +731,11 @@ export default function Home() {
     <div>
       {contextHolder}
       {user ? <Body>
-        <Tabbar>
+        {/* <Tabbar>
           <Tabs>
             {tabs.map(o => (
               <Tab
+                active={active === o.id ? active : null}
                 onClick={() => setActive(o.id)}
                 key={o.id}
               >
@@ -748,10 +748,12 @@ export default function Home() {
             <Image unoptimized height={30} width={30} quality="100" src={user.photoURL ? user.photoURL : "default_avatar.jpg"} alt={"profile_pic"} style={{ borderRadius: "50%" }} />
             <Button style={{ margin: "0px 10px" }} onClick={logOut}>Logout</Button>
           </div>
-        </Tabbar>
+        </Tabbar> */}
         {/* <Button style={{marginTop:"100px"}} onClick={downloadData}>Download Data</Button> */}
         <div style={isWide ? { margin: "0px 50px", flex: 1 } : isVeryWide ? { margin: "0px 10vw", flex: 1 } : { margin: "0px 15vw", flex: 1 }}>
-          {active === 0 ?
+
+          {/* search */}
+          {active === 1 ?
             <>
               <Hero
                 onSearch={onSearch}
@@ -818,9 +820,9 @@ export default function Home() {
             </>
             : <></>}
 
-          {/* ==============tables ========== */}
 
-          {active === 1 ?
+          {/* Seen */}
+          {active === 2 ?
             <MovieTable
               pagination={{ position: ["bottomCenter"], showSizeChanger: true, }}
               header={"Seen | " + userMedia.filter((item) => item.list_type === "seen").length + " Items"}
@@ -836,7 +838,8 @@ export default function Home() {
             />
             : <></>}
 
-          {active === 2 ?
+          {/* Watchlist */}
+          {active === 3 ?
             <MovieTable
               pagination={{ position: ["bottomCenter"], showSizeChanger: true, }}
               header={"Watchlist | " + userMedia.filter((item) => item.list_type === "watchlist").length + " Items"}
@@ -851,7 +854,9 @@ export default function Home() {
               showRemove={true}
             />
             : <></>}
-          {active === 3 ?
+
+          {/* Upcoming */}
+          {active === 4 ?
             <div>
               {/* sort by this for movie (new Date(o.release_date) > new Date()) 
                 for tv: details.next_episode_to_air !== null  */}
@@ -875,7 +880,8 @@ export default function Home() {
             </div >
             : <></>}
 
-          {active === 4 ?
+          {/* Stats */}
+          {active === 5 ?
             <div style={{ marginTop: "100px" }}>
               Stats
             </div >
