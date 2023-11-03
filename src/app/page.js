@@ -8,12 +8,11 @@ import { tabs } from "../../data.js"
 import MovieTable from "../components/MovieTable.js"
 import Card from "../components/Card.js"
 import Hero from "../components/Hero.js"
-import { capitalizeFirstLetter, getDateWeekAgo } from "../../utils.js"
+import { capitalizeFirstLetter, getDateWeekAgo } from "./utils.js"
 import styled from "styled-components";
 import { useMediaQuery } from 'react-responsive'
 import Footer from "../components/Footer.js"
 import { poster, date_added, release_date, audience_rating, type, episode, upcoming_release, genres, view } from "../../columns.js"
-import Auth from "../components/Auth.js"
 import { auth, db } from "../config/firebase.js"
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { getDocs, collection, getDoc, setDoc, addDoc, deleteDoc, deleteDocs, updateDoc, doc, where, query, writeBatch } from "firebase/firestore"
@@ -882,7 +881,7 @@ export default function Home() {
 
         </div>
         <Footer />
-      </Body > : <Auth />
+      </Body > : <div></div>
       }
     </div>
   );

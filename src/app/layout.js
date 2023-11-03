@@ -11,12 +11,6 @@ import { auth } from "../config/firebase.js"
 import { onAuthStateChanged, signOut } from "firebase/auth";
 const inter = Inter({ subsets: ['latin'] })
 
-// export const metadata = {
-//   title: 'Muvi',
-//   description: 'JOSREN ©2023',
-//   link: "muvi-icon.svg"
-// }
-
 const Body = styled.div`
   display: flex;
   flex-direction: column;
@@ -65,15 +59,15 @@ cursor:pointer;
 > * {
   margin:5px;
 }
-${({ active }) => {
-    return active &&
-      `
-    border-bottom: 2px solid white;
-    opacity: 1;
-    color:white;
-  `
-  }}
 `
+// ${({ active }) => {
+//     return active &&
+//       `
+//     border-bottom: 2px solid white;
+//     opacity: 1;
+//     color:white;
+//   `
+//   }}
 
 // check if there is user
 // if no user, do not show tab bar
