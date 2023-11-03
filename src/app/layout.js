@@ -7,6 +7,8 @@ import Image from "next/image";
 import { tabs } from "../../data"
 import { message, Button } from 'antd';
 
+import { auth } from "../config/firebase.js"
+import { onAuthStateChanged, signOut } from "firebase/auth";
 const inter = Inter({ subsets: ['latin'] })
 
 // export const metadata = {
@@ -19,6 +21,7 @@ const Body = styled.div`
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+
 `;
 
 const Grid = styled.div`
@@ -72,7 +75,18 @@ ${({ active }) => {
   }}
 `
 
+// check if there is user
+// if no user, do not show tab bar
+
 export default function RootLayout({ children }) {
+  const logOut = async () => {
+    try {
+      await signOut(auth)
+    } catch (err) {
+      console.error(err)
+      // onMessage(`${err.name + ": " + err.code}`, "error")
+    }
+  };
 
   return (
     <html lang="en">
@@ -92,7 +106,7 @@ export default function RootLayout({ children }) {
           </Tabs>
           <div style={{ display: "flex", alignItems: "center", position: "absolute", right: "0px" }}>
             {/* <Image unoptimized height={30} width={30} quality="100" src={user.photoURL ? user.photoURL : "default_avatar.jpg"} alt={"profile_pic"} style={{ borderRadius: "50%" }} /> */}
-            {/* <Button style={{ margin: "0px 10px" }} onClick={logOut}>Logout</Button> */}
+            <Button style={{ margin: "0px 10px" }} onClick={logOut}>Logout</Button>
           </div>
         </Tabbar>
         {children}
