@@ -1,16 +1,18 @@
 "use client"
 import React, { useState } from 'react';
 import { Input, message, Divider } from "antd"
-import { auth, googleProvider } from "../../../config/firebase"
+import { auth, googleProvider } from "@/config/firebase"
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth'
-import CustomButton from "../../../components/CustomButton.js"
-import { transformErrorMessage } from "../../utils"
+import CustomButton from "@/components/CustomButton.js"
+import { transformErrorMessage } from "../../../utils.js"
+import { useRouter } from 'next/navigation'
 
 const Login = () => {
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [isCreate, setIsCreate] = useState(true)
     const [messageApi, contextHolder] = message.useMessage();
+    const router = useRouter()
 
     const onMessage = (message, type) => {
         messageApi.open({
@@ -28,6 +30,7 @@ const Login = () => {
             console.error(`${err.name + ": " + err.code}`, "error")
             onMessage(transformErrorMessage(err.code), "error")
         }
+        router.push('/search')
     };
 
     const signIn = async () => {
@@ -37,6 +40,7 @@ const Login = () => {
             console.error(`${err.name + ": " + err.code}`, "error")
             onMessage(transformErrorMessage(err.code), "error")
         }
+        router.push('/search')
     };
 
     const signInWithGoogle = async () => {
@@ -46,6 +50,7 @@ const Login = () => {
             console.error(`${err.name + ": " + err.code}`, "error")
             onMessage(transformErrorMessage(err.code), "error")
         }
+        router.push('/search')
     };
 
     return (
