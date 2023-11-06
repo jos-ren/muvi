@@ -14,10 +14,9 @@ const ProfilePage = () => {
     return (
         <div>
             {contextHolder}
-            <div style={isWide ? { margin: "0px 50px", flex: 1 } : isVeryWide ? { margin: "0px 10vw", flex: 1 } : { margin: "0px 15vw", flex: 1 }}>
-                <h1 style={{ marginTop: "100px" }}>Profile Page</h1>
-                <p>This is the profile page content.</p>
-            </div>
+
+            <h1 style={{ marginTop: "100px" }}>Profile Page</h1>
+            <p>This is the profile page content.</p>
         </div>
     );
 };

@@ -6,31 +6,31 @@ export const tabs = [
         id: 1,
         name: "Search",
         icon: <SearchOutlined />,
-        path: "/"
+        route: "/search"
     },
     {
         id: 2,
         name: "Seen",
         icon: <CheckOutlined />,
-        path: "/seen"
+        route: "/seen"
     },
     {
         id: 3,
         name: "Watchlist",
         icon: <RiseOutlined />,
-        path: "/watchlist"
+        route: "/watchlist"
     },
     {
         id: 4,
         name: "Upcoming",
         icon: <FaRegBookmark />,
-        path: "/upcoming"
+        route: "/upcoming"
     },
     {
         id: 5,
         name: "Stats",
         icon: <PieChartOutlined />,
-        path: "/statistics"
+        route: "/statistics"
     },
 ]
 
