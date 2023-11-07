@@ -8,10 +8,17 @@ import { auth } from "../../../config/firebase.js";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter, usePathname } from 'next/navigation';
 import tmdb from "../../../../public/tmdb.svg";
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 
 export default function ContentRootLayout({ children }) {
   const router = useRouter()
   const pathName = usePathname()
+  const theme = useTheme();
+  const medium = useMediaQuery(theme.breakpoints.up('md'));
+  const large = useMediaQuery(theme.breakpoints.up('lg'));
+
+  console.log(large, medium)
 
   const logOut = async () => {
     try {
@@ -24,8 +31,8 @@ export default function ContentRootLayout({ children }) {
   };
 
   return (
-    <div>
-      <div className='tab-bar' >
+    <div style={{minHeight:"100vh", display:"flex", flexDirection:"column"}}>
+      <div className='header' >
         <div className='tab-container'>
           {tabs.map(o => (
             <div
@@ -44,8 +51,11 @@ export default function ContentRootLayout({ children }) {
           <Button style={{ margin: "0px 10px" }} onClick={logOut}>Logout</Button>
         </div>
       </div>
-      {children}
-      {/* <Footer /> */}
+
+      <div style={large ? { margin: "0px 15vw", flex: 1 } : medium ? { margin: "0px 10vw", flex: 1 } : { margin: "0px 50px", flex: 1 }}>
+        {children}
+      </div>
+
       <div className='footer'>
         <>JOSREN ©2023 | Created using data from</>
         <Image unoptimized height="20" width="66" quality="75" src={tmdb} alt={"tmdb"} style={{ marginLeft: "7px" }} />

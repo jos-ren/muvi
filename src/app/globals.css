@@ -42,11 +42,10 @@ body {
   background: #fafafa;
   font-size: 10pt;
   width: 100%;
-  position: relative;
   bottom: 0px;
 }
 
-.tab-bar {
+.header {
   background: #001529;
   color: #bbc0c4;
   display: flex;

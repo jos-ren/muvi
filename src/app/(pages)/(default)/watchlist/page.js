@@ -553,26 +553,16 @@ const SeenPage = () => {
 
     // ======================= ^^ NEW REFACTORED STUFF ^^ =============
 
-    const seenColumns = [
+    const watchlistColumns = [
         poster,
         title,
         release_date,
         date_added,
-        my_rating,
+        audience_rating,
         type,
         genres,
-        progress,
-        view,
+        view
     ];
-
-    // const upcomingColumns = [
-    //     upcoming_release,
-    //     poster,
-    //     title,
-    //     episode,
-    //     type,
-    //     genres,
-    // ];
 
     useEffect(() => {
         // monitors login status
@@ -593,15 +583,15 @@ const SeenPage = () => {
             {contextHolder}
             <MovieTable
                 pagination={{ position: ["bottomCenter"], showSizeChanger: true, }}
-                header={"Seen | " + userMedia.filter((item) => item.list_type === "seen").length + " Items"}
+                header={"Watchlist | " + userMedia.filter((item) => item.list_type === "watchlist").length + " Items"}
                 onRemove={() => deleteUserMedia()}
-                onMove={() => moveItemList("watchlist")}
+                onMove={() => moveItemList("seen")}
                 disableButtons={disableButtons}
-                columns={seenColumns}
-                data={userMedia.filter((item) => item.list_type === "seen")}
+                columns={watchlistColumns}
+                data={userMedia.filter((item) => item.list_type === "watchlist")}
                 rowSelection={rowSelection}
                 showMove={true}
-                moveKeyword={"Watchlist"}
+                moveKeyword={"Seen"}
                 showRemove={true}
             />
         </div>

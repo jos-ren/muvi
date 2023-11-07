@@ -115,7 +115,7 @@ const Login = () => {
                             <div onClick={() => setIsCreate(false)} style={{ color: "#1677ff", marginLeft: "5px", cursor: "pointer" }}>Sign In</div>
                         </div> :
                         <div style={{ display: "flex", fontSize: "10pt", marginTop: "10px" }}>
-                            <div>Don't have an account?</div>
+                            <div>Don&rsquo;t have an account?</div>
                             <div onClick={() => setIsCreate(true)} style={{ color: "#1677ff", marginLeft: "5px", cursor: "pointer" }}>Register</div>
                         </div>
                     }
