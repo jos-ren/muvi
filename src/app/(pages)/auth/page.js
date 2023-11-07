@@ -4,7 +4,7 @@ import { Input, message, Divider } from "antd"
 import { auth, googleProvider } from "@/config/firebase"
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth'
 import CustomButton from "@/components/CustomButton.js"
-import { transformErrorMessage } from "../../../utils.js"
+import { transformErrorMessage } from "../../utils.js"
 import { useRouter } from 'next/navigation'
 
 const Login = () => {
@@ -26,31 +26,31 @@ const Login = () => {
     const createAccount = async () => {
         try {
             await createUserWithEmailAndPassword(auth, email, password)
+            router.push('/search')
         } catch (err) {
             console.error(`${err.name + ": " + err.code}`, "error")
             onMessage(transformErrorMessage(err.code), "error")
         }
-        router.push('/search')
     };
 
     const signIn = async () => {
         try {
             await signInWithEmailAndPassword(auth, email, password)
+            router.push('/search')
         } catch (err) {
             console.error(`${err.name + ": " + err.code}`, "error")
             onMessage(transformErrorMessage(err.code), "error")
         }
-        router.push('/search')
     };
 
     const signInWithGoogle = async () => {
         try {
             await signInWithPopup(auth, googleProvider)
+            router.push('/search')
         } catch (err) {
             console.error(`${err.name + ": " + err.code}`, "error")
             onMessage(transformErrorMessage(err.code), "error")
         }
-        router.push('/search')
     };
 
     return (

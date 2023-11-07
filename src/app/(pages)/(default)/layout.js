@@ -3,13 +3,14 @@ import '../../globals.css';
 import styled from "styled-components";
 import Image from "next/image";
 import { tabs } from "../../../data";
-import { Button } from 'antd';
 import { auth } from "../../../config/firebase.js";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter, usePathname } from 'next/navigation';
 import tmdb from "../../../../public/tmdb.svg";
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
+import { DownOutlined, ArrowRightOutlined, UserOutlined, ApartmentOutlined } from '@ant-design/icons';
+import { Dropdown, Space, Button } from 'antd';
 
 export default function ContentRootLayout({ children }) {
   const router = useRouter()
@@ -18,20 +19,41 @@ export default function ContentRootLayout({ children }) {
   const medium = useMediaQuery(theme.breakpoints.up('md'));
   const large = useMediaQuery(theme.breakpoints.up('lg'));
 
-  console.log(large, medium)
-
   const logOut = async () => {
     try {
       await signOut(auth)
     } catch (err) {
       console.error(err)
-      // onMessage(`${err.name + ": " + err.code}`, "error")
     }
-    router.push('/auth/login')
+    router.push('/auth')
   };
 
+  const items = [
+    {
+      test: <div>test</div>
+    },
+    {
+      key: '1',
+      label: <div onClick={() => { router.push('/profile') }}>View Profile</div>,
+      icon: <UserOutlined />,
+    },
+    {
+      key: '2',
+      label: <div onClick={() => { router.push('/admin') }}>Admin Console</div>,
+      icon: <ApartmentOutlined />
+    },
+    {
+      type: 'divider',
+    },
+    {
+      key: '3',
+      label: <div onClick={logOut}>Logout</div>,
+      icon: <ArrowRightOutlined />,
+    },
+  ];
+
   return (
-    <div style={{minHeight:"100vh", display:"flex", flexDirection:"column"}}>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <div className='header' >
         <div className='tab-container'>
           {tabs.map(o => (
@@ -46,9 +68,16 @@ export default function ContentRootLayout({ children }) {
             </div>
           ))}
         </div>
-        <div style={{ display: "flex", alignItems: "center", position: "absolute", right: "0px" }}>
-          <Image unoptimized height={30} width={30} quality="100" src={"default_avatar.jpg"} alt={"profile_pic"} style={{ borderRadius: "50%" }} />
-          <Button style={{ margin: "0px 10px" }} onClick={logOut}>Logout</Button>
+        <div style={{ position: "absolute", right: "15px" }}>
+          <Dropdown arrow menu={{ items }} trigger={['click']}>
+            <div style={{ display: "flex", cursor: "pointer", alignItems: "center" }}>
+              <div style={{marginRight:"10px" }}>email</div>
+              <Image unoptimized height={30} width={30} quality="100" src={"default_avatar.jpg"} alt={"profile_pic"} style={{ borderRadius: "50%", marginRight: "10px" }} />
+              <DownOutlined />
+            </div>
+
+          </Dropdown>
+          {/* <Button style={{ margin: "0px 10px" }} onClick={logOut}>Logout</Button> */}
         </div>
       </div>
 

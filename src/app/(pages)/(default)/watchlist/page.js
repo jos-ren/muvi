@@ -370,6 +370,7 @@ const SeenPage = () => {
 
             const combinedData = await processFilteredData(userData);
             setUserMedia(combinedData);
+            setLoading(false)
         } catch (err) {
             onMessage(`${err.name + ": " + err.code}`, "error");
         }
@@ -570,16 +571,19 @@ const SeenPage = () => {
             if (u) {
                 setUser(u)
                 getUserMedia(u.uid);
-                setLoading(false)
             } else {
                 // send user to login if not logged in
-                router.push('/auth/login')
+                router.push('/auth')
             }
         })
     }, []);
 
-    return (
-        <div>
+    if (loading) {
+        return <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "95vh" }}>
+            <h1>Loading...</h1>
+        </div>
+    } else {
+        return <div>
             {contextHolder}
             <MovieTable
                 pagination={{ position: ["bottomCenter"], showSizeChanger: true, }}
@@ -595,7 +599,7 @@ const SeenPage = () => {
                 showRemove={true}
             />
         </div>
-    );
+    }
 };
 
 export default SeenPage;
