@@ -1,16 +1,17 @@
 "use client";
 import '../../globals.css';
-import styled from "styled-components";
+import { useState, useEffect } from "react";
 import Image from "next/image";
-import { tabs } from "../../../data";
+import { tabs } from "../../../data.js";
 import { auth } from "../../../config/firebase.js";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { signOut } from "firebase/auth";
 import { useRouter, usePathname } from 'next/navigation';
 import tmdb from "../../../../public/tmdb.svg";
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import { DownOutlined, ArrowRightOutlined, UserOutlined, ApartmentOutlined } from '@ant-design/icons';
 import { Dropdown, Space, Button } from 'antd';
+import { onAuthStateChanged } from "firebase/auth";
 
 export default function ContentRootLayout({ children }) {
   const router = useRouter()
@@ -18,6 +19,7 @@ export default function ContentRootLayout({ children }) {
   const theme = useTheme();
   const medium = useMediaQuery(theme.breakpoints.up('md'));
   const large = useMediaQuery(theme.breakpoints.up('lg'));
+  const [navData, setNavData] = useState()
 
   const logOut = async () => {
     try {
@@ -37,9 +39,10 @@ export default function ContentRootLayout({ children }) {
       label: <div onClick={() => { router.push('/profile') }}>View Profile</div>,
       icon: <UserOutlined />,
     },
+    // dont show is not admin
     {
       key: '2',
-      label: <div onClick={() => { router.push('/admin') }}>Admin Console</div>,
+      label: <div onClick={() => { router.push('/admin/dashboard') }}>Admin Console</div>,
       icon: <ApartmentOutlined />
     },
     {
@@ -51,6 +54,14 @@ export default function ContentRootLayout({ children }) {
       icon: <ArrowRightOutlined />,
     },
   ];
+
+
+  useEffect(() => {
+    // monitors login status
+    onAuthStateChanged(auth, (u) => {
+      setNavData(u)
+    })
+  }, []);
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
@@ -68,14 +79,14 @@ export default function ContentRootLayout({ children }) {
             </div>
           ))}
         </div>
-        <div style={{ position: "absolute", right: "15px" }}>
-          <Dropdown arrow menu={{ items }} trigger={['click']}>
-            <div style={{ display: "flex", cursor: "pointer", alignItems: "center" }}>
-              <div style={{marginRight:"10px" }}>email</div>
-              <Image unoptimized height={30} width={30} quality="100" src={"default_avatar.jpg"} alt={"profile_pic"} style={{ borderRadius: "50%", marginRight: "10px" }} />
+        <div style={{ position: "absolute", right: "15px", display:"flex", alignItems:"center" }}>
+          <div style={{ marginRight: "10px" }}>{navData ? navData.email : ""}</div>
+          {/* <div style={{ marginRight: "10px" }}>{navData ? navData.displayName : "email"}</div> */}
+          <Dropdown arrow menu={{ items }} trigger={['click']} placement="bottomRight" overlayClassName="nav-dropdown">
+            <div style={{ cursor:"pointer", display:"flex", alignItems:"center"}}>
+              <Image unoptimized height={30} width={30} quality="100" src={navData ? navData.photoURL : "default_avatar.jpg"} alt={"profile_pic"} style={{ borderRadius: "50%", marginRight: "10px" }} />
               <DownOutlined />
             </div>
-
           </Dropdown>
           {/* <Button style={{ margin: "0px 10px" }} onClick={logOut}>Logout</Button> */}
         </div>

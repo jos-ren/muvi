@@ -6,7 +6,7 @@ import { auth, db } from "@/config/firebase.js"
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { getDocs, doc, collection } from "firebase/firestore"
-import { formatFSTimestamp } from "../../../utils.js"
+import { formatFSTimestamp } from "../../../../utils.js"
 
 const AdminPage = () => {
     const [messageApi, contextHolder] = message.useMessage();
