@@ -1,15 +1,12 @@
 "use client";
-import Image from "next/image";
-import { useState, useEffect, useRef, cloneElement } from "react";
-import { message, Input, Button, InputNumber, Space, Tooltip, Progress, Select, Divider, Popover, Dropdown } from 'antd';
-import { StarTwoTone, StarOutlined, SearchOutlined, CheckOutlined, EditOutlined, QuestionCircleOutlined, CloseOutlined } from '@ant-design/icons';
+import { useState, useEffect, useRef } from "react";
+import { message, Input, Button, Space, Popover } from 'antd';
+import { SearchOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import Highlighter from 'react-highlight-words';
 import MovieTable from "@/components/MovieTable.js"
-import { capitalizeFirstLetter, getDateWeekAgo } from "../../../utils.js"
-import styled from "styled-components";
-import { poster, date_added, release_date, audience_rating, type, episode, upcoming_release, genres, view } from "@/columns.js"
-import { getDocs, collection, getDoc, setDoc, addDoc, deleteDoc, deleteDocs, updateDoc, doc, where, query, writeBatch } from "firebase/firestore"
-import useAuth from "@/hooks/useAuth.js";
+import {  getDateWeekAgo } from "../../../utils.js"
+import { poster, type, episode, upcoming_release, genres } from "@/columns.js"
+import { getDocs, collection, getDoc, doc} from "firebase/firestore"
 import { useRouter } from 'next/navigation'
 
 // firebase
@@ -20,7 +17,6 @@ const UpcomingPage = () => {
     const fetch = require("node-fetch");
     const [userMedia, setUserMedia] = useState([]);
     const [messageApi, contextHolder] = message.useMessage();
-    const [disableButtons, setDisableButtons] = useState(true);
     const [searchText, setSearchText] = useState('');
     const [searchedColumn, setSearchedColumn] = useState('');
     const searchInput = useRef(null);
@@ -233,7 +229,6 @@ const UpcomingPage = () => {
                         </Popover>
                     </div>
                 }
-                disableButtons={disableButtons}
                 columns={upcomingColumns}
                 data={userMedia.filter(item => new Date(item.upcoming_release) > getDateWeekAgo())}
                 rowSelection={false}

@@ -1,14 +1,11 @@
 "use client";
-import Image from "next/image";
-import { useState, useEffect, useRef, cloneElement } from "react";
+import { useState, useEffect, useRef } from "react";
 import { message, Input, Button, InputNumber, Space, Tooltip, Progress, Select, Divider, Popover, Dropdown } from 'antd';
 import { StarTwoTone, StarOutlined, SearchOutlined, CheckOutlined, EditOutlined, QuestionCircleOutlined, CloseOutlined } from '@ant-design/icons';
 import Highlighter from 'react-highlight-words';
 import MovieTable from "@/components/MovieTable.js"
-import { capitalizeFirstLetter, getDateWeekAgo } from "../../../utils.js"
-import styled from "styled-components";
-import { poster, date_added, release_date, audience_rating, type, episode, upcoming_release, genres, view } from "@/columns.js"
-import { getDocs, collection, getDoc, setDoc, addDoc, deleteDoc, deleteDocs, updateDoc, doc, where, query, writeBatch } from "firebase/firestore"
+import { poster, date_added, release_date, type, genres, view } from "@/columns.js"
+import { getDocs, collection, getDoc, doc } from "firebase/firestore"
 import { useRouter } from 'next/navigation'
 
 import { deleteUserMedia, updateUserMedia, moveItemList } from "@/functions/functions.js"
