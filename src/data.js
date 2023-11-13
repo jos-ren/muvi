@@ -17,13 +17,13 @@ export const tabs = [
     {
         id: 3,
         name: "Watchlist",
-        icon: <RiseOutlined />,
+        icon: <FaRegBookmark/>,
         route: "/watchlist"
     },
     {
         id: 4,
         name: "Upcoming",
-        icon: <FaRegBookmark />,
+        icon: <RiseOutlined />,
         route: "/upcoming"
     },
     // {

@@ -19,3 +19,4 @@ const useAuth = () => {
 export default useAuth;
 
 // need one for check if admin
+// need one to get media

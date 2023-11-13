@@ -5,7 +5,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "@/config/firebase.js"
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { getDocs, collection, getDoc, setDoc, addDoc, deleteDoc, deleteDocs, updateDoc, doc, where, query, writeBatch } from "firebase/firestore"
+import { getDoc, doc } from "firebase/firestore"
 import { formatFSTimestamp } from "../../../utils.js"
 
 const ProfilePage = () => {

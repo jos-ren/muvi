@@ -16,6 +16,8 @@ import { useRouter } from 'next/navigation'
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "@/config/firebase.js"
 
+import { deleteUserMedia, updateUserMedia, moveItemList } from "@/functions/functions.js"
+
 const SeenPage = () => {
     const fetch = require("node-fetch");
     const [userMedia, setUserMedia] = useState([]);
@@ -162,205 +164,6 @@ const SeenPage = () => {
         });
     };
 
-    const setNull = () => {
-        setSeValue(null);
-        setEpValue(null);
-        setRatingValue(null);
-    }
-
-    const refreshUpdate = () => {
-        // if the current release date is less than todays, check for next episode
-        // instead of todays date, it needs to be last checked date.
-        let tv = upcoming.filter((o) => o.media_type === "tv" && new Date(o.upcoming_release) < new Date())
-        tv.forEach((item) => {
-            let details = []
-            async function getDetails() {
-                const response = await fetch("https://api.themoviedb.org/3/tv/" + item.key + "?language=en-US", options);
-                details = await response.json();
-                // if there is an upcoming episode, update the show. else ignore.
-                if (details.next_episode_to_air !== null) {
-                    onUpdate(item, details.next_episode_to_air.air_date)
-                }
-            }
-            getDetails()
-        })
-        if (tv.length === 0) {
-            console.log("no updates made")
-        }
-        onMessage("Refreshed List", "success")
-    }
-
-
-
-    const my_rating = {
-        title: 'My Rating',
-        dataIndex: 'my_rating',
-        sorter: (a, b) => a.my_rating - b.my_rating,
-        render: (my_rating, data) => {
-            return <>
-                {ratingEditMode === data.key ?
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <InputNumber
-                            min={1}
-                            max={10}
-                            // addonBefore={<StarTwoTone twoToneColor="#fadb14" />}
-                            size="small"
-                            defaultValue={data.my_rating}
-                            // controls={false}
-                            style={{ maxWidth: "60px", marginRight: "4px" }}
-                            onChange={(value) => { setRatingValue(value) }}
-                        />
-                        <div>
-                            <Button icon={<CheckOutlined />} size="small" onClick={() => { setRatingEditMode(false); updateUserMedia(data); }} />
-                            <Button icon={<CloseOutlined />} size="small" onClick={() => { setRatingEditMode(false) }} />
-                        </div>
-                    </div>
-                    :
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        {my_rating !== 0 ?
-                            <div>
-                                <StarTwoTone twoToneColor="#fadb14" />
-                                <> </>
-                                {Number.parseFloat(my_rating).toFixed(1)}
-                            </div> : <>
-                                <StarOutlined />
-                            </>}
-                        <Button icon={<EditOutlined />} size="small" onClick={() => {
-                            setRatingEditMode(data.key);
-                            setNull();
-                        }} />
-                    </div>
-                }
-            </>
-        }
-    }
-
-    const filterOption = (input, option) => {
-        (option?.label ?? '').toLowerCase().includes(input.toLowerCase());
-    }
-
-    const episodeChange = (value) => {
-        console.log(`selected ${value} episode`);
-        setEpValue(value)
-    };
-
-    const seasonChange = (value, o) => {
-        console.log(`selected ${value} season`);
-        setSeValue(value)
-        setEpOptions(getEpOptions({}, value, o.count))
-    };
-
-    const getSeOptions = (data) => {
-        let temp = []
-        // remove specials
-        let seasons = data.details.seasons.filter((o) => { return o.season_number !== 0 })
-        seasons.forEach((o) => { temp.push({ "value": o.season_number, "label": "" + o.season_number, "count": o.episode_count }) })
-        return temp
-    }
-
-    const getEpOptions = (data, season_value, count) => {
-        let temp = []
-        let num = ""
-        if (data.is_anime) {
-            num = data.details.number_of_episodes
-        } else {
-            if (count) {
-                num = count
-            } else {
-                num = data.details.seasons.filter((o) => { return o.season_number === season_value })[0].episode_count
-            }
-        }
-        for (let i = 1; i < num + 1; i++) {
-            temp.push({ "value": i, "label": "" + i })
-        }
-        return temp
-    }
-
-    const getTotalEpisodes = (data) => {
-        let total = 0
-        for (let i = 1; i < data.my_season; i++) {
-            total = total + data.details.seasons[i].episode_count
-        }
-        // past seasons + current episode of current season
-        return total + data.my_episode
-    }
-
-    const progress = {
-        title: 'Progress',
-        // dataIndex: 'my_rating',
-        // sorter: (a, b) => a.my_rating - b.my_rating,
-        render: (data) => {
-            let percent = 0
-            let total_watched = data.my_episode
-            if (data.media_type === "movie") {
-                percent = 100
-            } else {
-                if (data.is_anime === true) {
-                    percent = total_watched / data.details.number_of_episodes * 100
-                } else {
-                    total_watched = getTotalEpisodes(data)
-                    percent = total_watched / data.details.number_of_episodes * 100
-                }
-            }
-            return <>
-                {data.media_type !== "movie" ? <div>
-                    {/* have an option for Completed */}
-                    {progressEditMode === data.key ?
-                        <div style={{ display: "flex", justifyContent: "space-between" }}>
-                            <div>
-                                {data.is_anime !== true ? <Select
-                                    showSearch
-                                    defaultValue={data.my_season}
-                                    placeholder="Select a person"
-                                    optionFilterProp="children"
-                                    style={{ width: 70 }}
-                                    onChange={seasonChange}
-                                    // onSearch={seasonSearch}
-                                    options={seOptions}
-                                    filterOption={filterOption}
-                                /> : null}
-                                <Select
-                                    showSearch
-                                    defaultValue={data.my_episode}
-                                    placeholder="Select a person"
-                                    optionFilterProp="children"
-                                    style={{ width: 80 }}
-                                    onChange={episodeChange}
-                                    // onSearch={episodeSearch}
-                                    options={epOptions}
-                                    filterOption={filterOption}
-                                />
-                            </div>
-                            <div>
-                                <Button icon={<CheckOutlined />} size="small" onClick={() => { setProgressEditMode(false); updateUserMedia(data); }}></Button>
-                                <Button icon={<CloseOutlined />} size="small" onClick={() => { setProgressEditMode(false) }}></Button>
-                            </div>
-                        </div> : <div style={{ display: "flex", justifyContent: "space-between" }}>
-                            <>
-                                {data.is_anime !== true ? <> S {data.my_season}</> : null}
-                                <> E {data.my_episode}</>
-                            </>
-                            <Button icon={<EditOutlined />} size="small" onClick={() => {
-                                setNull();
-                                setProgressEditMode(data.key);
-                                setSeOptions(getSeOptions(data));
-                                setEpOptions(getEpOptions(data, data.my_season));
-                            }} />
-                        </div>
-                    }
-                </div> : null}
-                <Tooltip title={data.media_type === "movie" ? "Watched" : total_watched + "/" + data.details.number_of_episodes + " Episodes"}>
-                    <Progress
-                        format={percent === 100 ? () => <CheckOutlined /> : () => Number.parseFloat(percent).toFixed(0) + "%"}
-                        size="small" percent={percent}
-                    />
-                </Tooltip>
-            </>
-        }
-    }
-
-    // ==================== REFACTORED FUNCS =====================
-
     const getUserMedia = async (uid) => {
         try {
             const userDocRef = doc(db, 'Users', uid);
@@ -487,73 +290,6 @@ const SeenPage = () => {
         }
     }
 
-    // to change list type
-    const moveItemList = async (location) => {
-        const userID = user.uid;
-        const updatedData = {
-            list_type: location,
-        };
-        const batch = writeBatch(db);
-
-        for (const docId of selected) {
-            const docRef = doc(db, 'Users', userID, 'MediaList', docId);
-            batch.update(docRef, updatedData);
-        }
-
-        try {
-            await batch.commit();
-            onMessage("Moved " + selected.length + " Items to " + capitalizeFirstLetter(location), "success");
-            getUserMedia(userID);
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-    // to change rating, progress, etc
-    const updateUserMedia = async (data) => {
-        // console.log(data.key, ratingValue)
-        let userID = user.uid
-        let updatedData = {};
-
-        if (ratingEditMode) {
-            updatedData.my_rating = ratingValue;
-        } else if (progressEditMode) {
-            updatedData.my_season = seValue;
-            updatedData.my_episode = epValue;
-        }
-        // console.log(updatedData)
-
-        try {
-            await updateDoc(doc(db, 'Users', userID, 'MediaList', data.key), updatedData)
-        } catch (err) {
-            console.error(err);
-        }
-
-        onMessage("Updated " + data.title, "success")
-        getUserMedia(userID);
-    }
-
-    const deleteUserMedia = async () => {
-        const userID = user.uid;
-        const batch = writeBatch(db);
-
-        for (const docId of selected) {
-            const docRef = doc(db, 'Users', userID, 'MediaList', docId);
-            batch.delete(docRef);
-        }
-
-        try {
-            await batch.commit();
-            onMessage("Deleted " + selected.length + " Items", "success");
-            // After the data is deleted, get media again
-            getUserMedia(userID);
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-    // ======================= ^^ NEW REFACTORED STUFF ^^ =============
-
     const watchlistColumns = [
         poster,
         title,
@@ -588,8 +324,13 @@ const SeenPage = () => {
             <MovieTable
                 pagination={{ position: ["bottomCenter"], showSizeChanger: true, }}
                 header={"Watchlist | " + userMedia.filter((item) => item.list_type === "watchlist").length + " Items"}
-                onRemove={() => deleteUserMedia()}
-                onMove={() => moveItemList("seen")}
+                onRemove={() => {
+                    deleteUserMedia(selected, user);
+                    // need to add a if successful then execute these
+                    onMessage("Deleted " + selected.length + " Items", "success");
+                    getUserMedia(user.uid);
+                }}
+                onMove={() => moveItemList("seen", user.uid, selected)}
                 disableButtons={disableButtons}
                 columns={watchlistColumns}
                 data={userMedia.filter((item) => item.list_type === "watchlist")}

@@ -189,6 +189,7 @@ const UpcomingPage = () => {
         return combinedData.filter((data) => data !== null);
     }
 
+
     const upcomingColumns = [
         upcoming_release,
         poster,
@@ -210,28 +211,6 @@ const UpcomingPage = () => {
             }
         })
     }, []);
-
-    // const refreshUpdate = () => {
-    //     // if the current release date is less than todays, check for next episode
-    //     // instead of todays date, it needs to be last checked date.
-    //     let tv = upcoming.filter((o) => o.media_type === "tv" && new Date(o.upcoming_release) < new Date())
-    //     tv.forEach((item) => {
-    //         let details = []
-    //         async function getDetails() {
-    //             const response = await fetch("https://api.themoviedb.org/3/tv/" + item.key + "?language=en-US", options);
-    //             details = await response.json();
-    //             // if there is an upcoming episode, update the show. else ignore.
-    //             if (details.next_episode_to_air !== null) {
-    //                 onUpdate(item, details.next_episode_to_air.air_date)
-    //             }
-    //         }
-    //         getDetails()
-    //     })
-    //     if (tv.length === 0) {
-    //         console.log("no updates made")
-    //     }
-    //     onMessage("Refreshed List", "success")
-    // }
 
     if (loading) {
         return <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "95vh" }}>
