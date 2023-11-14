@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation'
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "@/config/firebase.js"
 
-import { deleteUserMedia, moveItemList } from "@/app/api/api.js"
+import { deleteUserMedia, moveItemList } from "@/api/api.js"
 
 const SeenPage = () => {
     const [userMedia, setUserMedia] = useState([]);

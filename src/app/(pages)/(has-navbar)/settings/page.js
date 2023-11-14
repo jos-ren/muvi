@@ -6,9 +6,9 @@ import { auth, db } from "@/config/firebase.js"
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { getDoc, doc } from "firebase/firestore"
-import { formatFSTimestamp } from "../../../utils.js"
+import { formatFSTimestamp } from "../../../../api/utils.js"
 
-const ProfilePage = () => {
+const SettingsPage = () => {
     const [messageApi, contextHolder] = message.useMessage();
     const [user, setUser] = useState('')
     const [profileData, setProfileData] = useState([])
@@ -78,4 +78,4 @@ const ProfilePage = () => {
     }
 }
 
-export default ProfilePage;
+export default SettingsPage;

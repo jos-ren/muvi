@@ -6,14 +6,14 @@ import { auth, db } from "@/config/firebase.js"
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { getDocs, doc, collection } from "firebase/firestore"
-import { formatFSTimestamp } from "../../../../utils.js"
+import { formatFSTimestamp } from "../../../../../api/utils.js"
 import MovieTable from '@/components/MovieTable.js';
 
 const AdminPage = () => {
     const [messageApi, contextHolder] = message.useMessage();
     const [user, setUser] = useState('')
     const [usersData, setUsersData] = useState([])
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(true)
     const router = useRouter()
 
     async function getAllUsersData() {
@@ -65,7 +65,7 @@ const AdminPage = () => {
             sorter: (a, b) => {
                 const dateA = new Date(a.lastLoginTime.seconds * 1000 + a.lastLoginTime.nanoseconds / 1e6);
                 const dateB = new Date(b.lastLoginTime.seconds * 1000 + b.lastLoginTime.nanoseconds / 1e6);
-                console.log(dateA, dateB)
+                // console.log(dateA, dateB)
               
                 // Compare dates
                 if (dateA < dateB) {

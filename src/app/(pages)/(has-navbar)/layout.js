@@ -9,7 +9,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import tmdb from "../../../../public/tmdb.svg";
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
-import { DownOutlined, ArrowRightOutlined, UserOutlined, ApartmentOutlined } from '@ant-design/icons';
+import { DownOutlined, ArrowRightOutlined, UserOutlined, ApartmentOutlined, SettingOutlined  } from '@ant-design/icons';
 import { Dropdown, Space, Button } from 'antd';
 import { onAuthStateChanged } from "firebase/auth";
 
@@ -36,10 +36,10 @@ export default function ContentRootLayout({ children }) {
     },
     {
       key: '1',
-      label: <div onClick={() => { router.push('/profile') }}>View Profile</div>,
-      icon: <UserOutlined />,
+      label: <div onClick={() => { router.push('/settings') }}>Settings</div>,
+      icon: <SettingOutlined />,
     },
-    // dont show is not admin
+    // dont show if not admin
     {
       key: '2',
       label: <div onClick={() => { router.push('/admin/dashboard') }}>Admin Console</div>,
