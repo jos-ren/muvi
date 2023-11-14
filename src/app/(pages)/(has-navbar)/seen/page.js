@@ -8,7 +8,7 @@ import { poster, date_added, release_date, type, genres, view } from "@/columns.
 import { getDocs, collection, getDoc, doc } from "firebase/firestore"
 import { useRouter } from 'next/navigation'
 
-import { deleteUserMedia, updateUserMedia, moveItemList } from "@/functions/functions.js"
+import { deleteUserMedia, updateUserMedia, moveItemList } from "@/app/api/api.js"
 
 // firebase
 import { onAuthStateChanged } from "firebase/auth";
