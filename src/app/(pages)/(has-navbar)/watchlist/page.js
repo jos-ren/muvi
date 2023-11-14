@@ -4,7 +4,7 @@ import { message, Input, Button,  Space } from 'antd';
 import { SearchOutlined} from '@ant-design/icons';
 import Highlighter from 'react-highlight-words';
 import MovieTable from "@/components/MovieTable.js"
-import { poster, date_added, release_date, audience_rating, type, episode, upcoming_release, genres, view } from "@/columns.js"
+import { poster, date_added, release_date, audience_rating, type, genres, view } from "@/columns.js"
 import { getDocs, collection, getDoc, doc} from "firebase/firestore"
 import { useRouter } from 'next/navigation'
 

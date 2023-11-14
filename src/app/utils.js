@@ -37,6 +37,18 @@ export function formatFSTimestamp(timestamp, method) {
     const formattedDay = formattedDate.replace(/^0/, ' ');
 
     return formattedDay;
+  } else if(method === 3){
+  
+      // Format the date using Intl.DateTimeFormat
+      const formattedDate = new Intl.DateTimeFormat('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      }).format(date);
+    
+      return formattedDate;
   }
 }
 

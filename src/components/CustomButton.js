@@ -1,8 +1,4 @@
 import React, { useState } from 'react';
-import { Button, Input, message, Divider } from "antd"
-import { auth, googleProvider } from "../config/firebase"
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth'
-import { GoogleOutlined } from '@ant-design/icons';
 import Image from "next/image"
 
 const CustomButton = ({
