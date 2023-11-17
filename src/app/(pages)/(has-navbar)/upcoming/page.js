@@ -4,10 +4,11 @@ import { message, Input, Button, Space, Popover } from 'antd';
 import { SearchOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import Highlighter from 'react-highlight-words';
 import MovieTable from "@/components/MovieTable.js"
-import {  getDateWeekAgo } from "../../../../api/utils.js"
-import { poster, type, episode, upcoming_release, genres } from "@/columns.js"
-import { getDocs, collection, getDoc, doc} from "firebase/firestore"
+import { getDateWeekAgo } from "../../../../api/utils.js"
+import { poster, type, episode, upcoming_release, genres, status } from "@/columns.js"
+import { getDocs, collection, getDoc, doc } from "firebase/firestore"
 import { useRouter } from 'next/navigation'
+import { getUserMedia, updateUser, refreshUpdate } from "@/api/api.js"
 
 // firebase
 import { onAuthStateChanged } from "firebase/auth";
@@ -125,66 +126,25 @@ const UpcomingPage = () => {
         });
     };
 
-    // NEEDS REWORK
-    const refreshUpdate = () => {
-        // if the current release date is less than todays, check for next episode
-        // instead of todays date, it needs to be last checked date.
-        let tv = upcoming.filter((o) => o.media_type === "tv" && new Date(o.upcoming_release) < new Date())
-        tv.forEach((item) => {
-            let details = []
-            async function getDetails() {
-                const response = await fetch("https://api.themoviedb.org/3/tv/" + item.key + "?language=en-US", options);
-                details = await response.json();
-                // if there is an upcoming episode, update the show. else ignore.
-                if (details.next_episode_to_air !== null) {
-                    onUpdate(item, details.next_episode_to_air.air_date)
-                }
+    const fetchUserData = async (uid) => {
+        const result = await getUserMedia(uid);
+        console.log("SETTING")
+        setUserMedia(result);
+        setLoading(false);
+    }
+
+    useEffect(() => {
+        // monitors login status
+        onAuthStateChanged(auth, (u) => {
+            if (u) {
+                setUser(u)
+                fetchUserData(u.uid);
+            } else {
+                // send user to login if not logged in
+                router.push('/auth')
             }
-            getDetails()
         })
-        if (tv.length === 0) {
-            console.log("no updates made")
-        }
-        onMessage("Refreshed List", "success")
-    }
-
-    const getUserMedia = async (uid) => {
-        try {
-            const userDocRef = doc(db, 'Users', uid);
-            const mediaListCollectionRef = collection(userDocRef, 'MediaList');
-            const mediaListSnapshot = await getDocs(mediaListCollectionRef);
-            const userData = mediaListSnapshot.docs.map((doc) => ({ ...doc.data(), key: doc.id }));
-
-            const combinedData = await processFilteredData(userData);
-            setUserMedia(combinedData);
-            setLoading(false)
-        } catch (err) {
-            onMessage(`${err.name + ": " + err.code}`, "error");
-        }
-    };
-
-    async function processFilteredData(userData) {
-        const fetchPromises = userData.map(async (i) => {
-            const documentRef = doc(db, 'Media', i.media_uid);
-            try {
-                const documentSnapshot = await getDoc(documentRef);
-                if (documentSnapshot.exists()) {
-                    const mediaData = documentSnapshot.data();
-                    return { ...mediaData, ...i };
-                } else {
-                    console.log('Document not found.');
-                    return null;
-                }
-            } catch (err) {
-                console.error('Error fetching document:', err);
-                return null;
-            }
-        });
-
-        const combinedData = await Promise.all(fetchPromises);
-        return combinedData.filter((data) => data !== null);
-    }
-
+    }, []);
 
     const upcomingColumns = [
         upcoming_release,
@@ -193,20 +153,8 @@ const UpcomingPage = () => {
         episode,
         type,
         genres,
+        status
     ];
-
-    useEffect(() => {
-        // monitors login status
-        onAuthStateChanged(auth, (u) => {
-            if (u) {
-                setUser(u)
-                getUserMedia(u.uid);
-            } else {
-                // send user to login if not logged in
-                router.push('/auth')
-            }
-        })
-    }, []);
 
     if (loading) {
         return <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "95vh" }}>
@@ -219,7 +167,7 @@ const UpcomingPage = () => {
                 for tv: details.next_episode_to_air !== null  */}
             <MovieTable
                 showRefresh
-                onRefresh={() => { refreshUpdate() }}
+                onRefresh={() => { refreshUpdate(userMedia), fetchUserData(user.uid), onMessage("Refreshed List", "success") }}
                 pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
                 header={
                     <div style={{ display: "flex", alignItems: "center" }}>

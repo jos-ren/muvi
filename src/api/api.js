@@ -5,10 +5,10 @@ import { auth, db } from "@/config/firebase.js"
 const options = {
     method: "GET",
     headers: {
-      accept: "application/json",
-      Authorization: "Bearer " + process.env.NEXT_PUBLIC_TMDB_ACCESS_TOKEN,
+        accept: "application/json",
+        Authorization: "Bearer " + process.env.NEXT_PUBLIC_TMDB_ACCESS_TOKEN,
     },
-  };
+};
 
 
 // ----- CREATE -----
@@ -17,14 +17,14 @@ export const createUserMedia = async (o, list_type, user) => {
     // o = movie object data
     const userRef = doc(db, 'Users', user.uid);
     const subCollectionRef = collection(userRef, 'MediaList');
-    
+
     // check if already in Users' subcollection
     const querySnapshot = await getDocs(query(subCollectionRef, where('tmdb_id', '==', o.id)));
     const notAdded = querySnapshot.empty
     if (notAdded) {
         try {
             const { media_uid, title } = await createMedia(o);
-            
+
             let obj = {
                 media_uid: media_uid,
                 tmdb_id: o.id,
@@ -34,7 +34,7 @@ export const createUserMedia = async (o, list_type, user) => {
                 my_episode: 1,
                 my_rating: 0,
             };
-            
+
             await addDoc(subCollectionRef, obj);
             // onMessage("Added " + title + " to " + capitalizeFirstLetter(list_type), "success")
             console.log("Added " + title + " to " + list_type)
@@ -103,26 +103,84 @@ const createMedia = async (o) => {
     }
 }
 
+
+// ----- READ -----
+
+export const getUserMedia = async (uid) => {
+    try {
+        const userDocRef = doc(db, 'Users', uid);
+        const mediaListCollectionRef = collection(userDocRef, 'MediaList');
+        const mediaListSnapshot = await getDocs(mediaListCollectionRef);
+        const userData = mediaListSnapshot.docs.map((doc) => ({ ...doc.data(), key: doc.id }));
+        const combinedData = await processFilteredData(userData);
+        return combinedData
+    } catch (err) {
+        console.error(err)
+        // onMessage(`${err.name + ": " + err.code}`, "error");
+    }
+};
+
+async function processFilteredData(userData) {
+    const fetchPromises = userData.map(async (i) => {
+        const documentRef = doc(db, 'Media', i.media_uid);
+        try {
+            const documentSnapshot = await getDoc(documentRef);
+            if (documentSnapshot.exists()) {
+                const mediaData = documentSnapshot.data();
+                return { ...mediaData, ...i };
+            } else {
+                console.log('Document not found.');
+                return null;
+            }
+        } catch (err) {
+            console.error('Error fetching document:', err);
+            return null;
+        }
+    });
+
+    const combinedData = await Promise.all(fetchPromises);
+    return combinedData.filter((data) => data !== null);
+}
+
+export async function getAllUsersData() {
+    try {
+        const usersCollection = collection(db, 'Users');
+        const querySnapshot = await getDocs(usersCollection);
+
+        const usersData = [];
+        querySnapshot.forEach((doc) => {
+            usersData.push({ key: doc.id, ...doc.data() });
+        });
+
+        return usersData
+    } catch (err) {
+        console.error('Error fetching documents:', err);
+        return null;
+    }
+}
+
 //  ----- UPDATE -----
 
-export const updateUser = async (user) => {
-    const userRef = doc(db, 'Users', user.uid); // Reference to the specific user document
-    const dataToUpdate = { lastLoginTime: new Date(), email: user.email }
+export const updateUser = async (user, update_type) => {
+    const userRef = doc(db, 'Users', user.uid);
+    var dataToUpdate = {}
+    // to do: need to only set email once, also set role once
+    update_type === "login" ? dataToUpdate = { lastLoginTime: new Date(), email: user.email } : dataToUpdate = { lastRefresh: new Date() }
     try {
-      const userDoc = await getDoc(userRef);
-      if (userDoc.exists()) {
-        // The document exists, so update it
-        await updateDoc(userRef, dataToUpdate);
-        console.log('user updated.');
-      } else {
-        // The document doesn't exist, so create it
-        await setDoc(userRef, dataToUpdate);
-        console.log('user created.');
-      }
+        const userDoc = await getDoc(userRef);
+        if (userDoc.exists()) {
+            // The document exists, so update it
+            await updateDoc(userRef, dataToUpdate);
+            console.log('user updated.');
+        } else {
+            // The document doesn't exist, so create it
+            await setDoc(userRef, dataToUpdate);
+            console.log('user created.');
+        }
     } catch (error) {
-      console.error('Error updating/creating user: ', error);
+        console.error('Error updating/creating user: ', error);
     }
-  }
+}
 
 // to change rating, progress, etc
 export const updateUserMedia = async (mediaID, userID, updatedData) => {
@@ -144,7 +202,6 @@ export const moveItemList = async (location, userID, selected) => {
         const docRef = doc(db, 'Users', userID, 'MediaList', docId);
         batch.update(docRef, updatedData);
     }
-
     try {
         await batch.commit();
     } catch (err) {
@@ -152,7 +209,64 @@ export const moveItemList = async (location, userID, selected) => {
     }
 };
 
+// BUG refresh works but still needs to reload page too, fix this
+
+// update media's upcoming_release date
+export const refreshUpdate = (userMedia) => {  
+    // tv shows have a status either "Returning Series" or "Ended" or "Cancelled"
+    // UPDATE TV
+    let returning = userMedia.filter(item => item.details.status === "Returning Series")
+    returning.forEach((item) => {
+        let details = []
+        async function getDetails() {
+            const response = await fetch("https://api.themoviedb.org/3/tv/" + item.details.id + "?language=en-US", options);
+            details = await response.json();
+            // if there is an upcoming episode, update the item's details
+            if (details.next_episode_to_air !== null) {
+                // check if data is same
+                if (details.next_episode_to_air.air_date !== item.upcoming_release) {
+                    const dataToUpdate = { upcoming_release: details.next_episode_to_air.air_date, details: details }
+                    updateMedia(item.media_uid, dataToUpdate)
+                }
+            } else {
+                // check if it is the correct last_air_date, check if status matches current status
+                if (details.last_air_date !== item.upcoming_release || details.status !== item.details.status) {
+                    const dataToUpdate = { upcoming_release: details.last_air_date, details: details }
+                    updateMedia(item.media_uid, dataToUpdate)
+                }
+            }
+        }
+        getDetails()
+    })
+    if (returning.length === 0) {
+        console.log("no updates made")
+    }
+
+    // UPDATE MOVIES
+        // movies have status either Planned or !== Released
+
+}
+
+// updates Media/uid
+export const updateMedia = async (uid, dataToUpdate) => {
+    const mediaRef = doc(db, 'Media', uid);
+    try {
+        const mediaDoc = await getDoc(mediaRef);
+        if (mediaDoc.exists()) {
+            // The document exists, so update it
+            await updateDoc(mediaRef, dataToUpdate);
+            console.log('media updated.');
+        } else {
+            // The document doesn't exist, so create it
+            console.log("media doesnt exist...")
+        }
+    } catch (error) {
+        console.error('Error updating media: ', error);
+    }
+}
+
 // ----- DELETE -----
+
 export const deleteUserMedia = async (selected, user) => {
     const userID = user.uid;
     const batch = writeBatch(db);

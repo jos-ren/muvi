@@ -5,7 +5,7 @@ import { Button, Tag, Tooltip } from 'antd';
 const dayjs = require('dayjs')
 import styled from "styled-components";
 import { genreCodes } from "./data.js"
-import {formatFSTimestamp} from "./api/utils.js"
+import { formatFSTimestamp } from "./api/utils.js"
 
 const Block = styled.div`
   margin-right: 3px;
@@ -190,6 +190,21 @@ export const genres = {
                 </Block>
             )}
         </div>
+    }
+}
+
+
+export const status = {
+    title: 'Status',
+    render: (data) => { 
+        let text = ''
+        if(data.details.status === "Returning Series"){
+            text = "Returning"
+        } else{
+            text = data.details.status
+        }
+        
+        return<Block style={{fontSize: "9pt" }}>{text}</Block>
     }
 }
 

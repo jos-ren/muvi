@@ -84,7 +84,7 @@ export default function Home() {
     onAuthStateChanged(auth, (u) => {
       if (u) {
         setUser(u)
-        updateUser(u)
+        updateUser(u, "login")
         setLoading(false)
       } else {
         router.push('/auth')

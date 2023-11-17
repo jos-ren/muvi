@@ -1,18 +1,18 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { message, Input, Button,  Space } from 'antd';
-import { SearchOutlined} from '@ant-design/icons';
+import { message, Input, Button, Space } from 'antd';
+import { SearchOutlined } from '@ant-design/icons';
 import Highlighter from 'react-highlight-words';
 import MovieTable from "@/components/MovieTable.js"
 import { poster, date_added, release_date, audience_rating, type, genres, view } from "@/columns.js"
-import { getDocs, collection, getDoc, doc} from "firebase/firestore"
 import { useRouter } from 'next/navigation'
 
 // firebase
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "@/config/firebase.js"
 
-import { deleteUserMedia, moveItemList } from "@/api/api.js"
+// api
+import { deleteUserMedia, moveItemList, getUserMedia } from "@/api/api.js"
 
 const SeenPage = () => {
     const [userMedia, setUserMedia] = useState([]);
@@ -134,42 +134,24 @@ const SeenPage = () => {
         });
     };
 
-    const getUserMedia = async (uid) => {
-        try {
-            const userDocRef = doc(db, 'Users', uid);
-            const mediaListCollectionRef = collection(userDocRef, 'MediaList');
-            const mediaListSnapshot = await getDocs(mediaListCollectionRef);
-            const userData = mediaListSnapshot.docs.map((doc) => ({ ...doc.data(), key: doc.id }));
-
-            const combinedData = await processFilteredData(userData);
-            setUserMedia(combinedData);
-            setLoading(false)
-        } catch (err) {
-            onMessage(`${err.name + ": " + err.code}`, "error");
-        }
-    };
-
-    async function processFilteredData(userData) {
-        const fetchPromises = userData.map(async (i) => {
-            const documentRef = doc(db, 'Media', i.media_uid);
-            try {
-                const documentSnapshot = await getDoc(documentRef);
-                if (documentSnapshot.exists()) {
-                    const mediaData = documentSnapshot.data();
-                    return { ...mediaData, ...i };
-                } else {
-                    console.log('Document not found.');
-                    return null;
-                }
-            } catch (err) {
-                console.error('Error fetching document:', err);
-                return null;
-            }
-        });
-
-        const combinedData = await Promise.all(fetchPromises);
-        return combinedData.filter((data) => data !== null);
+    const fetchUserData = async (uid) => {
+        const result = await getUserMedia(uid);
+        setUserMedia(result);
+        setLoading(false);
     }
+
+    useEffect(() => {
+        // monitors login status
+        onAuthStateChanged(auth, (u) => {
+            if (u) {
+                setUser(u)
+                fetchUserData(u.uid);
+            } else {
+                // send user to login if not logged in
+                router.push('/auth')
+            }
+        })
+    }, []);
 
     const watchlistColumns = [
         poster,
@@ -181,19 +163,6 @@ const SeenPage = () => {
         genres,
         view
     ];
-
-    useEffect(() => {
-        // monitors login status
-        onAuthStateChanged(auth, (u) => {
-            if (u) {
-                setUser(u)
-                getUserMedia(u.uid);
-            } else {
-                // send user to login if not logged in
-                router.push('/auth')
-            }
-        })
-    }, []);
 
     if (loading) {
         return <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "95vh" }}>

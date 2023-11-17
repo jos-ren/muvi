@@ -8,7 +8,7 @@ import { poster, date_added, release_date, type, genres, view } from "@/columns.
 import { getDocs, collection, getDoc, doc } from "firebase/firestore"
 import { useRouter } from 'next/navigation'
 
-import { deleteUserMedia, updateUserMedia, moveItemList } from "@/api/api.js"
+import { deleteUserMedia, updateUserMedia, moveItemList, getUserMedia } from "@/api/api.js"
 
 // firebase
 import { onAuthStateChanged } from "firebase/auth";
@@ -159,7 +159,7 @@ const SeenPage = () => {
         if (Object.keys(updatedData).length !== 0) {
             updateUserMedia(data.key, user.uid, updatedData);
             onMessage("Updated " + data.title, "success")
-            getUserMedia(user.uid);
+            fetchUserData(user.uid)
         } else {
             onMessage("No Changes", "warning")
         }
@@ -332,42 +332,6 @@ const SeenPage = () => {
         }
     }
 
-    const getUserMedia = async (uid) => {
-        try {
-            const userDocRef = doc(db, 'Users', uid);
-            const mediaListCollectionRef = collection(userDocRef, 'MediaList');
-            const mediaListSnapshot = await getDocs(mediaListCollectionRef);
-            const userData = mediaListSnapshot.docs.map((doc) => ({ ...doc.data(), key: doc.id }));
-            const combinedData = await processFilteredData(userData);
-            setUserMedia(combinedData);
-            setLoading(false)
-        } catch (err) {
-            onMessage(`${err.name + ": " + err.code}`, "error");
-        }
-    };
-
-    async function processFilteredData(userData) {
-        const fetchPromises = userData.map(async (i) => {
-            const documentRef = doc(db, 'Media', i.media_uid);
-            try {
-                const documentSnapshot = await getDoc(documentRef);
-                if (documentSnapshot.exists()) {
-                    const mediaData = documentSnapshot.data();
-                    return { ...mediaData, ...i };
-                } else {
-                    console.log('Document not found.');
-                    return null;
-                }
-            } catch (err) {
-                console.error('Error fetching document:', err);
-                return null;
-            }
-        });
-
-        const combinedData = await Promise.all(fetchPromises);
-        return combinedData.filter((data) => data !== null);
-    }
-
     const seenColumns = [
         poster,
         title,
@@ -380,18 +344,26 @@ const SeenPage = () => {
         view,
     ];
 
+    const fetchUserData = async (uid) => {
+        const result = await getUserMedia(uid);
+        setUserMedia(result);
+        setLoading(false);
+    }
+
     useEffect(() => {
         // monitors login status
         onAuthStateChanged(auth, (u) => {
             if (u) {
                 setUser(u)
-                getUserMedia(u.uid);
+                fetchUserData(u.uid);
             } else {
                 // send user to login if not logged in
                 router.push('/auth')
             }
         })
     }, []);
+
+    console.log(userMedia)
 
 
     if (loading) {
@@ -409,12 +381,12 @@ const SeenPage = () => {
                         deleteUserMedia(selected, user);
                         // need to add a if successful then execute these
                         onMessage("Deleted " + selected.length + " Items", "success");
-                        getUserMedia(user.uid);
+                        fetchUserData(user.uid)
                     }}
                     onMove={() => {
                         moveItemList("watchlist", user.uid, selected);
                         onMessage("Moved " + selected.length + " Items to Watchlist", "success");
-                        getUserMedia(user.uid);
+                        fetchUserData(user.uid)
                     }}
                     disableButtons={disableButtons}
                     columns={seenColumns}
