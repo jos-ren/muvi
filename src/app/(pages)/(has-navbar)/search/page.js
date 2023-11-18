@@ -93,6 +93,11 @@ export default function Home() {
     getTrending();
   }, []);
 
+  const handleUserMedia = async (o, list_type, user) => {
+    const { message, type } = await createUserMedia(o, list_type, user);
+    onMessage(message, type);
+  };
+
   if (loading) {
     return <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "95vh" }}>
@@ -117,8 +122,8 @@ export default function Home() {
                 {search.map((o) =>
                   <Card
                     key={o.id}
-                    addToSeen={() => createUserMedia(o, "seen", user)}
-                    addToWatchlist={() => createUserMedia(o, "watchlist", user)}
+                    addToSeen={() => handleUserMedia(o, "seen", user)}
+                    addToWatchlist={() => handleUserMedia(o, "watchlist", user)}
                     title={o.media_type === "movie" ? o.title : o.name}
                     src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
                     alt={o.id}
@@ -135,8 +140,8 @@ export default function Home() {
             {trending.slice(0, 10).map((o) =>
               <Card
                 key={o.id}
-                addToSeen={() => createUserMedia(o, "seen", user)}
-                addToWatchlist={() => createUserMedia(o, "watchlist", user)}
+                addToSeen={() => handleUserMedia(o, "seen", user)}
+                addToWatchlist={() => handleUserMedia(o, "watchlist", user)}
                 title={o.media_type === "movie" ? o.title : o.name}
                 src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
                 alt={o.id}
@@ -153,8 +158,8 @@ export default function Home() {
             {viewMoreTrending ? trending.slice(10).map((o) =>
               <Card
                 key={o.id}
-                addToSeen={() => createUserMedia(o, "seen", user)}
-                addToWatchlist={() => createUserMedia(o, "watchlist", user)}
+                addToSeen={() => handleUserMedia(o, "seen", user)}
+                addToWatchlist={() => handleUserMedia(o, "watchlist", user)}
                 title={o.media_type === "movie" ? o.title : o.name}
                 src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
                 alt={o.id}

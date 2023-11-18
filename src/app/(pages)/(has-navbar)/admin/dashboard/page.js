@@ -8,7 +8,7 @@ import Image from 'next/image'
 import { getDocs, doc, collection } from "firebase/firestore"
 import { formatFSTimestamp } from "../../../../../api/utils.js"
 import MovieTable from '@/components/MovieTable.js';
-import { getAllUsersData , createUserMedia} from "@/api/api.js"
+import { getAllUsersData } from "@/api/api.js"
 
 
 

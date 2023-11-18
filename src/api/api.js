@@ -1,6 +1,7 @@
 import { getDocs, collection, getDoc, setDoc, addDoc, deleteDoc, deleteDocs, updateDoc, doc, where, query, writeBatch } from "firebase/firestore"
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "@/config/firebase.js"
+import { capitalizeFirstLetter } from "@/api/utils"
 
 const options = {
     method: "GET",
@@ -24,6 +25,7 @@ export const createUserMedia = async (o, list_type, user) => {
     if (notAdded) {
         try {
             const { media_uid, title } = await createMedia(o);
+            console.log(media_uid, title, "ZZZ")
 
             let obj = {
                 media_uid: media_uid,
@@ -36,15 +38,13 @@ export const createUserMedia = async (o, list_type, user) => {
             };
 
             await addDoc(subCollectionRef, obj);
-            // onMessage("Added " + title + " to " + capitalizeFirstLetter(list_type), "success")
-            console.log("Added " + title + " to " + list_type)
+            return { message: "Added " + title + " to " + capitalizeFirstLetter(list_type), type: "success" };
         } catch (err) {
             console.error(err)
         }
     } else {
         // warning if already added to your list
-        // onMessage("Already Added", "warning")
-        console.log("already added")
+        return { message: "Already Added", type: "warning" }
     }
 }
 
@@ -216,7 +216,7 @@ export const moveItemList = async (location, userID, selected) => {
 // BUG refresh works but still needs to reload page too, fix this
 
 // update media's upcoming_release date
-export const refreshUpdate = (userMedia) => {  
+export const refreshUpdate = (userMedia) => {
     // tv shows have a status either "Returning Series" or "Ended" or "Cancelled"
     // UPDATE TV
     let returning = userMedia.filter(item => item.details.status === "Returning Series")
@@ -247,7 +247,7 @@ export const refreshUpdate = (userMedia) => {
     }
 
     // UPDATE MOVIES
-        // movies have status either Planned or !== Released
+    // movies have status either Planned or !== Released
 
 }
 
