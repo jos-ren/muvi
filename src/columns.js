@@ -204,7 +204,7 @@ export const status = {
             text = data.details.status
         }
         
-        return<Block style={{fontSize: "9pt" }}>{text}</Block>
+        return<Tag style={{fontSize: "9pt" }}>{text}</Tag>
     }
 }
 

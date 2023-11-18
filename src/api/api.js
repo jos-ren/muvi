@@ -147,12 +147,16 @@ export async function getAllUsersData() {
         const usersCollection = collection(db, 'Users');
         const querySnapshot = await getDocs(usersCollection);
 
-        const usersData = [];
-        querySnapshot.forEach((doc) => {
-            usersData.push({ key: doc.id, ...doc.data() });
-        });
+        const usersData = await Promise.all(querySnapshot.docs.map(async (doc) => {
+            // get size of user's MediaList
+            const mediaListRef = collection(db, 'Users', doc.id, 'MediaList');
+            const snapshot = await getDocs(mediaListRef);
+            const count = snapshot.size;
 
-        return usersData
+            return { key: doc.id, num_items: count, ...doc.data() };
+        }));
+
+        return usersData;
     } catch (err) {
         console.error('Error fetching documents:', err);
         return null;
@@ -165,7 +169,7 @@ export const updateUser = async (user, update_type) => {
     const userRef = doc(db, 'Users', user.uid);
     var dataToUpdate = {}
     // to do: need to only set email once, also set role once
-    update_type === "login" ? dataToUpdate = { lastLoginTime: new Date(), email: user.email } : dataToUpdate = { lastRefresh: new Date() }
+    dataToUpdate = { lastLoginTime: new Date(), email: user.email }
     try {
         const userDoc = await getDoc(userRef);
         if (userDoc.exists()) {

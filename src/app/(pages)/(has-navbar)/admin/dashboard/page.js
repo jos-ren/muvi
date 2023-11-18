@@ -8,7 +8,9 @@ import Image from 'next/image'
 import { getDocs, doc, collection } from "firebase/firestore"
 import { formatFSTimestamp } from "../../../../../api/utils.js"
 import MovieTable from '@/components/MovieTable.js';
-import { getAllUsersData } from "@/api/api.js"
+import { getAllUsersData , createUserMedia} from "@/api/api.js"
+
+
 
 const AdminPage = () => {
     const [messageApi, contextHolder] = message.useMessage();
@@ -17,10 +19,7 @@ const AdminPage = () => {
     const [loading, setLoading] = useState(true)
     const router = useRouter()
 
-
     // NEED to turn away unauthed users
-    console.log(usersData)
-
 
     const dashboardColumns = [
         {
@@ -31,6 +30,10 @@ const AdminPage = () => {
         {
             title: "Role",
             dataIndex: "role",
+        },
+        {
+            title: "Total Items",
+            dataIndex: "num_items",
         },
         {
             title: 'Last Login',
