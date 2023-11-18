@@ -42,7 +42,6 @@ const AdminPage = () => {
             sorter: (a, b) => {
                 const dateA = new Date(a.lastLoginTime.seconds * 1000 + a.lastLoginTime.nanoseconds / 1e6);
                 const dateB = new Date(b.lastLoginTime.seconds * 1000 + b.lastLoginTime.nanoseconds / 1e6);
-                // console.log(dateA, dateB)
 
                 // Compare dates
                 if (dateA < dateB) {

@@ -128,7 +128,6 @@ const UpcomingPage = () => {
 
     const fetchUserData = async (uid) => {
         const result = await getUserMedia(uid);
-        console.log("SETTING")
         setUserMedia(result);
         setLoading(false);
     }
@@ -167,7 +166,11 @@ const UpcomingPage = () => {
                 for tv: details.next_episode_to_air !== null  */}
             <MovieTable
                 showRefresh
-                onRefresh={() => { refreshUpdate(userMedia), fetchUserData(user.uid), onMessage("Refreshed List", "success") }}
+                onRefresh={() => { 
+                    refreshUpdate(userMedia);
+                    fetchUserData(user.uid)
+                    onMessage("Refreshed List", "success")
+                 }}
                 pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
                 header={
                     <div style={{ display: "flex", alignItems: "center" }}>

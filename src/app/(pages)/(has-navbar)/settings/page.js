@@ -49,8 +49,6 @@ const SettingsPage = () => {
 
     // run a function on first login to grab email, name, photourl
     // lastlogintime might not be needed, it might already be in firestore
-    // console.log(user, user.displayName, user.email, user.photoURL)
-    // console.log(profileData)
 
     if (loading) {
         return <div>

@@ -25,7 +25,6 @@ export const createUserMedia = async (o, list_type, user) => {
     if (notAdded) {
         try {
             const { media_uid, title } = await createMedia(o);
-            console.log(media_uid, title, "ZZZ")
 
             let obj = {
                 media_uid: media_uid,
@@ -226,6 +225,7 @@ export const refreshUpdate = (userMedia) => {
             const response = await fetch("https://api.themoviedb.org/3/tv/" + item.details.id + "?language=en-US", options);
             details = await response.json();
             // if there is an upcoming episode, update the item's details
+            // console.log("TEST", details.next_episode_to_air.air_date,  item.upcoming_release, item.title)
             if (details.next_episode_to_air !== null) {
                 // check if data is same
                 if (details.next_episode_to_air.air_date !== item.upcoming_release) {

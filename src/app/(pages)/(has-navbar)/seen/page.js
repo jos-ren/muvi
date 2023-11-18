@@ -154,7 +154,6 @@ const SeenPage = () => {
         seValue !== null ? updatedData.my_season = seValue : null;
         epValue !== null ? updatedData.my_episode = epValue : null;
         ratingValue !== null ? updatedData.my_rating = ratingValue : null;
-        console.log(Object.keys(updatedData).length, updatedData)
         // check if any changes
         if (Object.keys(updatedData).length !== 0) {
             updateUserMedia(data.key, user.uid, updatedData);
@@ -362,9 +361,6 @@ const SeenPage = () => {
             }
         })
     }, []);
-
-    console.log(userMedia)
-
 
     if (loading) {
         return <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "95vh" }}>
