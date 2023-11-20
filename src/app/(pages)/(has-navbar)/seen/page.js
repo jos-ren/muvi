@@ -9,6 +9,19 @@ import { deleteUserMedia, updateUserMedia, moveItemList, getUserMedia } from "@/
 import { useGlobalContext } from '@/context/store.js';
 import styled from "styled-components";
 
+const Block = styled.div`
+    margin-right: 3px;
+    cursor: default;
+    border: 1px solid #d9d9d9;
+    height: 22px;
+    min-width: 22px; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fafafa;
+    border-radius: 5px;
+`;
+
 const SeenPage = () => {
     const [selected, setSelected] = useState([]);
     const [messageApi, contextHolder] = message.useMessage();
@@ -25,19 +38,6 @@ const SeenPage = () => {
     const [ratingValue, setRatingValue] = useState(null);
     const [loading, setLoading] = useState(true);
     const { user, data, setData } = useGlobalContext();
-
-    const Block = styled.div`
-    margin-right: 3px;
-    cursor: default;
-    border: 1px solid #d9d9d9;
-    height: 22px;
-    min-width: 22px; 
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #fafafa;
-    border-radius: 5px;
-  `;
 
     const handleSearch = (selectedKeys, confirm, dataIndex) => {
         confirm();
@@ -309,7 +309,7 @@ const SeenPage = () => {
                                     defaultValue={data.my_episode}
                                     placeholder="Select a person"
                                     optionFilterProp="children"
-                                    style={{ width: 80 }}
+                                    style={{ width: 70 }}
                                     onChange={episodeChange}
                                     // onSearch={episodeSearch}
                                     options={epOptions}

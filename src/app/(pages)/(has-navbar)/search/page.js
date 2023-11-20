@@ -66,12 +66,6 @@ export default function Home() {
     });
   };
 
-  const clearSearch = () => {
-    setSearch([])
-    setDisableClear(true)
-  };
-
-
   const handleUserMedia = async (o, list_type, user) => {
     const { message, type } = await createUserMedia(o, list_type, user.uid);
     // need to set data here after it is finished creating
@@ -94,8 +88,6 @@ export default function Home() {
     }
   }, [user]);
 
-  console.log(trending)
-
   if (loading) {
     return <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "95vh" }}>
@@ -114,7 +106,10 @@ export default function Home() {
               setDisableClear(false);
             }
             }
-            clearSearch={clearSearch}
+            clearSearch={() => {
+              setSearch([]);
+              setDisableClear(true);
+            }}
             disableClear={disableClear}
             loading={loading}
           />
@@ -127,10 +122,18 @@ export default function Home() {
                   key={o.id}
                   addToSeen={() => handleUserMedia(o, "seen", user)}
                   addToWatchlist={() => handleUserMedia(o, "watchlist", user)}
-                  cardTitle={o.media_type === "movie" ? o.title : o.name}
                   src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
                   alt={o.id}
                   url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
+                  details={{
+                    cardTitle: o.media_type === "movie" ? o.title : o.name,
+                    description: o.overview,
+                    rating: o.vote_average,
+                    vote_count: o.vote_count,
+                    release_date: o.release_date,
+                    media_type: o.media_type,
+                    genre_ids: o.genre_ids,
+                  }}
                 />
               )}
             </Grid>
@@ -140,22 +143,26 @@ export default function Home() {
 
           <h2>Trending Shows</h2>
           <Grid>
-            {trending.map((o) =>
-              <Card
+            {trending.map((o) => {
+
+              return <Card
                 key={o.id}
                 addToSeen={() => handleUserMedia(o, "seen", user)}
                 addToWatchlist={() => handleUserMedia(o, "watchlist", user)}
-                cardTitle={o.media_type === "movie" ? o.title : o.name}
                 src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
                 alt={o.id}
                 url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
-                description={o.overview}
-                rating={o.vote_average}
-                vote_count={o.vote_count}
-                release_date={o.release_date}
-                media_type={o.media_type}
-                genre_ids={o.genre_ids}
+                details={{
+                  cardTitle: o.media_type === "movie" ? o.title : o.name,
+                  description: o.overview,
+                  rating: o.vote_average,
+                  vote_count: o.vote_count,
+                  release_date: o.release_date,
+                  media_type: o.media_type,
+                  genre_ids: o.genre_ids,
+                }}
               />
+            }
             )}
           </Grid>
         </Body>
