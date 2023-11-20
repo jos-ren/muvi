@@ -6,24 +6,16 @@ import Highlighter from 'react-highlight-words';
 import MovieTable from "@/components/MovieTable.js"
 import { getDateWeekAgo } from "../../../../api/utils.js"
 import { poster, type, episode, upcoming_release, genres, status } from "@/columns.js"
-import { getDocs, collection, getDoc, doc } from "firebase/firestore"
-import { useRouter } from 'next/navigation'
-import { getUserMedia, updateUser, refreshUpdate } from "@/api/api.js"
-
-// firebase
-import { onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "@/config/firebase.js"
+import { getUserMedia, refreshUpdate } from "@/api/api.js"
+import { useGlobalContext } from '@/context/store.js';
 
 const UpcomingPage = () => {
-    const fetch = require("node-fetch");
-    const [userMedia, setUserMedia] = useState([]);
     const [messageApi, contextHolder] = message.useMessage();
     const [searchText, setSearchText] = useState('');
     const [searchedColumn, setSearchedColumn] = useState('');
     const searchInput = useRef(null);
     const [loading, setLoading] = useState(true);
-    const [user, setUser] = useState(false);
-    const router = useRouter()
+    const { user, data, setData } = useGlobalContext();
 
     const handleSearch = (selectedKeys, confirm, dataIndex) => {
         confirm();
@@ -126,24 +118,13 @@ const UpcomingPage = () => {
         });
     };
 
-    const fetchUserData = async (uid) => {
-        const result = await getUserMedia(uid);
-        setUserMedia(result);
-        setLoading(false);
-    }
-
     useEffect(() => {
-        // monitors login status
-        onAuthStateChanged(auth, (u) => {
-            if (u) {
-                setUser(u)
-                fetchUserData(u.uid);
-            } else {
-                // send user to login if not logged in
-                router.push('/auth')
-            }
-        })
-    }, []);
+        if (user !== null) {
+            setLoading(false);
+        }
+    }, [user]);
+
+    console.log(data)
 
     const upcomingColumns = [
         upcoming_release,
@@ -166,11 +147,15 @@ const UpcomingPage = () => {
                 for tv: details.next_episode_to_air !== null  */}
             <MovieTable
                 showRefresh
-                onRefresh={() => { 
-                    refreshUpdate(userMedia);
-                    fetchUserData(user.uid)
-                    onMessage("Refreshed List", "success")
-                 }}
+                onRefresh={async () => {
+                    const currentMedia = await getUserMedia(user.uid);
+                    const { message, type } = await refreshUpdate(currentMedia);
+                    if (message !== "List is up to date") {
+                        const updatedMedia = await getUserMedia(user.uid);
+                        setData(updatedMedia);
+                    }
+                    onMessage(message, type)
+                }}
                 pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
                 header={
                     <div style={{ display: "flex", alignItems: "center" }}>
@@ -181,7 +166,7 @@ const UpcomingPage = () => {
                     </div>
                 }
                 columns={upcomingColumns}
-                data={userMedia.filter(item => new Date(item.upcoming_release) > getDateWeekAgo())}
+                data={data.filter(item => new Date(item.upcoming_release) > getDateWeekAgo())}
                 rowSelection={false}
             />
         </div>

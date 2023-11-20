@@ -5,14 +5,8 @@ import { SearchOutlined } from '@ant-design/icons';
 import Highlighter from 'react-highlight-words';
 import MovieTable from "@/components/MovieTable.js"
 import { poster, date_added, release_date, audience_rating, type, genres, view } from "@/columns.js"
-import { useRouter } from 'next/navigation'
-
-// firebase
-import { onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "@/config/firebase.js"
-
-// api
 import { deleteUserMedia, moveItemList, getUserMedia } from "@/api/api.js"
+import { useGlobalContext } from '@/context/store.js';
 
 const SeenPage = () => {
     const [userMedia, setUserMedia] = useState([]);
@@ -23,8 +17,7 @@ const SeenPage = () => {
     const [searchedColumn, setSearchedColumn] = useState('');
     const searchInput = useRef(null);
     const [loading, setLoading] = useState(true);
-    const [user, setUser] = useState(false);
-    const router = useRouter()
+    const { user, data, setData } = useGlobalContext();
 
     const handleSearch = (selectedKeys, confirm, dataIndex) => {
         confirm();
@@ -134,24 +127,11 @@ const SeenPage = () => {
         });
     };
 
-    const fetchUserData = async (uid) => {
-        const result = await getUserMedia(uid);
-        setUserMedia(result);
-        setLoading(false);
-    }
-
     useEffect(() => {
-        // monitors login status
-        onAuthStateChanged(auth, (u) => {
-            if (u) {
-                setUser(u)
-                fetchUserData(u.uid);
-            } else {
-                // send user to login if not logged in
-                router.push('/auth')
-            }
-        })
-    }, []);
+        if (user !== null) {
+            setLoading(false);
+        }
+    }, [user]);
 
     const watchlistColumns = [
         poster,
@@ -173,17 +153,22 @@ const SeenPage = () => {
             {contextHolder}
             <MovieTable
                 pagination={{ position: ["bottomCenter"], showSizeChanger: true, }}
-                header={"Watchlist | " + userMedia.filter((item) => item.list_type === "watchlist").length + " Items"}
-                onRemove={() => {
+                header={"Watchlist | " + data.filter((item) => item.list_type === "watchlist").length + " Items"}
+                onRemove={async () => {
                     deleteUserMedia(selected, user);
-                    // need to add a if successful then execute these
+                    const result = await getUserMedia(user.uid);
+                    setData(result);
                     onMessage("Deleted " + selected.length + " Items", "success");
-                    getUserMedia(user.uid);
                 }}
-                onMove={() => moveItemList("seen", user.uid, selected)}
+                onMove={async () => {
+                    moveItemList("seen", user.uid, selected);
+                    const result = await getUserMedia(user.uid);
+                    setData(result);
+                    onMessage("Moved " + selected.length + " Items to Seen", "success");
+                }}
                 disableButtons={disableButtons}
                 columns={watchlistColumns}
-                data={userMedia.filter((item) => item.list_type === "watchlist")}
+                data={data.filter((item) => item.list_type === "watchlist")}
                 rowSelection={rowSelection}
                 showMove={true}
                 moveKeyword={"Seen"}

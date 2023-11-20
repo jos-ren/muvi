@@ -1,16 +1,12 @@
 "use client";
-import { useState, useEffect, use } from "react";
-import { message, Button, Divider, } from 'antd';
+import { useState, useEffect, useRef } from "react";
+import { message, Divider } from 'antd';
 import Card from "@/components/Card.js"
 import Hero from "@/components/Hero.js"
 import styled from "styled-components";
-import { auth, db } from "@/config/firebase.js"
-import { onAuthStateChanged } from "firebase/auth";
-import { getDocs, collection, getDoc, setDoc, addDoc, deleteDoc, deleteDocs, updateDoc, doc, where, query, writeBatch } from "firebase/firestore"
-import useAuth from "@/hooks/useAuth.js";
-import { useRouter } from 'next/navigation'
-import { capitalizeFirstLetter, getDateWeekAgo } from "../../../../api/utils.js"
-import { createUserMedia, updateUser } from "@/api/api.js"
+import { createUserMedia, getUserMedia } from "@/api/api.js"
+import { useGlobalContext } from '@/context/store.js';
+import { tmdbSearch, tmdbTrending } from "@/vendor/vendor"
 
 const Body = styled.div`
   display: flex;
@@ -20,23 +16,47 @@ const Body = styled.div`
 
 const Grid = styled.div`
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  grid-column-gap: 10px;
-  grid-row-gap: 10px;
+  grid-gap: 20px; 
+
+  /* Media queries for different device sizes */
+  @media only screen and (max-width: 449px) {
+    grid-template-columns: repeat(1, 1fr);
+    grid-gap: 10px; 
+  }
+
+  @media only screen and (min-width: 450px) and (max-width: 749px) {
+    grid-template-columns: repeat(2, 1fr);
+    grid-gap: 10px; 
+  }
+
+  @media only screen and (min-width: 750px) and (max-width: 1099px) {
+    grid-template-columns: repeat(3, 1fr);
+    grid-gap: 15px; 
+  }
+
+  @media only screen and (min-width: 1100px) and (max-width: 1535px) {
+    grid-template-columns: repeat(4, 1fr);
+    grid-gap: 20px; 
+  }
+
+  @media only screen and (min-width: 1536px) and (max-width: 1699px) {
+    grid-template-columns: repeat(5, 1fr);
+    grid-gap: 25px; 
+  }
+  
+  @media only screen and (min-width: 1700px) {
+    grid-template-columns: repeat(5, 1fr);
+    grid-gap: 35px; 
+  }
 `;
 
 export default function Home() {
-  const fetch = require("node-fetch");
   const [trending, setTrending] = useState([]);
   const [search, setSearch] = useState([]);
   const [disableClear, setDisableClear] = useState(true);
   const [messageApi, contextHolder] = message.useMessage();
-  // const [viewMoreSearch, setViewMoreSearch] = useState(false);
-  const [viewMoreTrending, setViewMoreTrending] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(false);
-  const router = useRouter()
-
+  const { user, data, setData } = useGlobalContext();
 
   const onMessage = (message, type) => {
     messageApi.open({
@@ -46,57 +66,35 @@ export default function Home() {
     });
   };
 
-  // need res, and error handling for all functions
-  const onSearch = async (value) => {
-    const response = await fetch("https://api.themoviedb.org/3/search/multi?&language=en-US&query=" + value + "&page=1&include_adult=false", options);
-    let json = await response.json();
-    // if items are people or dont include a poster, remove from search results
-    let passed = json.results.filter((e) => e.poster_path !== null && e.media_type !== "person")
-    setSearch(passed)
-    setDisableClear(false)
-  };
-
   const clearSearch = () => {
     setSearch([])
     setDisableClear(true)
   };
 
-  const options = {
-    method: "GET",
-    headers: {
-      accept: "application/json",
-      Authorization: "Bearer " + process.env.NEXT_PUBLIC_TMDB_ACCESS_TOKEN,
-    },
-  };
-
-  async function getTrending() {
-    const response = await fetch("https://api.themoviedb.org/3/trending/all/day?language=en-US", options);
-    const json = await response.json();
-    let temp = json.results
-    temp.forEach((item, index) => {
-      item.key = index + 1;
-    })
-    setTrending(temp)
-  }
-
-  useEffect(() => {
-    // monitors login status
-    onAuthStateChanged(auth, (u) => {
-      if (u) {
-        setUser(u)
-        updateUser(u, "login")
-        setLoading(false)
-      } else {
-        router.push('/auth')
-      }
-    })
-    getTrending();
-  }, []);
 
   const handleUserMedia = async (o, list_type, user) => {
-    const { message, type } = await createUserMedia(o, list_type, user);
+    const { message, type } = await createUserMedia(o, list_type, user.uid);
+    // need to set data here after it is finished creating
+    const result = await getUserMedia(user.uid)
+    setData(result)
     onMessage(message, type);
   };
+
+  useEffect(() => {
+    const trendingFetch = async () => {
+      const result = await tmdbTrending();
+      setTrending(result);
+    };
+    trendingFetch();
+  }, []);
+
+  useEffect(() => {
+    if (user !== null) {
+      setLoading(false)
+    }
+  }, [user]);
+
+  console.log(trending)
 
   if (loading) {
     return <div>
@@ -110,68 +108,56 @@ export default function Home() {
         {contextHolder}
         <Body>
           <Hero
-            onSearch={onSearch}
+            onSearch={async (value) => {
+              const result = await tmdbSearch(value);
+              setSearch(result);
+              setDisableClear(false);
+            }
+            }
             clearSearch={clearSearch}
             disableClear={disableClear}
             loading={loading}
           />
           <br />
-          {search ?
-            <>
-              <Grid>
-                {search.map((o) =>
-                  <Card
-                    key={o.id}
-                    addToSeen={() => handleUserMedia(o, "seen", user)}
-                    addToWatchlist={() => handleUserMedia(o, "watchlist", user)}
-                    title={o.media_type === "movie" ? o.title : o.name}
-                    src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
-                    alt={o.id}
-                    height={300}
-                    width={200}
-                    url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
-                  />
-                )}
-              </Grid>
-              <Divider />
-            </> : <></>}
-          <h2 style={{}}>Trending Shows</h2>
+
+          {search ? <>
+            <Grid>
+              {search.map((o) =>
+                <Card
+                  key={o.id}
+                  addToSeen={() => handleUserMedia(o, "seen", user)}
+                  addToWatchlist={() => handleUserMedia(o, "watchlist", user)}
+                  cardTitle={o.media_type === "movie" ? o.title : o.name}
+                  src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
+                  alt={o.id}
+                  url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
+                />
+              )}
+            </Grid>
+            <Divider />
+          </> : <></>}
+
+
+          <h2>Trending Shows</h2>
           <Grid>
-            {trending.slice(0, 10).map((o) =>
+            {trending.map((o) =>
               <Card
                 key={o.id}
                 addToSeen={() => handleUserMedia(o, "seen", user)}
                 addToWatchlist={() => handleUserMedia(o, "watchlist", user)}
-                title={o.media_type === "movie" ? o.title : o.name}
+                cardTitle={o.media_type === "movie" ? o.title : o.name}
                 src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
                 alt={o.id}
-                height={300}
-                width={200}
                 url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
+                description={o.overview}
+                rating={o.vote_average}
+                vote_count={o.vote_count}
+                release_date={o.release_date}
+                media_type={o.media_type}
+                genre_ids={o.genre_ids}
               />
             )}
           </Grid>
-          <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
-            {viewMoreTrending === false ? <Button style={{ marginTop: "10px" }} type="primary" onClick={() => setViewMoreTrending(true)}>Load More</Button> : null}
-          </div>
-          <Grid>
-            {viewMoreTrending ? trending.slice(10).map((o) =>
-              <Card
-                key={o.id}
-                addToSeen={() => handleUserMedia(o, "seen", user)}
-                addToWatchlist={() => handleUserMedia(o, "watchlist", user)}
-                title={o.media_type === "movie" ? o.title : o.name}
-                src={"https://image.tmdb.org/t/p/original/" + o.poster_path}
-                alt={o.id}
-                height={300}
-                width={200}
-                url={"https://www.themoviedb.org/" + o.media_type + "/" + o.id}
-              />)
-              : null}
-          </Grid>
-          <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
-            {viewMoreTrending === true ? <Button style={{ marginTop: "10px" }} type="primary" onClick={() => setViewMoreTrending(false)}>Load Less</Button> : null}
-          </div>
         </Body>
       </div>
     )

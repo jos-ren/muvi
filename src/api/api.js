@@ -1,6 +1,5 @@
 import { getDocs, collection, getDoc, setDoc, addDoc, deleteDoc, deleteDocs, updateDoc, doc, where, query, writeBatch } from "firebase/firestore"
-import { onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "@/config/firebase.js"
+import { db } from "@/config/firebase.js"
 import { capitalizeFirstLetter } from "@/api/utils"
 
 const options = {
@@ -11,12 +10,11 @@ const options = {
     },
 };
 
-
 // ----- CREATE -----
 // adds to a Users/uid/MediaList/uid
-export const createUserMedia = async (o, list_type, user) => {
+export const createUserMedia = async (o, list_type, user_uid) => {
     // o = movie object data
-    const userRef = doc(db, 'Users', user.uid);
+    const userRef = doc(db, 'Users', user_uid);
     const subCollectionRef = collection(userRef, 'MediaList');
 
     // check if already in Users' subcollection
@@ -162,6 +160,23 @@ export async function getAllUsersData() {
     }
 }
 
+export const getUserData = async (userId) => {
+    const userRef = doc(db, 'Users', userId);
+
+    try {
+        const userDoc = await getDoc(userRef);
+
+        if (userDoc.exists()) {
+            return userDoc.data();
+        } else {
+            return null; // User not found
+        }
+    } catch (error) {
+        console.error('Error getting user data:', error);
+        throw error;
+    }
+};
+
 //  ----- UPDATE -----
 
 export const updateUser = async (user, update_type) => {
@@ -215,40 +230,47 @@ export const moveItemList = async (location, userID, selected) => {
 // BUG refresh works but still needs to reload page too, fix this
 
 // update media's upcoming_release date
-export const refreshUpdate = (userMedia) => {
-    // tv shows have a status either "Returning Series" or "Ended" or "Cancelled"
+export const refreshUpdate = async (userMedia) => {
+    // TV shows have a status either "Returning Series" or "Ended" or "Cancelled"
     // UPDATE TV
+    let numUpdated = 0;
     let returning = userMedia.filter(item => item.details.status === "Returning Series")
-    returning.forEach((item) => {
-        let details = []
-        async function getDetails() {
-            const response = await fetch("https://api.themoviedb.org/3/tv/" + item.details.id + "?language=en-US", options);
-            details = await response.json();
-            // if there is an upcoming episode, update the item's details
-            // console.log("TEST", details.next_episode_to_air.air_date,  item.upcoming_release, item.title)
-            if (details.next_episode_to_air !== null) {
-                // check if data is same
-                if (details.next_episode_to_air.air_date !== item.upcoming_release) {
-                    const dataToUpdate = { upcoming_release: details.next_episode_to_air.air_date, details: details }
-                    updateMedia(item.media_uid, dataToUpdate)
-                }
-            } else {
-                // check if it is the correct last_air_date, check if status matches current status
-                if (details.last_air_date !== item.upcoming_release || details.status !== item.details.status) {
-                    const dataToUpdate = { upcoming_release: details.last_air_date, details: details }
-                    updateMedia(item.media_uid, dataToUpdate)
-                }
+
+    const fetchDetails = async (item) => {
+        const response = await fetch("https://api.themoviedb.org/3/tv/" + item.details.id + "?language=en-US", options);
+        const details = await response.json();
+        console.log(item.title);
+
+        if (details.next_episode_to_air !== null) {
+            if (details.next_episode_to_air.air_date !== item.upcoming_release) {
+                const dataToUpdate = { upcoming_release: details.next_episode_to_air.air_date, details: details };
+                await updateMedia(item.media_uid, dataToUpdate);
+                numUpdated += 1;
+            }
+        } else {
+            if (details.last_air_date !== item.upcoming_release || details.status !== item.details.status) {
+                const dataToUpdate = { upcoming_release: details.last_air_date, details: details };
+                await updateMedia(item.media_uid, dataToUpdate);
+                numUpdated += 1;
             }
         }
-        getDetails()
-    })
-    if (returning.length === 0) {
-        console.log("no updates made")
+    };
+
+    const fetchDetailsPromises = returning.map(fetchDetails);
+
+    // Wait for all asynchronous operations to complete
+    await Promise.all(fetchDetailsPromises);
+
+    console.log("updated " + numUpdated + " items");
+    
+    if (numUpdated === 0) {
+        return { message: "List is up to date", type: "info" };
+    } else {
+        return { message: "Refreshed List", type: "success" };
     }
 
     // UPDATE MOVIES
-    // movies have status either Planned or !== Released
-
+    // Movies have status either Planned or !== Released
 }
 
 // updates Media/uid

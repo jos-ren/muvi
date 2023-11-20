@@ -1,23 +1,19 @@
 "use client";
 import { useEffect, useState } from 'react';
-import { message, Button } from 'antd';
-import { onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "@/config/firebase.js"
-import { useRouter } from 'next/navigation'
-import Image from 'next/image'
-import { getDocs, doc, collection } from "firebase/firestore"
-import { formatFSTimestamp } from "../../../../../api/utils.js"
 import MovieTable from '@/components/MovieTable.js';
+import { message } from 'antd';
+import { useRouter } from 'next/navigation'
+import { formatFSTimestamp } from "../../../../../api/utils.js"
 import { getAllUsersData } from "@/api/api.js"
-
+import { useGlobalContext } from '@/context/store.js';
 
 
 const AdminPage = () => {
     const [messageApi, contextHolder] = message.useMessage();
-    const [user, setUser] = useState('')
     const [usersData, setUsersData] = useState([])
     const [loading, setLoading] = useState(true)
     const router = useRouter()
+    const { user } = useGlobalContext();
 
     // NEED to turn away unauthed users
 
@@ -70,17 +66,12 @@ const AdminPage = () => {
     }
 
     useEffect(() => {
-        // monitors login status
-        onAuthStateChanged(auth, (u) => {
-            if (u) {
-                setUser(u)
-                fetchAllUsersData()
-            } else {
-                // send user to login if not logged in
-                router.push('/auth')
-            }
-        })
-    }, []);
+        if (user !== null && user.role === "admin") {
+            fetchAllUsersData();
+        } else if (user !== null && user.role === "user") {
+            router.push('/403')
+        }
+    }, [user]);
 
     if (loading) {
         return <div>

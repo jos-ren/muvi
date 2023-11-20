@@ -5,17 +5,11 @@ import { StarTwoTone, StarOutlined, SearchOutlined, CheckOutlined, EditOutlined,
 import Highlighter from 'react-highlight-words';
 import MovieTable from "@/components/MovieTable.js"
 import { poster, date_added, release_date, type, genres, view } from "@/columns.js"
-import { getDocs, collection, getDoc, doc } from "firebase/firestore"
-import { useRouter } from 'next/navigation'
-
 import { deleteUserMedia, updateUserMedia, moveItemList, getUserMedia } from "@/api/api.js"
-
-// firebase
-import { onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "@/config/firebase.js"
+import { useGlobalContext } from '@/context/store.js';
+import styled from "styled-components";
 
 const SeenPage = () => {
-    const [userMedia, setUserMedia] = useState([]);
     const [selected, setSelected] = useState([]);
     const [messageApi, contextHolder] = message.useMessage();
     const [disableButtons, setDisableButtons] = useState(true);
@@ -30,8 +24,20 @@ const SeenPage = () => {
     const [epValue, setEpValue] = useState(null);
     const [ratingValue, setRatingValue] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [user, setUser] = useState(false);
-    const router = useRouter()
+    const { user, data, setData } = useGlobalContext();
+
+    const Block = styled.div`
+    margin-right: 3px;
+    cursor: default;
+    border: 1px solid #d9d9d9;
+    height: 22px;
+    min-width: 22px; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fafafa;
+    border-radius: 5px;
+  `;
 
     const handleSearch = (selectedKeys, confirm, dataIndex) => {
         confirm();
@@ -147,7 +153,7 @@ const SeenPage = () => {
         setRatingValue(null);
     }
 
-    const onUpdate = (data) => {
+    const onUpdate = async (data) => {
         setRatingID(false);
         setProgressID(false);
         let updatedData = {};
@@ -158,7 +164,8 @@ const SeenPage = () => {
         if (Object.keys(updatedData).length !== 0) {
             updateUserMedia(data.key, user.uid, updatedData);
             onMessage("Updated " + data.title, "success")
-            fetchUserData(user.uid)
+            const result = await getUserMedia(user.uid);
+            setData(result);
         } else {
             onMessage("No Changes", "warning")
         }
@@ -208,8 +215,14 @@ const SeenPage = () => {
     }
 
     const filterOption = (input, option) => {
-        (option?.label ?? '').toLowerCase().includes(input.toLowerCase());
-    }
+        const label = option?.label || '';
+        const optionValue = String(option.value);
+
+        return (
+            label.toLowerCase().startsWith(input.toLowerCase()) ||
+            optionValue.toLowerCase().startsWith(input.toLowerCase())
+        );
+    };
 
     const episodeChange = (value) => {
         console.log(`selected ${value} episode`);
@@ -308,10 +321,10 @@ const SeenPage = () => {
                                 <Button icon={<CloseOutlined />} size="small" onClick={() => { setProgressID(false) }} />
                             </div>
                         </div> : <div style={{ display: "flex", justifyContent: "space-between" }}>
-                            <>
-                                {data.is_anime !== true ? <> S {data.my_season}</> : null}
-                                <> E {data.my_episode}</>
-                            </>
+                            <div style={{ display: "flex" }}>
+                                {!data.is_anime ? <Block style={{ padding: "0px 5px", fontSize: "9pt" }}>S : {data.my_season}</Block> : <></>}
+                                <Block style={{ padding: "0px 5px", fontSize: "9pt" }}>E : {data.my_episode}</Block>
+                            </div>
                             <Button icon={<EditOutlined />} size="small" onClick={() => {
                                 setNull();
                                 setProgressID(data.key);
@@ -343,24 +356,11 @@ const SeenPage = () => {
         view,
     ];
 
-    const fetchUserData = async (uid) => {
-        const result = await getUserMedia(uid);
-        setUserMedia(result);
-        setLoading(false);
-    }
-
     useEffect(() => {
-        // monitors login status
-        onAuthStateChanged(auth, (u) => {
-            if (u) {
-                setUser(u)
-                fetchUserData(u.uid);
-            } else {
-                // send user to login if not logged in
-                router.push('/auth')
-            }
-        })
-    }, []);
+        if (user !== null) {
+            setLoading(false);
+        }
+    }, [user]);
 
     if (loading) {
         return <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "95vh" }}>
@@ -372,21 +372,22 @@ const SeenPage = () => {
                 {contextHolder}
                 <MovieTable
                     pagination={{ position: ["bottomCenter"], showSizeChanger: true, }}
-                    header={"Seen | " + userMedia.filter((item) => item.list_type === "seen").length + " Items"}
-                    onRemove={() => {
+                    header={"Seen | " + data.filter((item) => item.list_type === "seen").length + " Items"}
+                    onRemove={async () => {
                         deleteUserMedia(selected, user);
-                        // need to add a if successful then execute these
+                        const result = await getUserMedia(user.uid);
+                        setData(result);
                         onMessage("Deleted " + selected.length + " Items", "success");
-                        fetchUserData(user.uid)
                     }}
-                    onMove={() => {
+                    onMove={async () => {
                         moveItemList("watchlist", user.uid, selected);
+                        const result = await getUserMedia(user.uid);
+                        setData(result);
                         onMessage("Moved " + selected.length + " Items to Watchlist", "success");
-                        fetchUserData(user.uid)
                     }}
                     disableButtons={disableButtons}
                     columns={seenColumns}
-                    data={userMedia.filter((item) => item.list_type === "seen")}
+                    data={data.filter((item) => item.list_type === "seen")}
                     rowSelection={rowSelection}
                     showMove={true}
                     moveKeyword={"Watchlist"}

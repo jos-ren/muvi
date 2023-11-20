@@ -1,51 +1,22 @@
 "use client";
 import { useEffect, useState } from 'react';
-import { message, Button } from 'antd';
-import { onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "@/config/firebase.js"
-import { useRouter } from 'next/navigation'
+import { message } from 'antd';
 import Image from 'next/image'
-import { getDoc, doc } from "firebase/firestore"
 import { formatFSTimestamp } from "../../../../api/utils.js"
+import { useGlobalContext } from '@/context/store.js';
 
 const SettingsPage = () => {
     const [messageApi, contextHolder] = message.useMessage();
-    const [user, setUser] = useState('')
-    const [profileData, setProfileData] = useState([])
     const [loading, setLoading] = useState(true);
-    const router = useRouter()
-
-    async function getUserData(u) {
-        const documentRef = doc(db, 'Users', u.uid);
-        try {
-            const documentSnapshot = await getDoc(documentRef);
-            if (documentSnapshot.exists()) {
-                const profileData = documentSnapshot.data();
-                setProfileData(profileData)
-                setLoading(false)
-            } else {
-                console.log('Document not found.');
-                return null;
-            }
-        } catch (err) {
-            console.error('Error fetching document:', err);
-            return null;
-        }
-    }
+    const { user } = useGlobalContext();
 
     useEffect(() => {
-        // monitors login status
-        onAuthStateChanged(auth, (u) => {
-            if (u) {
-                setUser(u)
-                getUserData(u)
-            } else {
-                // send user to login if not logged in
-                router.push('/auth')
-            }
-        })
-    }, []);
+        if (user !== null) {
+            setLoading(false)
+        }
+    }, [user]);
 
+    console.log(user)
 
     // run a function on first login to grab email, name, photourl
     // lastlogintime might not be needed, it might already be in firestore
@@ -60,18 +31,30 @@ const SettingsPage = () => {
         return <div>
             {contextHolder}
 
-            <h1 style={{ marginTop: "100px" }}>Profile</h1>
+            <h1 style={{ marginTop: "100px" }}>Settings</h1>
             {user.photoURL ?
-                <Image unoptimized height={150} width={150} quality="100" src={user.photoURL} alt={"profile_pic"} style={{ borderRadius: "50%", marginRight: "10px" }} /> :
-                <Image unoptimized height={150} width={150} quality="100" src={"default_avatar.jpg"} alt={"profile_pic"} style={{ borderRadius: "50%", marginRight: "10px" }} />
+                <Image unoptimized height={150} width={150} quality="100" src={user.photoURL} alt={"profile_pic"} /> :
+                <Image unoptimized height={150} width={150} quality="100" src={"default_avatar.jpg"} alt={"profile_pic"} />
             }
-
             <div style={{ display: "flex" }}>
                 <div>Email: </div>
                 <div>{user.email}</div>
             </div>
-            <div>{user.displayName}</div>
-            <div>{formatFSTimestamp(profileData.lastLoginTime, 1)}</div>
+            <div style={{ display: "flex" }}>
+                <div>Name: </div>
+                <div>{user.displayName}</div>
+            </div>
+            <div style={{ display: "flex" }}>
+                <div>Last Login: </div>
+                <div>{formatFSTimestamp(user.lastLoginTime, 2)}</div>
+            </div>
+            <div style={{ display: "flex" }}>
+                <div>Role: </div>
+                <div>{user.role}</div>
+            </div>
+            <br/>
+            <div>Delete Account</div>
+            <div>Export Data</div>
         </div>
     }
 }

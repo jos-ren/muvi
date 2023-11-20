@@ -82,3 +82,15 @@ export function getDateWeekAgo() {
   return sevenDaysAgo
 }
 
+export function formatGenres(genre_ids, genreCodes) {
+  const genres = [];
+
+  genre_ids.forEach((id) => {
+      const matchingGenre = genreCodes.find((genre) => genre.value === id);
+      if (matchingGenre) {
+          genres.push(matchingGenre.text);
+      }
+  });
+
+  return genres.join(", ");
+}
