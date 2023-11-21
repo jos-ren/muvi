@@ -4,7 +4,7 @@ import { message, Button } from 'antd';
 import Image from 'next/image'
 import { formatFSTimestamp } from "../../../../api/utils.js"
 import { useGlobalContext } from '@/context/store.js';
-import { uploadJSON } from '@/api/api.js'
+// import { uploadJSON } from '@/api/api.js'
 
 const SettingsPage = () => {
     const [messageApi, contextHolder] = message.useMessage();
@@ -55,7 +55,7 @@ const SettingsPage = () => {
             <div>Delete Account</div>
             <div>Export Data</div>
             <br/>
-            <Button type='primary' onClick={()=>uploadJSON(user.uid)}>Upload Data</Button>
+            {/* <Button type='primary' onClick={()=>uploadJSON(user.uid)}>Upload Data</Button> */}
         </div>
     }
 }

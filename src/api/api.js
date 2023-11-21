@@ -1,4 +1,4 @@
-import { getDocs, collection, getDoc, setDoc, addDoc, updateDoc, doc, where, query, writeBatch, documentId } from "firebase/firestore"
+import { getDocs, collection, getDoc, setDoc, addDoc, updateDoc, doc, where, query, writeBatch, FieldPath, collectionGroup, documentId } from "firebase/firestore"
 import { db } from "@/config/firebase.js"
 import { capitalizeFirstLetter } from "@/api/utils"
 
@@ -20,11 +20,9 @@ export const createUserMedia = async (o, list_type, user_uid) => {
     // check if already in Users' subcollection
     const querySnapshot = await getDocs(query(subCollectionRef, where('tmdb_id', '==', o.id)));
     const notAdded = querySnapshot.empty
-
     if (notAdded) {
         try {
             const { media_uid, title } = await createMedia(o);
-            console.log(media_uid, title)
 
             let obj = {
                 media_uid: media_uid,
@@ -51,9 +49,9 @@ export const createUserMedia = async (o, list_type, user_uid) => {
 const createMedia = async (o) => {
     // check if already in media collection 
     const mediaCollectionRef = collection(db, "Media")
-    const querySnapshot = await getDocs(query(mediaCollectionRef, where('details.id', '==', o.id)));
-
+    const querySnapshot = await getDocs(query(mediaCollectionRef, where('key', '==', o.id)));
     let title = o.media_type === "movie" ? o.title : o.name;
+
     //  if movie does not exists in you Media collection yet
     if (querySnapshot.empty) {
         let release_date = o.media_type === "movie" ? o.release_date : o.first_air_date;
@@ -66,12 +64,11 @@ const createMedia = async (o) => {
             }
         })
         let is_anime = o.original_language === "ja" && animation === true ? true : false;
-        // get more details
+        // get details
         const response = await fetch("https://api.themoviedb.org/3/" + o.media_type + "/" + o.id + "?language=en-US", options);
         let details = await response.json();
         let upcoming_release = o.media_type === "movie" ? details.release_date : (details.next_episode_to_air !== null ? details.next_episode_to_air.air_date : details.last_air_date)
 
-        // basically anything unique to the user will go in the sub
         let obj = {
             title: title,
             release_date: release_date,
@@ -80,56 +77,92 @@ const createMedia = async (o) => {
             upcoming_release: upcoming_release,
             details: details
         }
-
-        const docRef = await addDoc(mediaCollectionRef, obj)
-        const newDocId = docRef.id;
-        return { media_uid: newDocId, title };
-
+        try {
+            const docRef = await addDoc(mediaCollectionRef, obj)
+            const newDocId = docRef.id;
+            if (newDocId) {
+                return { media_uid: newDocId, title };
+            } else {
+                throw new Error('Failed to create media.');
+            }
+        } catch (err) {
+            console.error(err)
+        }
     } else {
         const oldDocId = querySnapshot.docs[0].id;
-        return { media_uid: oldDocId, title };
+        if (oldDocId) {
+            return { media_uid: oldDocId, title };
+        } else {
+            throw new Error('Failed to create media.');
+        }
     }
 }
-
-export const uploadJSON = async (user_uid) => {
-    const response = await fetch('my-data.json');
-    const data = await response.json();
-    for (let i = 0; i < 1; i++) {
-        const item = data[i];
-        console.log(item.details.id, item.title, item.list_type, user_uid, item);
-    }
-}
-
 // ----- READ -----
 
+// NEEDS UPDATING SO SLOW RN
+// Maybe just keep details in MediaList?
 export const getUserMedia = async (uid) => {
     try {
+        // get a User's MediaList items
         const userDocRef = doc(db, 'Users', uid);
         const mediaListCollectionRef = collection(userDocRef, 'MediaList');
         const mediaListSnapshot = await getDocs(mediaListCollectionRef);
-        const userData = mediaListSnapshot.docs.map((doc) => ({ ...doc.data(), key: doc.id }));
-        if (userData.length === 0) {
-            return []
+
+        // if no data
+        if (mediaListSnapshot.empty) {
+            return [];
         }
 
-        // Get the document IDs directly from the MediaList collection
-        const media_ids = mediaListSnapshot.docs.map((doc) => doc.data().media_uid);
+        // Extract user data from the MediaList documents
+        const userData = mediaListSnapshot.docs.map((doc) => ({ ...doc.data(), key: doc.id }));
+        const media_ids = userData.map((userItem) => userItem.media_uid);
 
+
+        const chunkSize = 30;
+        const mediaChunks = [];
+        for (let i = 0; i < media_ids.length; i += chunkSize) {
+            mediaChunks.push(media_ids.slice(i, i + chunkSize));
+        }
+
+        // console.log(mediaChunks)
+
+        // Array to store the combined results
+        const combinedMediaData = [];
         const mediaRef = collection(db, 'Media');
-        // Use where-in query to fetch only documents with specified document IDs
-        const mediaQuery = query(mediaRef, where(documentId(), 'in', media_ids));
-        const mediaSnapshots = await getDocs(mediaQuery);
 
-        const combinedData = mediaSnapshots.docs.map((docSnapshot, index) => {
-            const mediaData = docSnapshot.exists() ? docSnapshot.data() : null;
-            return mediaData ? { ...mediaData, ...userData[index] } : null;
+        // Iterate over each chunk and fetch the corresponding Media documents
+        for (const chunk of mediaChunks) {
+            const mediaQuery = query(mediaRef, where(documentId(), 'in', chunk));
+            const mediaSnapshots = await getDocs(mediaQuery);
+
+            // Combine the results
+            combinedMediaData.push(...mediaSnapshots.docs.map((doc) => ({ ...doc.data(), temp_matcher: doc.id })));
+        }
+
+        // Combine user data and combinedMediaData based on matching media_uid
+        const combinedData = userData.map((userItem) => {
+            // Find the matching media document based on media_uid
+            const matchingMediaItem = combinedMediaData
+                .find((mediaDoc) => mediaDoc.temp_matcher === userItem.media_uid);
+
+            // Check if a matching media item is found
+            if (matchingMediaItem) {
+                // Combine user item and matching media item
+                return { ...userItem, ...matchingMediaItem };
+            } else {
+                // Return null if no match is found
+                return null;
+            }
         });
 
-        // await Promise.all(docIds.map(id => getDoc(doc(parentColRef, id))) 
+        // console.log(combinedData);
+        // Filter out null values and return the combined data
+        return combinedData.filter(Boolean);
 
-        return combinedData.filter((data) => data !== null);
     } catch (err) {
         console.error('Error in getUserMedia:', err);
+        // Return an empty array in case of an error
+        return [];
     }
 };
 
@@ -264,7 +297,7 @@ export const refreshUpdate = async (userMedia) => {
     if (numUpdated === 0) {
         return { message: "List is up to date", type: "info" };
     } else {
-        return { message: "Refreshed List", type: "success" };
+        return { message: "Refreshed " + numUpdated + " Items", type: "success" };
     }
 
     // UPDATE MOVIES
@@ -281,7 +314,6 @@ export const updateMedia = async (uid, dataToUpdate) => {
             await updateDoc(mediaRef, dataToUpdate);
             console.log('media updated.');
         } else {
-            // The document doesn't exist, so create it
             console.log("media doesnt exist...")
         }
     } catch (error) {
@@ -294,43 +326,9 @@ export const updateMedia = async (uid, dataToUpdate) => {
 export const deleteUserMedia = async (selected, user) => {
     const batch = writeBatch(db);
 
-    console.log(selected)
     for (const docId of selected) {
-
-        // Fetch document from 'Users' collection
         const docRef = doc(db, 'Users', user.uid, 'MediaList', docId);
-        const docSnapshot = await getDoc(docRef);
-
-        // Retrieve data from the fetched document
-        const docData = docSnapshot.data();
-        console.log(docData.media_uid, "docData", docId);
-
-        // Fetch document from 'Media' collection based on 'media_uid'
-        const mediaDocRef = doc(db, 'Media', docData.media_uid);
-        const mediaDocSnapshot = await getDoc(mediaDocRef);
-
-        // Retrieve data from the fetched 'Media' document
-        const mediaDocData = mediaDocSnapshot.data();
-        console.log(mediaDocData.title);
-
-
-
         batch.delete(docRef);
-    }
-    try {
-        await batch.commit();
-    } catch (err) {
-        console.error(err);
-    }
-};
-
-export const moveItemList2 = async (location, userID, selected) => {
-    const updatedData = { list_type: location };
-    const batch = writeBatch(db);
-
-    for (const docId of selected) {
-        const docRef = doc(db, 'Users', userID, 'MediaList', docId);
-        batch.update(docRef, updatedData);
     }
     try {
         await batch.commit();

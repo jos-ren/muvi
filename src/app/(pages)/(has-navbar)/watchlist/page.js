@@ -144,8 +144,6 @@ const SeenPage = () => {
         view
     ];
 
-    console.log(selected)
-
     if (loading) {
         return <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "95vh" }}>
             <h1>Loading...</h1>

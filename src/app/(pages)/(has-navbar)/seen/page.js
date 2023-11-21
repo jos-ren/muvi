@@ -134,7 +134,6 @@ const SeenPage = () => {
 
     const rowSelection = {
         onChange: (selectedRowKeys, selectedRows) => {
-            selectedRows.length !== 0 ? console.log(selectedRowKeys, selectedRows[0].title, "test"): null
             setSelected(selectedRowKeys)
             selectedRows.length !== 0 ? setDisableButtons(false) : setDisableButtons(true)
         }
