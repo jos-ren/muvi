@@ -134,6 +134,7 @@ const SeenPage = () => {
 
     const rowSelection = {
         onChange: (selectedRowKeys, selectedRows) => {
+            selectedRows.length !== 0 ? console.log(selectedRowKeys, selectedRows[0].title, "test"): null
             setSelected(selectedRowKeys)
             selectedRows.length !== 0 ? setDisableButtons(false) : setDisableButtons(true)
         }
@@ -162,9 +163,9 @@ const SeenPage = () => {
         ratingValue !== null ? updatedData.my_rating = ratingValue : null;
         // check if any changes
         if (Object.keys(updatedData).length !== 0) {
-            updateUserMedia(data.key, user.uid, updatedData);
-            onMessage("Updated " + data.title, "success")
+            await updateUserMedia(data.key, user.uid, updatedData);
             const result = await getUserMedia(user.uid);
+            onMessage("Updated " + data.title, "success")
             setData(result);
         } else {
             onMessage("No Changes", "warning")
@@ -374,14 +375,16 @@ const SeenPage = () => {
                     pagination={{ position: ["bottomCenter"], showSizeChanger: true, }}
                     header={"Seen | " + data.filter((item) => item.list_type === "seen").length + " Items"}
                     onRemove={async () => {
-                        deleteUserMedia(selected, user);
+                        await deleteUserMedia(selected, user);
                         const result = await getUserMedia(user.uid);
+                        setSelected([])
                         setData(result);
                         onMessage("Deleted " + selected.length + " Items", "success");
                     }}
                     onMove={async () => {
-                        moveItemList("watchlist", user.uid, selected);
+                        await moveItemList("watchlist", user.uid, selected);
                         const result = await getUserMedia(user.uid);
+                        setSelected([])
                         setData(result);
                         onMessage("Moved " + selected.length + " Items to Watchlist", "success");
                     }}

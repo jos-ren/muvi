@@ -1,9 +1,10 @@
 "use client";
 import { useEffect, useState } from 'react';
-import { message } from 'antd';
+import { message, Button } from 'antd';
 import Image from 'next/image'
 import { formatFSTimestamp } from "../../../../api/utils.js"
 import { useGlobalContext } from '@/context/store.js';
+import { uploadJSON } from '@/api/api.js'
 
 const SettingsPage = () => {
     const [messageApi, contextHolder] = message.useMessage();
@@ -15,8 +16,6 @@ const SettingsPage = () => {
             setLoading(false)
         }
     }, [user]);
-
-    console.log(user)
 
     // run a function on first login to grab email, name, photourl
     // lastlogintime might not be needed, it might already be in firestore
@@ -52,9 +51,11 @@ const SettingsPage = () => {
                 <div>Role: </div>
                 <div>{user.role}</div>
             </div>
-            <br/>
+            <br />
             <div>Delete Account</div>
             <div>Export Data</div>
+            <br/>
+            <Button type='primary' onClick={uploadJSON}>Upload Data</Button>
         </div>
     }
 }

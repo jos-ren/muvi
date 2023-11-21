@@ -124,8 +124,6 @@ const UpcomingPage = () => {
         }
     }, [user]);
 
-    console.log(data)
-
     const upcomingColumns = [
         upcoming_release,
         poster,

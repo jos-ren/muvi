@@ -144,6 +144,8 @@ const SeenPage = () => {
         view
     ];
 
+    console.log(selected)
+
     if (loading) {
         return <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "95vh" }}>
             <h1>Loading...</h1>
@@ -155,13 +157,13 @@ const SeenPage = () => {
                 pagination={{ position: ["bottomCenter"], showSizeChanger: true, }}
                 header={"Watchlist | " + data.filter((item) => item.list_type === "watchlist").length + " Items"}
                 onRemove={async () => {
-                    deleteUserMedia(selected, user);
+                    await deleteUserMedia(selected, user);
                     const result = await getUserMedia(user.uid);
                     setData(result);
                     onMessage("Deleted " + selected.length + " Items", "success");
                 }}
                 onMove={async () => {
-                    moveItemList("seen", user.uid, selected);
+                    await moveItemList("seen", user.uid, selected);
                     const result = await getUserMedia(user.uid);
                     setData(result);
                     onMessage("Moved " + selected.length + " Items to Seen", "success");

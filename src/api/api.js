@@ -1,4 +1,4 @@
-import { getDocs, collection, getDoc, setDoc, addDoc, deleteDoc, deleteDocs, updateDoc, doc, where, query, writeBatch } from "firebase/firestore"
+import { getDocs, collection, getDoc, setDoc, addDoc, updateDoc, doc, where, query, writeBatch, documentId } from "firebase/firestore"
 import { db } from "@/config/firebase.js"
 import { capitalizeFirstLetter } from "@/api/utils"
 
@@ -20,9 +20,11 @@ export const createUserMedia = async (o, list_type, user_uid) => {
     // check if already in Users' subcollection
     const querySnapshot = await getDocs(query(subCollectionRef, where('tmdb_id', '==', o.id)));
     const notAdded = querySnapshot.empty
+
     if (notAdded) {
         try {
             const { media_uid, title } = await createMedia(o);
+            console.log(media_uid, title)
 
             let obj = {
                 media_uid: media_uid,
@@ -49,7 +51,8 @@ export const createUserMedia = async (o, list_type, user_uid) => {
 const createMedia = async (o) => {
     // check if already in media collection 
     const mediaCollectionRef = collection(db, "Media")
-    const querySnapshot = await getDocs(query(mediaCollectionRef, where('key', '==', o.id)));
+    const querySnapshot = await getDocs(query(mediaCollectionRef, where('details.id', '==', o.id)));
+
     let title = o.media_type === "movie" ? o.title : o.name;
     //  if movie does not exists in you Media collection yet
     if (querySnapshot.empty) {
@@ -63,12 +66,11 @@ const createMedia = async (o) => {
             }
         })
         let is_anime = o.original_language === "ja" && animation === true ? true : false;
-        // get details
+        // get more details
         const response = await fetch("https://api.themoviedb.org/3/" + o.media_type + "/" + o.id + "?language=en-US", options);
         let details = await response.json();
         let upcoming_release = o.media_type === "movie" ? details.release_date : (details.next_episode_to_air !== null ? details.next_episode_to_air.air_date : details.last_air_date)
 
-        // need to seperate what need to be added to subcollection vs main media collection
         // basically anything unique to the user will go in the sub
         let obj = {
             title: title,
@@ -76,30 +78,27 @@ const createMedia = async (o) => {
             media_type: o.media_type,
             is_anime: is_anime,
             upcoming_release: upcoming_release,
-            // these details could change: (new episodes etc, is it better to just use a get everytime and not store these? or have a refresh button to get more current data)
             details: details
         }
-        try {
-            const docRef = await addDoc(mediaCollectionRef, obj)
-            const newDocId = docRef.id;
-            if (newDocId) {
-                return { media_uid: newDocId, title };
-            } else {
-                throw new Error('Failed to create media.');
-            }
-        } catch (err) {
-            console.error(err)
-        }
+
+        const docRef = await addDoc(mediaCollectionRef, obj)
+        const newDocId = docRef.id;
+        return { media_uid: newDocId, title };
+
     } else {
         const oldDocId = querySnapshot.docs[0].id;
-        if (oldDocId) {
-            return { media_uid: oldDocId, title };
-        } else {
-            throw new Error('Failed to create media.');
-        }
+        return { media_uid: oldDocId, title };
     }
 }
 
+export const uploadJSON = async () => {
+    const response = await fetch('my-data.json');
+    const data = await response.json();
+    for (let i = 0; i < 1; i++) {
+        const item = data[i];
+        console.log(item.details.id, item.title, item);
+    }
+}
 
 // ----- READ -----
 
@@ -109,35 +108,30 @@ export const getUserMedia = async (uid) => {
         const mediaListCollectionRef = collection(userDocRef, 'MediaList');
         const mediaListSnapshot = await getDocs(mediaListCollectionRef);
         const userData = mediaListSnapshot.docs.map((doc) => ({ ...doc.data(), key: doc.id }));
-        const combinedData = await processFilteredData(userData);
-        return combinedData
+        if (userData.length === 0) {
+            return []
+        }
+
+        // Get the document IDs directly from the MediaList collection
+        const media_ids = mediaListSnapshot.docs.map((doc) => doc.data().media_uid);
+
+        const mediaRef = collection(db, 'Media');
+        // Use where-in query to fetch only documents with specified document IDs
+        const mediaQuery = query(mediaRef, where(documentId(), 'in', media_ids));
+        const mediaSnapshots = await getDocs(mediaQuery);
+
+        const combinedData = mediaSnapshots.docs.map((docSnapshot, index) => {
+            const mediaData = docSnapshot.exists() ? docSnapshot.data() : null;
+            return mediaData ? { ...mediaData, ...userData[index] } : null;
+        });
+
+        // await Promise.all(docIds.map(id => getDoc(doc(parentColRef, id))) 
+
+        return combinedData.filter((data) => data !== null);
     } catch (err) {
-        console.error(err)
-        // onMessage(`${err.name + ": " + err.code}`, "error");
+        console.error('Error in getUserMedia:', err);
     }
 };
-
-async function processFilteredData(userData) {
-    const fetchPromises = userData.map(async (i) => {
-        const documentRef = doc(db, 'Media', i.media_uid);
-        try {
-            const documentSnapshot = await getDoc(documentRef);
-            if (documentSnapshot.exists()) {
-                const mediaData = documentSnapshot.data();
-                return { ...mediaData, ...i };
-            } else {
-                console.log('Document not found.');
-                return null;
-            }
-        } catch (err) {
-            console.error('Error fetching document:', err);
-            return null;
-        }
-    });
-
-    const combinedData = await Promise.all(fetchPromises);
-    return combinedData.filter((data) => data !== null);
-}
 
 export async function getAllUsersData() {
     try {
@@ -160,13 +154,14 @@ export async function getAllUsersData() {
     }
 }
 
-export const getUserData = async (userId) => {
-    const userRef = doc(db, 'Users', userId);
+export const getUserData = async (user) => {
+    const userRef = doc(db, 'Users', user.uid);
 
     try {
         const userDoc = await getDoc(userRef);
 
         if (userDoc.exists()) {
+            updateUser(user, 'refresh_last_login')
             return userDoc.data();
         } else {
             return null; // User not found
@@ -180,10 +175,16 @@ export const getUserData = async (userId) => {
 //  ----- UPDATE -----
 
 export const updateUser = async (user, update_type) => {
+    // update_type can be update_time, or first_login
     const userRef = doc(db, 'Users', user.uid);
     var dataToUpdate = {}
     // to do: need to only set email once, also set role once
-    dataToUpdate = { lastLoginTime: new Date(), email: user.email }
+    if (update_type === 'first_login') {
+        dataToUpdate = { lastLoginTime: new Date(), email: user.email, role: "user" }
+    } else if (update_type === 'refresh_last_login') {
+        dataToUpdate = { lastLoginTime: new Date() }
+    }
+
     try {
         const userDoc = await getDoc(userRef);
         if (userDoc.exists()) {
@@ -227,9 +228,6 @@ export const moveItemList = async (location, userID, selected) => {
     }
 };
 
-// BUG refresh works but still needs to reload page too, fix this
-
-// update media's upcoming_release date
 export const refreshUpdate = async (userMedia) => {
     // TV shows have a status either "Returning Series" or "Ended" or "Cancelled"
     // UPDATE TV
@@ -262,7 +260,7 @@ export const refreshUpdate = async (userMedia) => {
     await Promise.all(fetchDetailsPromises);
 
     console.log("updated " + numUpdated + " items");
-    
+
     if (numUpdated === 0) {
         return { message: "List is up to date", type: "info" };
     } else {
@@ -294,12 +292,45 @@ export const updateMedia = async (uid, dataToUpdate) => {
 // ----- DELETE -----
 
 export const deleteUserMedia = async (selected, user) => {
-    const userID = user.uid;
+    const batch = writeBatch(db);
+
+    console.log(selected)
+    for (const docId of selected) {
+
+        // Fetch document from 'Users' collection
+        const docRef = doc(db, 'Users', user.uid, 'MediaList', docId);
+        const docSnapshot = await getDoc(docRef);
+
+        // Retrieve data from the fetched document
+        const docData = docSnapshot.data();
+        console.log(docData.media_uid, "docData", docId);
+
+        // Fetch document from 'Media' collection based on 'media_uid'
+        const mediaDocRef = doc(db, 'Media', docData.media_uid);
+        const mediaDocSnapshot = await getDoc(mediaDocRef);
+
+        // Retrieve data from the fetched 'Media' document
+        const mediaDocData = mediaDocSnapshot.data();
+        console.log(mediaDocData.title);
+
+
+
+        batch.delete(docRef);
+    }
+    try {
+        await batch.commit();
+    } catch (err) {
+        console.error(err);
+    }
+};
+
+export const moveItemList2 = async (location, userID, selected) => {
+    const updatedData = { list_type: location };
     const batch = writeBatch(db);
 
     for (const docId of selected) {
         const docRef = doc(db, 'Users', userID, 'MediaList', docId);
-        batch.delete(docRef);
+        batch.update(docRef, updatedData);
     }
     try {
         await batch.commit();
