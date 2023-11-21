@@ -163,8 +163,8 @@ const SeenPage = () => {
         // check if any changes
         if (Object.keys(updatedData).length !== 0) {
             await updateUserMedia(data.key, user.uid, updatedData);
-            const result = await getUserMedia(user.uid);
             onMessage("Updated " + data.title, "success")
+            const result = await getUserMedia(user.uid);
             setData(result);
         } else {
             onMessage("No Changes", "warning")

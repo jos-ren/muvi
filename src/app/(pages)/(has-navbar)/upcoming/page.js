@@ -147,7 +147,7 @@ const UpcomingPage = () => {
                 showRefresh
                 onRefresh={async () => {
                     const currentMedia = await getUserMedia(user.uid);
-                    const { message, type } = await refreshUpdate(currentMedia);
+                    const { message, type } = await refreshUpdate(currentMedia, user.uid);
                     if (message !== "List is up to date") {
                         const updatedMedia = await getUserMedia(user.uid);
                         setData(updatedMedia);

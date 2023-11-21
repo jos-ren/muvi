@@ -17,32 +17,33 @@ export const GlobalProvider = ({ children }) => {
         const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
             try {
                 if (authUser) {
-
-                    // get data from firestore users collection
-                    let FSUserData = await getUserData(authUser);
-                    let FSData = {}
-                    // if first login, set some user data
-                    if (FSUserData === null) {
-                        await updateUser(authUser, 'first_login')
-                        const newData = await getUserData(authUser);
-                        FSData = { role: newData.role, lastLoginTime: newData.lastLoginTime }
-
-                        // else simply get the data
-                    } else {
-                        FSData = { role: FSUserData.role, lastLoginTime: FSUserData.lastLoginTime }
-                    }
-                    let userData = {
-                        uid: authUser.uid,
-                        email: authUser.email,
-                        displayName: authUser.displayName,
-                        photoURL: authUser.photoURL,
-                        role: FSData.role,
-                        lastLoginTime: FSData.lastLoginTime,
-                    };
-                    setUser(userData);
-
+                    // makes it only run once on first page load
                     if (!hasMounted) {
-                        // Only run setData on the first page load
+
+                        // get data from firestore users collection
+                        let FSUserData = await getUserData(authUser);
+                        let FSData = {}
+                        // if first login, set some user data
+                        if (FSUserData === null) {
+                            await updateUser(authUser, 'first_login')
+                            const newData = await getUserData(authUser);
+                            FSData = { role: newData.role, lastLoginTime: newData.lastLoginTime }
+
+                            // else simply get the data
+                        } else {
+                            FSData = { role: FSUserData.role, lastLoginTime: FSUserData.lastLoginTime }
+                        }
+                        let userData = {
+                            uid: authUser.uid,
+                            email: authUser.email,
+                            displayName: authUser.displayName,
+                            photoURL: authUser.photoURL,
+                            role: FSData.role,
+                            lastLoginTime: FSData.lastLoginTime,
+                        };
+                        setUser(userData);
+
+                        // get data
                         const userMediaList = await getUserMedia(authUser.uid);
                         setData(userMediaList);
                         setHasMounted(true);
