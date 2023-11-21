@@ -160,6 +160,8 @@ const SeenPage = () => {
         seValue !== null ? updatedData.my_season = seValue : null;
         epValue !== null ? updatedData.my_episode = epValue : null;
         ratingValue !== null ? updatedData.my_rating = ratingValue : null;
+        updatedData.last_edited = new Date();
+        
         // check if any changes
         if (Object.keys(updatedData).length !== 0) {
             await updateUserMedia(data.key, user.uid, updatedData);

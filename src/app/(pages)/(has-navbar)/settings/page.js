@@ -4,7 +4,7 @@ import { message, Button } from 'antd';
 import Image from 'next/image'
 import { formatFSTimestamp } from "../../../../api/utils.js"
 import { useGlobalContext } from '@/context/store.js';
-// import { uploadJSON } from '@/api/api.js'
+import { uploadJSON } from '@/api/api.js'
 
 const SettingsPage = () => {
     const [messageApi, contextHolder] = message.useMessage();
