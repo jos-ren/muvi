@@ -12,6 +12,38 @@ const options = {
 
 // ----- CREATE -----
 
+export const uploadJSON = async (user_uid) => {
+    // Fetch the JSON file
+    const response = await fetch('my-data.json');
+
+    // Parse the JSON data
+    const data = await response.json();
+
+    // Iterate over each item and log the id
+    for (let i = 0; i < data.length; i++) {
+        const item = data[i];
+        createUserMedia(item, "list", user_uid)
+    }
+
+    // // replace obj below with this
+    // let obj = {
+    //     tmdb_id: o.details.id,
+    //     // custom fields
+    //     date_added: o.date_added,
+    //     list_type: o.list_type,
+    //     my_season: o.my_season,
+    //     my_episode: o.my_episode,
+    //     my_rating: o.my_rating,
+    //     // data fields
+    //     title: o.title,
+    //     release_date: o.release_date,
+    //     media_type: o.media_type,
+    //     is_anime: o.is_anime,
+    //     upcoming_release: o.upcoming_release,
+    //     details: o.details
+    // };
+}
+
 // adds to a Users/uid/MediaList/uid
 export const createUserMedia = async (o, list_type, user_uid) => {
     // o = movie object data
@@ -54,6 +86,7 @@ export const createUserMedia = async (o, list_type, user_uid) => {
             my_season: 1,
             my_episode: 1,
             my_rating: 0,
+            last_edited: new Date(),
             // data fields
             title: title,
             release_date: release_date,
@@ -64,6 +97,7 @@ export const createUserMedia = async (o, list_type, user_uid) => {
         };
 
         await addDoc(subCollectionRef, obj);
+        // console.log("added: ", o.title)
         return { message: "Added " + title + " to " + capitalizeFirstLetter(list_type), type: "success" };
     } catch (err) {
         console.error(err)
@@ -87,8 +121,9 @@ export const getUserMedia = async (uid) => {
 
         // Extract user data from the MediaList documents
         const userMediaList = mediaListSnapshot.docs.map((doc) => ({ ...doc.data(), key: doc.id }));
-
-        return userMediaList
+        // sort data by last_edited
+        const sortedMediaList = userMediaList.sort((a, b) => b.last_edited - a.last_edited);
+        return sortedMediaList
 
     } catch (err) {
         console.error('Error in getUserMedia:', err);
@@ -180,6 +215,7 @@ export const updateUserMedia = async (mediaID, userID, updatedData) => {
 export const moveItemList = async (location, userID, selected) => {
     const updatedData = {
         list_type: location,
+        last_edited: new Date()
     };
     const batch = writeBatch(db);
 
@@ -208,13 +244,13 @@ export const refreshUpdate = async (userMedia, user_uid) => {
 
         if (details.next_episode_to_air !== null) {
             if (details.next_episode_to_air.air_date !== item.upcoming_release) {
-                const dataToUpdate = { upcoming_release: details.next_episode_to_air.air_date, details: details };
+                const dataToUpdate = { upcoming_release: details.next_episode_to_air.air_date, details: details, last_edited: new Date() };
                 await updateUserMedia(item.key, user_uid, dataToUpdate);
                 numUpdated += 1;
             }
         } else {
             if (details.last_air_date !== item.upcoming_release || details.status !== item.details.status) {
-                const dataToUpdate = { upcoming_release: details.last_air_date, details: details };
+                const dataToUpdate = { upcoming_release: details.last_air_date, details: details, last_edited: new Date() };
                 await updateUserMedia(item.key, user_uid, dataToUpdate);
                 numUpdated += 1;
             }
