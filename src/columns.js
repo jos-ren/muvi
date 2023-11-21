@@ -5,7 +5,7 @@ import { Button, Tag, Tooltip } from 'antd';
 const dayjs = require('dayjs')
 import styled from "styled-components";
 import { genreCodes } from "./data.js"
-import {formatFSTimestamp} from "./utils.js"
+import { formatFSTimestamp } from "./api/utils.js"
 
 const Block = styled.div`
   margin-right: 3px;
@@ -148,7 +148,10 @@ export const episode = {
                 data.media_type === "movie" ? "" :
                     <div style={{ display: "flex" }}>
                         {!data.is_anime ? <Block style={{ padding: "0px 5px", fontSize: "9pt" }}>S : {season}</Block> : <></>}
-                        <Block style={{ padding: "0px 5px", fontSize: "9pt" }}>E : {episode}</Block>
+                        {episode > 999 ?
+                            <Block style={{ padding: "0px 5px", fontSize: "9pt", minWidth: "44px" }}>E : {episode}</Block> :
+                            <Block style={{ padding: "0px 5px", fontSize: "9pt" }}>E : {episode}</Block>
+                        }
                         <div style={{ marginLeft: "2px" }}>{text.slice(0, 7) === "Episode" ? "" : text}</div>
                     </div>
             }
@@ -190,6 +193,21 @@ export const genres = {
                 </Block>
             )}
         </div>
+    }
+}
+
+
+export const status = {
+    title: 'Status',
+    render: (data) => {
+        let text = ''
+        if (data.details.status === "Returning Series") {
+            text = "Returning"
+        } else {
+            text = data.details.status
+        }
+
+        return <Tag style={{ fontSize: "9pt" }}>{text}</Tag>
     }
 }
 

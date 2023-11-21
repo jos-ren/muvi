@@ -11,23 +11,77 @@
 
 body {
   margin: 0px;
-  font-family:'Int';
+  font-family: 'Int';
   /* padding-top:60px; */
 }
 
-.message{
+.message {
   display: flex;
   justify-content: flex-end;
-  position:relative;
-  top:60px;
-  right:5px;
+  position: relative;
+  top: 60px;
+  right: 5px;
   /* border: 1px solid red; */
 }
 
-.login-message{
+.login-message {
   display: flex;
   justify-content: flex-end;
-  position:relative;
-  right:5px;
+  position: relative;
+  right: 5px;
   /* border: 1px solid red; */
+}
+
+.footer {
+  margin-top: 60px;
+  display: flex;
+  height: 60px;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  background: #fafafa;
+  font-size: 10pt;
+  width: 100%;
+  bottom: 0px;
+}
+
+.header {
+  background: #001529;
+  color: #bbc0c4;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 60px;
+  font-size: 11pt;
+  border-bottom: 2px solid #001529;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 100;
+}
+
+.tab-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.tab-container :hover {
+  color: white;
+}
+
+.tab-item {
+  padding: 0px 10px 0px 5px;
+  display: flex;
+  height: 60px;
+  align-items: center;
+  cursor: pointer;
+}
+
+.ellipsis-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  text-overflow: ellipsis;
+  overflow: hidden;
 }

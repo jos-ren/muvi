@@ -1,4 +1,5 @@
-// --- NOTES --- 
+// --- features --- 
+
 // find a way to update the data for your items as next episodes dont update localstorage dynamically
 // make view more, more stylish
 // clear selection button for tables
@@ -24,7 +25,6 @@
 // if an upcomings episode title starts with episode, hide it
 // hide certain upcoming items
 // ability to share your watchlist with friends
-
 // export / import movie data
 // allow audience rating sort (watchlist)
 // add a "times seen" column with plus and minuses

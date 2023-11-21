@@ -3,34 +3,34 @@ import { FaRegBookmark } from "react-icons/fa6";
 
 export const tabs = [
     {
-        id: 0,
+        id: 1,
         name: "Search",
         icon: <SearchOutlined />,
-        path: "/"
-    },
-    {
-        id: 1,
-        name: "Seen",
-        icon: <CheckOutlined />,
-        path: "/seen"
+        route: "/search"
     },
     {
         id: 2,
-        name: "Watchlist",
-        icon: <RiseOutlined />,
-        path: "/watchlist"
+        name: "Seen",
+        icon: <CheckOutlined />,
+        route: "/seen"
     },
     {
         id: 3,
+        name: "Watchlist",
+        icon: <FaRegBookmark/>,
+        route: "/watchlist"
+    },
+    {
+        id: 4,
         name: "Upcoming",
-        icon: <FaRegBookmark />,
-        path: "/upcoming"
+        icon: <RiseOutlined />,
+        route: "/upcoming"
     },
     // {
-    //     id: 4,
+    //     id: 5,
     //     name: "Stats",
     //     icon: <PieChartOutlined />,
-    //     path: "/statistics"
+    //     route: "/statistics"
     // },
 ]
 
