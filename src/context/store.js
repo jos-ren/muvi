@@ -42,7 +42,7 @@ export const GlobalProvider = ({ children }) => {
                             lastLoginTime: FSData.lastLoginTime,
                         };
                         setUser(userData);
-
+                        
                         // get data
                         const userMediaList = await getUserMedia(authUser.uid);
                         setData(userMediaList);
@@ -60,7 +60,8 @@ export const GlobalProvider = ({ children }) => {
 
         // Clean up subscription on unmount
         return () => unsubscribe();
-    }, [hasMounted]);
+    }, []);
+
 
 
     return (

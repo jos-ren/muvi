@@ -194,13 +194,11 @@ export const moveItemList = async (location, userID, selected) => {
     }
 };
 
-// REWORK THIS
 export const refreshUpdate = async (userMedia, user_uid) => {
     // UPDATE TV
     let numUpdated = 0;
     // TV shows have a status either "Returning Series" or "Ended" or "Cancelled"
     let returning = userMedia.filter(item => item.details.status === "Returning Series")
-    console.log(userMedia, "HERE")
 
     // if series is returning, check details
     const fetchDetails = async (item) => {

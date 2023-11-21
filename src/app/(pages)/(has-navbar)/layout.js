@@ -10,7 +10,7 @@ import tmdb from "../../../../public/tmdb.svg";
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import { DownOutlined, ArrowRightOutlined, ApartmentOutlined, SettingOutlined } from '@ant-design/icons';
-import { Dropdown} from 'antd';
+import { Dropdown } from 'antd';
 import { useGlobalContext } from '@/context/store.js';
 
 export default function ContentRootLayout({ children }) {
@@ -70,7 +70,7 @@ export default function ContentRootLayout({ children }) {
         <div style={{ position: "absolute", right: "15px", display: "flex", alignItems: "center" }}>
           <div style={{ marginRight: "10px" }}>{user ? user.email : ""}</div>
 
-          <Dropdown arrow menu={ { items }} trigger={['click']} placement="bottomRight" overlayClassName="nav-dropdown">
+          <Dropdown arrow menu={{ items }} trigger={['click']} placement="bottomRight" overlayClassName="nav-dropdown">
             <div style={{ cursor: "pointer", display: "flex", alignItems: "center" }}>
               <Image unoptimized height={30} width={30} quality="100" src={user ? user.photoURL : "default_avatar.jpg"} alt={"profile_pic"} style={{ borderRadius: "50%", marginRight: "10px" }} />
               <DownOutlined />
@@ -79,7 +79,11 @@ export default function ContentRootLayout({ children }) {
         </div>
       </div>
 
-      <div style={large ? { margin: "0px 15vw", flex: 1 } : medium ? { margin: "0px 10vw", flex: 1 } : { margin: "0px 50px", flex: 1 }}>
+      <div style={
+        large ? { margin: "0px 15vw", flex: 1 } :
+          medium ? { margin: "0px 7.5vw", flex: 1 } :
+            { margin: "0px 50px", flex: 1 }
+      }>
         {children}
       </div>
 
