@@ -55,7 +55,7 @@ const SettingsPage = () => {
             <div>Delete Account</div>
             <div>Export Data</div>
             <br/>
-            <Button type='primary' onClick={uploadJSON}>Upload Data</Button>
+            <Button type='primary' onClick={()=>uploadJSON(user.uid)}>Upload Data</Button>
         </div>
     }
 }

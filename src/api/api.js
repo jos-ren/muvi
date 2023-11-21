@@ -91,12 +91,12 @@ const createMedia = async (o) => {
     }
 }
 
-export const uploadJSON = async () => {
+export const uploadJSON = async (user_uid) => {
     const response = await fetch('my-data.json');
     const data = await response.json();
     for (let i = 0; i < 1; i++) {
         const item = data[i];
-        console.log(item.details.id, item.title, item);
+        console.log(item.details.id, item.title, item.list_type, user_uid, item);
     }
 }
 
