@@ -81,8 +81,8 @@ export default function ContentRootLayout({ children }) {
 
       <div style={
         large ? { margin: "0px 12.5vw", flex: 1 } :
-          medium ? { margin: "0px 7.5vw", flex: 1 } :
-            { margin: "0px 50px", flex: 1 }
+          medium ? { margin: "0px 50px", flex: 1 } :
+            { margin: "0px 15px", flex: 1 }
       }>
         {children}
       </div>

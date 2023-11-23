@@ -1,6 +1,7 @@
 import { getDocs, collection, getDoc, setDoc, addDoc, updateDoc, doc, where, query, writeBatch, FieldPath, collectionGroup, documentId } from "firebase/firestore"
 import { db, auth } from "@/config/firebase.js"
 import { capitalizeFirstLetter } from "@/api/utils"
+import { genreCodes } from "@/data"
 
 const options = {
     method: "GET",
@@ -289,4 +290,82 @@ export const deleteUserMedia = async (selected, user) => {
     } catch (err) {
         console.error(err);
     }
+};
+
+// --- DATA MANIPULATION --- 
+
+export const calculateStatistics = (data) => {
+
+    let statistics = {
+        total_minutes: 0,
+        media_types: {},
+        genres: []
+    };
+
+    for (let i = 0; i < data.length; i++) {
+        let item = data[i];
+        let minutes = 0;
+
+        // Only use SEEN items
+        if (item.list_type === "seen") {
+            const { media_type, details, is_anime, my_episode, my_season, title } = item;
+
+            // If it's a TV show, calculate minutes based on episodes, season, and runtime
+            if (media_type === "tv") {
+                if (details.last_episode_to_air !== null) {
+                    minutes = my_episode * my_season * details.last_episode_to_air.runtime;
+                } else if (details.episode_run_time.length > 0) {
+                    minutes = my_episode * my_season * details.episode_run_time[0];
+                } else {
+                    console.error('Error: ', title);
+                }
+            } else if (media_type === "movie") {
+                minutes = details.runtime;
+            }
+
+            // Update statistics based on media type
+            const mediaKey = is_anime ? 'anime' : media_type;
+
+            // Initialize the mediatype key if not present
+            if (!statistics.media_types[mediaKey]) {
+                statistics.media_types[mediaKey] = 0;
+            }
+
+            statistics.media_types[mediaKey] += minutes;
+            statistics.total_minutes += minutes;
+
+
+            // Update statistics based on genres
+            if (details.genres && details.genres.length > 0) {
+                details.genres.forEach((genre) => {
+                    const genreIndex = statistics.genres.findIndex((g) => g.id === genre.id);
+
+                    if (genreIndex === -1) {
+
+                        // find the corresponding emoji
+                        let emoji = ""
+                        for (const item of genreCodes) {
+                            if (item.value === genre.id) {
+                                emoji = item.emoji
+                            }
+                        }
+
+                        // Genre not found, add it to the array
+                        statistics.genres.push({
+                            id: genre.id,
+                            name: genre.name,
+                            emoji: emoji,
+                            watchtime: minutes,
+                        });
+                    } else {
+                        // Genre found, update watchtime
+                        statistics.genres[genreIndex].watchtime += minutes;
+                    }
+                });
+            }
+
+        }
+    }
+
+    return statistics;
 };

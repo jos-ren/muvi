@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { message, Input, Button, InputNumber, Space, Tooltip, Progress, Select, Divider, Popover, Dropdown } from 'antd';
-import { StarTwoTone, StarOutlined, SearchOutlined, CheckOutlined, EditOutlined, QuestionCircleOutlined, CloseOutlined } from '@ant-design/icons';
+import { message, Input, Button, InputNumber, Space, Tooltip, Progress, Select} from 'antd';
+import { StarTwoTone, StarOutlined, SearchOutlined, CheckOutlined, EditOutlined, CloseOutlined } from '@ant-design/icons';
 import Highlighter from 'react-highlight-words';
 import MovieTable from "@/components/MovieTable.js"
 import { poster, date_added, release_date, type, genres, view } from "@/columns.js"

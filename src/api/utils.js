@@ -37,18 +37,18 @@ export function formatFSTimestamp(timestamp, method) {
     const formattedDay = formattedDate.replace(/^0/, ' ');
 
     return formattedDay;
-  } else if(method === 3){
-  
-      // Format the date using Intl.DateTimeFormat
-      const formattedDate = new Intl.DateTimeFormat('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric'
-      }).format(date);
-    
-      return formattedDate;
+  } else if (method === 3) {
+
+    // Format the date using Intl.DateTimeFormat
+    const formattedDate = new Intl.DateTimeFormat('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    }).format(date);
+
+    return formattedDate;
   }
 }
 
@@ -86,11 +86,42 @@ export function formatGenres(genre_ids, genreCodes) {
   const genres = [];
 
   genre_ids.forEach((id) => {
-      const matchingGenre = genreCodes.find((genre) => genre.value === id);
-      if (matchingGenre) {
-          genres.push(matchingGenre.text);
-      }
+    const matchingGenre = genreCodes.find((genre) => genre.value === id);
+    if (matchingGenre) {
+      genres.push(matchingGenre.text);
+    }
   });
 
   return genres.join(", ");
+}
+
+export function formatTime(totalMinutes, method) {
+  if (method === "DHM") {
+
+    const days = Math.floor(totalMinutes / (60 * 24));
+    const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+    const remainingMinutes = totalMinutes % 60;
+
+    let timeString = '';
+
+    if (days > 0) {
+      timeString += `${days} days `;
+    }
+
+    if (hours > 0) {
+      timeString += `${hours} hours `;
+    }
+
+    if (remainingMinutes > 0 || timeString === '') {
+      timeString += `${remainingMinutes} minutes`;
+    }
+
+    return timeString.trim();
+  } else if (method === "H") {
+    const hours = Math.round(totalMinutes / 60);
+    return `${hours} hours`;
+  }else if (method === "H2") {
+    const hours = Math.round(totalMinutes / 60);
+    return hours
+  }
 }

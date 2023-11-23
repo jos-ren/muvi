@@ -42,10 +42,11 @@ export const GlobalProvider = ({ children }) => {
                             lastLoginTime: FSData.lastLoginTime,
                         };
                         setUser(userData);
-                        
+
                         // get data
                         const userMediaList = await getUserMedia(authUser.uid);
                         setData(userMediaList);
+
                         setHasMounted(true);
                     }
                 } else {
@@ -61,8 +62,6 @@ export const GlobalProvider = ({ children }) => {
         // Clean up subscription on unmount
         return () => unsubscribe();
     }, []);
-
-
 
     return (
         <GlobalContext.Provider value={{ user, data, setData }}>

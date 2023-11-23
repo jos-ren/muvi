@@ -9,10 +9,12 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ant-design/plots": "^1.2.5",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
     "@mui/material": "^5.14.17",
     "antd": "^5.8.4",
+    "chart.js": "^4.4.0",
     "dayjs": "^1.11.10",
     "encoding": "^0.1.13",
     "eslint": "8.47.0",
@@ -21,6 +23,7 @@
     "next": "^13.5.6",
     "node-fetch": "^2.7.0",
     "react": "18.2.0",
+    "react-chartjs-2": "^5.2.0",
     "react-dom": "18.2.0",
     "react-highlight-words": "^0.20.0",
     "react-icons": "^4.10.1",
