@@ -68,7 +68,7 @@ export const audience_rating = {
 }
 
 const filterType = (value, record) => {
-    console.log(value, record)
+    // console.log(value, record)
     if (value === "anime") {
         if (record.is_anime === true) {
             return true

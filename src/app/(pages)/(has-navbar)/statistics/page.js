@@ -6,7 +6,75 @@ import { formatTime, capitalizeFirstLetter } from "@/api/utils";
 import { calculateStatistics } from '@/api/api';
 import { Doughnut, Bar } from 'react-chartjs-2';
 import Chart from 'chart.js/auto'
+import Leaderboard from "@/components/Leaderboard"
+import ShowCard from "@/components/ShowCard"
+import ReactApexChart from 'react-apexcharts'
+import styled from 'styled-components';
+import Slider from 'react-slick';
+import 'slick-carousel/slick/slick.css';
+import 'slick-carousel/slick/slick-theme.css';
 
+const SimpleCarousel = ({ items }) => {
+  const settings = {
+    dots: false,
+    infinite: false,
+    speed: 500,
+    slidesToShow: 4,
+    slidesToScroll: 1,
+    // centerMode: true,
+    // centerPadding: '16px', // Adjust the spacing between items
+    nextArrow: <CustomNextArrow />,
+    prevArrow: <CustomPrevArrow />,
+  };
+
+  return (
+    <Slider {...settings}>
+      {items.map((item, index) => (
+        <ShowCard
+          key={index}
+          title={item.title}
+          time={item.time}
+          poster_path={item.image}
+          episodes={item.total_watched_eps}
+          index={index+1}
+        />
+      ))}
+    </Slider>
+  );
+};
+
+const CustomNextArrow = (props) => {
+  const { className, style, onClick } = props;
+  return (
+    <div
+      className={className}
+      style={{ ...style, display: 'block', background: 'black' }}
+      onClick={onClick}
+    />
+  );
+};
+
+const CustomPrevArrow = (props) => {
+  const { className, style, onClick } = props;
+  return (
+    <div
+      className={className}
+      style={{ ...style, display: 'block', background: 'black' }}
+      onClick={onClick}
+    />
+  );
+};
+
+const TwoColumnsContainer = styled.div`
+  display: flex;
+`;
+
+const Column = styled.div`
+  flex: 1;
+  padding: 16px;
+  // border: 1px solid #ddd;
+  // margin: 8px;
+`;
 
 const StatisticsPage = () => {
   const { user, data } = useGlobalContext();
@@ -16,6 +84,7 @@ const StatisticsPage = () => {
   const [pieLabels, setPieLabels] = useState([]);
   const [barValues, setBarValues] = useState([]);
   const [barLabels, setBarLabels] = useState([]);
+  const [topMedia, setTopMedia] = useState([]);
 
   useEffect(() => {
     if (data !== null) {
@@ -25,37 +94,56 @@ const StatisticsPage = () => {
 
   useEffect(() => {
     if (statistics !== null && user !== null) {
-      getInfo()
-      setLoading(false);
+      if (statistics.total_minutes !== 0) {
+        setTopMedia(statistics.longest_medias.slice().sort((a, b) => b.time - a.time))
+        getInfo()
+        setLoading(false);
+      }
     }
   }, [statistics, user]);
 
+  console.log(topMedia)
+
+
+
+
+
   function getInfo() {
-    if (statistics.total_minutes !== 0) {
+    if (statistics.media_types && statistics.genres.length !== 0) {
       let countArr = [];
       let labelArr = [];
       let countArrB = [];
       let labelArrB = [];
 
+      // // Use Object.keys to iterate over object properties (keys)
+      // Object.keys(statistics.media_types).forEach((key) => {
+      //   labelArr.push(key);
+      //   countArr.push(formatTime(statistics.media_types[key], "H2"));
+      // });
+      // setPieValues(countArr);
+      // setPieLabels(labelArr);
       // Use Object.keys to iterate over object properties (keys)
       Object.keys(statistics.media_types).forEach((key) => {
         labelArr.push(key);
         countArr.push(formatTime(statistics.media_types[key], "H2"));
       });
+      // Output the updated countArr
+      countArr.forEach((item, index) => countArr[index] = Math.round(item / formatTime(statistics.total_minutes, "H2") * 100));
+      countArr.sort((a, b) => b - a)
       setPieValues(countArr);
       setPieLabels(labelArr);
-      // Use Object.keys to iterate over object properties (keys)
-      statistics.genres.slice().sort((a, b) => b.watchtime - a.watchtime).forEach((item) => {
+
+      statistics.genres.sort((a, b) => b.watchtime - a.watchtime).slice(0, 10).forEach((item) => {
         labelArrB.push(`${item.emoji} ${item.name}`);
         countArrB.push(formatTime(item.watchtime, "H2"));
       });
       setBarValues(countArrB);
       setBarLabels(labelArrB);
-
     }
   }
 
-  console.log(pieLabels, pieValues, barLabels, barValues)
+
+  // console.log(pieLabels, pieValues, barLabels, barValues)
 
   // const segmentColors = [
   //   'rgba(255, 99, 132, 0.8)',
@@ -127,14 +215,58 @@ const StatisticsPage = () => {
     scales: {
       x: {
         beginAtZero: true,
+        // ticks: {
+        //   display: false, // Hide the labels on the x-axis
+        // },
       },
       y: {
         beginAtZero: true,
+        // ticks: {
+        //   display: false, // Hide the labels on the y-axis
+        // },
       },
     },
     indexAxis: 'y',
+    plugins: {
+      legend: {
+        display: false, // Hide the legend
+      },
+    },
   };
 
+  const apexSeries = pieValues;
+
+  const apexOptions = {
+    chart: {
+      height: 350,
+      type: 'radialBar',
+    },
+    plotOptions: {
+      radialBar: {
+        dataLabels: {
+          name: {
+            fontSize: '22px',
+          },
+          value: {
+            fontSize: '16px',
+          },
+          total: {
+            show: true,
+            label: 'Total',
+            formatter: function (w) {
+              // console.log(w, "w")
+              // By default, this function returns the average of all series.
+              // The below is just an example to show the use of a custom formatter function
+              return formatTime(statistics.total_minutes, "H2") + " Hours"
+            },
+          },
+        },
+      },
+    },
+    labels: pieLabels,
+  };
+
+  // add at least 5 items to see some statistics on your watch habits
 
 
   if (loading) {
@@ -148,40 +280,52 @@ const StatisticsPage = () => {
       <div>
         <div style={{ marginBottom: "100px" }}></div>
         <Card>
-          <Statistic title="Total Watchtime" value={formatTime(statistics.total_minutes, 'H')} loading={loading} />
+          <Statistic title="Total Watchtime" value={formatTime(statistics.total_minutes, 'H')} />
         </Card>
 
-        <br />
-        <div style={{ display: "flex" }}>
-          <div style={{ width: '400px', height: '400px', marginRight:"16px" }}>
-            <Card  >
+        <h2>Top Media</h2>
+        <SimpleCarousel items={topMedia.slice(0, 10)} />
+
+        {/* if smaller viewport, rearrange columns to 1 wide */}
+        <TwoColumnsContainer>
+          <Column>
+            <h2>Top Genres</h2>
+
+            <Leaderboard data={statistics.genres} />
+
+            {/* <Card style={{ maxWidth: '400px', maxHeight: '400px' }}>
+              <Bar
+                data={barChartData}
+                options={barChartOptions}
+                height={350}
+                width={350}
+              />
+            </Card> */}
+          </Column>
+          <Column>
+            <h2>Media Types Breakdown</h2>
+            <Card>
+              <ReactApexChart options={apexOptions} series={apexSeries} type="radialBar" height={350} />
+            </Card>
+            {/* <Card  >
               <Doughnut
                 data={doughnutChartData}
                 options={chartOptions}
               />
-            </Card>
-          </div>
-          <div style={{ width: '800px', height: '400px' }}>
-            <Card  >
-              <Bar 
-              data={barChartData} 
-              options={barChartOptions}
-              height={300} 
-              width={400}
-               />
-            </Card>
-          </div>
-        </div>
+            </Card> */}
+          </Column>
+        </TwoColumnsContainer>
 
-        {/* Rest of your components */}
-        {/* Rest of your components */}
+
+        {/* cards */}
+
         {/* <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginBottom: "16px" }}>
           {statistics.media_types && Object.entries(statistics.media_types).map(([media_type, minutes]) => (
             <Card key={media_type} >
               <Statistic title={capitalizeFirstLetter(media_type)} value={formatTime(minutes, "H")} />
             </Card>
           ))}
-        </div> */}
+        </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginTop: "16px" }}>
           {statistics.genres &&
@@ -202,9 +346,7 @@ const StatisticsPage = () => {
                 </Card>
               ))
           }
-        </div>
-
-        {/* <Pie {...config} />; */}
+        </div> */}
       </div>
     );
   }

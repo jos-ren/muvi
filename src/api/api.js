@@ -294,17 +294,49 @@ export const deleteUserMedia = async (selected, user) => {
 
 // --- DATA MANIPULATION --- 
 
-export const calculateStatistics = (data) => {
+const getTotalEpisodes = (data) => {
+    let accumulator = 0;
+    const seasons = data?.details?.seasons;
+    let i; 
 
+    if (seasons) {
+        let incrementI = true;
+
+        for (i = 0; i < seasons.length; i++) {
+            const season = seasons[i];
+
+            if (season.name !== "Specials") {
+                if (i !== data.my_season) {
+                    accumulator += season.episode_count;
+                } else {
+                    accumulator += data.my_episode;
+                    incrementI = false; // Don't increment i for the next iteration
+                    break; // Break the loop once it reaches your current season
+                }
+            }
+        }
+
+        if (incrementI) {
+            // Increment i for the next iteration if not done in the loop
+            i++;
+        }
+    }
+
+    return accumulator;
+};
+
+export const calculateStatistics = (data) => {
     let statistics = {
         total_minutes: 0,
         media_types: {},
-        genres: []
+        genres: [],
+        longest_medias: []
     };
 
     for (let i = 0; i < data.length; i++) {
         let item = data[i];
         let minutes = 0;
+        let total_watched_eps = 0;
 
         // Only use SEEN items
         if (item.list_type === "seen") {
@@ -312,14 +344,19 @@ export const calculateStatistics = (data) => {
 
             // If it's a TV show, calculate minutes based on episodes, season, and runtime
             if (media_type === "tv") {
+
                 if (details.last_episode_to_air !== null) {
-                    minutes = my_episode * my_season * details.last_episode_to_air.runtime;
+                    // your watched episodes * episode minutes length = watched minutes
+                    total_watched_eps = getTotalEpisodes(item)
+                    minutes = total_watched_eps * details.last_episode_to_air.runtime
                 } else if (details.episode_run_time.length > 0) {
-                    minutes = my_episode * my_season * details.episode_run_time[0];
+                    total_watched_eps = getTotalEpisodes(item)
+                    minutes = total_watched_eps * details.episode_run_time[0]
                 } else {
                     console.error('Error: ', title);
                 }
             } else if (media_type === "movie") {
+                total_watched_eps = 1;
                 minutes = details.runtime;
             }
 
@@ -334,6 +371,8 @@ export const calculateStatistics = (data) => {
             statistics.media_types[mediaKey] += minutes;
             statistics.total_minutes += minutes;
 
+            // add to longest mediatype array
+            statistics.longest_medias.push({ title: item.title, time: minutes, image: item.details.poster_path, total_watched_eps:total_watched_eps })
 
             // Update statistics based on genres
             if (details.genres && details.genres.length > 0) {
@@ -363,7 +402,6 @@ export const calculateStatistics = (data) => {
                     }
                 });
             }
-
         }
     }
 
