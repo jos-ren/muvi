@@ -68,6 +68,33 @@ const CustomPrevArrow = (props) => {
   );
 };
 
+const MostWatchedList = ({ title, items }) => (
+  <>
+    <h2>{title}</h2>
+    <ul>
+      {items
+        .slice()
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 20)
+        .map((item, index) => (
+          <li key={index}>
+            {/* Include your image here if needed */}
+            <Image
+              unoptimized
+              height={50}
+              width={50}
+              quality="100"
+              style={{ objectFit: 'cover' }}
+              src={item.profile_path ? `https://image.tmdb.org/t/p/original/${item.profile_path}` : 'default_avatar.jpg'}
+              alt="profile_pic"
+            />
+            {item.count}x - {item.name}
+          </li>
+        ))}
+    </ul>
+  </>
+);
+
 const TwoColumnsContainer = styled.div`
   display: flex;
 `;
@@ -114,7 +141,7 @@ const StatisticsPage = () => {
     }
   }, [statistics, user]);
 
-  // console.log(statistics)
+  console.log(statistics)
   // console.log(topActors)
 
 
@@ -220,24 +247,12 @@ const StatisticsPage = () => {
         <SimpleCarousel items={topMedia.slice(0, 10)} />
         <h2>Average Rating Given</h2>
         {statistics.average_rating}
-        <h2>Most Watched Actor</h2>
-        <ul>
-          {topActors.slice(0, 20).map((item, index) => (
-            <li key={index}>
-              {/* <Image unoptimized height={50} width={30} quality="100" src={"https://image.tmdb.org/t/p/original/" + item.profile_path} alt={"profile_pic"} /> */}
-              {item.count}x - {item.name}
-            </li>
-          ))}
-        </ul>
-        <h2>Most Watched Directors</h2>
-        <ul>
-          {topDirectors.slice(0, 20).map((item, index) => (
-            <li key={index}>
-              {/* <Image unoptimized height={50} width={30} quality="100" src={"https://image.tmdb.org/t/p/original/" + item.profile_path} alt={"profile_pic"} /> */}
-              {item.count}x - {item.name}
-            </li>
-          ))}
-        </ul>
+
+        <MostWatchedList title="Most Watched Actors" items={statistics.actors} />
+        <MostWatchedList title="Most Watched Directors" items={statistics.directors} />
+        <MostWatchedList title="Top Producers" items={statistics.producers} />
+        <MostWatchedList title="DOP" items={statistics.dop} />
+
         <h2>Longest Movie Watched</h2>
         <h2>Number of Rewatched Movies</h2>
         <h2>Oldest and Newest Movies Watched</h2>

@@ -99,8 +99,11 @@ export const calculateStatistics = async (data, user_id) => {
         genres: [],
         longest_medias: [],
         average_rating: 0,
+        // people
         actors: [],
         directors: [],
+        producers: [],
+        dop: [],
     };
 
     let temp_av_rate = [];
@@ -159,11 +162,13 @@ export const calculateStatistics = async (data, user_id) => {
         // Wait for all promises to resolve
         const allCredits = await Promise.all(promises);
 
-
+console.log(allCredits[0], "AYO")
         // Now you can use the generic function for both actors and directors
         allCredits.forEach((credits) => {
             updateRoleCounts(statistics, credits[0].cast, 'actors');
             updateRoleCounts(statistics, credits[0].crew.filter(item => item.job === "Director"), 'directors');
+            updateRoleCounts(statistics, credits[0].crew.filter(item => item.job === "Producer"), 'producers');
+            updateRoleCounts(statistics, credits[0].crew.filter(item => item.job === "Director of Photography"), 'dop');
         });
     }
 
