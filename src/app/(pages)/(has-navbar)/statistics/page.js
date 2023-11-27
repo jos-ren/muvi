@@ -141,7 +141,7 @@ const StatisticsPage = () => {
     }
   }, [statistics, user]);
 
-  console.log(statistics)
+  // console.log(statistics)
   // console.log(topActors)
 
 
@@ -252,6 +252,8 @@ const StatisticsPage = () => {
         <MostWatchedList title="Most Watched Directors" items={statistics.directors} />
         <MostWatchedList title="Top Producers" items={statistics.producers} />
         <MostWatchedList title="DOP" items={statistics.dop} />
+        <MostWatchedList title="sound" items={statistics.sound} />
+        <MostWatchedList title="Editor" items={statistics.editor} />
 
         <h2>Longest Movie Watched</h2>
         <h2>Number of Rewatched Movies</h2>

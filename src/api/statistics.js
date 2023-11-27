@@ -76,21 +76,21 @@ const updateGenreStatistics = (statistics, details, minutes) => {
 // update counts of directors, and actors
 const updateRoleCounts = (statistics, items, field) => {
     items.forEach((item) => {
-      const itemIndex = statistics[field].findIndex((o) => o.name === item.name);
-  
-      if (itemIndex === -1) {
-        // Item not found, add it to the array
-        statistics[field].push({
-          name: item.name,
-          count: 1,
-          profile_path: item.profile_path,
-        });
-      } else {
-        // Item found, update count
-        statistics[field][itemIndex].count += 1;
-      }
+        const itemIndex = statistics[field].findIndex((o) => o.name === item.name);
+
+        if (itemIndex === -1) {
+            // Item not found, add it to the array
+            statistics[field].push({
+                name: item.name,
+                count: 1,
+                profile_path: item.profile_path,
+            });
+        } else {
+            // Item found, update count
+            statistics[field][itemIndex].count += 1;
+        }
     });
-  };
+};
 
 export const calculateStatistics = async (data, user_id) => {
     let statistics = {
@@ -104,6 +104,8 @@ export const calculateStatistics = async (data, user_id) => {
         directors: [],
         producers: [],
         dop: [],
+        editor: [],
+        sound: [],
     };
 
     let temp_av_rate = [];
@@ -162,15 +164,18 @@ export const calculateStatistics = async (data, user_id) => {
         // Wait for all promises to resolve
         const allCredits = await Promise.all(promises);
 
-console.log(allCredits[0], "AYO")
         // Now you can use the generic function for both actors and directors
         allCredits.forEach((credits) => {
             updateRoleCounts(statistics, credits[0].cast, 'actors');
             updateRoleCounts(statistics, credits[0].crew.filter(item => item.job === "Director"), 'directors');
             updateRoleCounts(statistics, credits[0].crew.filter(item => item.job === "Producer"), 'producers');
             updateRoleCounts(statistics, credits[0].crew.filter(item => item.job === "Director of Photography"), 'dop');
+            updateRoleCounts(statistics, credits[0].crew.filter(item => item.job === "Editor"), 'editor');
+            updateRoleCounts(statistics, credits[0].crew.filter(item => item.department === "Sound"), 'sound');
         });
     }
+    // Executive Music Producer
+    // Original Music Composer
 
     statistics.average_rating = calculateAverage(temp_av_rate);
 
