@@ -1,7 +1,7 @@
 'use client'
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useGlobalContext } from '@/context/store.js';
-import { Statistic, Card, Button } from 'antd';
+import { Statistic, Card, Button, message } from 'antd';
 import { formatTime } from "@/api/utils";
 import { calculateStatistics } from '@/api/statistics';
 import Leaderboard from "@/components/Leaderboard"
@@ -11,16 +11,16 @@ import styled from 'styled-components';
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
-import { updateAll, test } from "@/api/api"
+import { refreshMembers, getPrincipalMembers } from "@/api/api"
 import Image from "next/image";
 
 const SimpleCarousel = ({ items }) => {
   const settings = {
     dots: false,
     infinite: false,
-    speed: 500,
+    speed: 1000,
     slidesToShow: 3.5,
-    slidesToScroll: 1,
+    slidesToScroll: 3,
     // centerMode: true,
     // centerPadding: '16px', // Adjust the spacing between items
     nextArrow: <CustomNextArrow />,
@@ -115,37 +115,44 @@ const StatisticsPage = () => {
   const [barValues, setBarValues] = useState([]);
   const [barLabels, setBarLabels] = useState([]);
   const [topMedia, setTopMedia] = useState([]);
-  const [topActors, setTopActors] = useState([]);
-  const [topDirectors, setTopDirectors] = useState([]);
+  const [pmID, setPMID] = useState(null)
+  const [messageApi, contextHolder] = message.useMessage();
+
+  const fetchInitData = async () => {
+    if (data !== null && user !== null) {
+      const principalMembers = await getPrincipalMembers(user.uid)
+      if (principalMembers.length !== 0) {
+        setPMID(principalMembers[0].id)
+      }
+      const newStatistics = await calculateStatistics(data, user.uid);
+      newStatistics.principal_members = principalMembers[0];
+      setStatistics(newStatistics);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (data !== null && user !== null) {
-        const newStatistics = await calculateStatistics(data, user.uid);
-        setStatistics(newStatistics);
-      }
-    };
-
-    fetchData();
+    fetchInitData();
   }, [data, user]);
 
   useEffect(() => {
     if (statistics !== null && user !== null) {
       if (statistics.total_minutes !== 0 && statistics.longest_medias) {
         setTopMedia(statistics.longest_medias.slice().sort((a, b) => b.time - a.time))
-        setTopActors(statistics.actors.slice().sort((a, b) => b.count - a.count))
-        setTopDirectors(statistics.directors.slice().sort((a, b) => b.count - a.count))
-        getInfo()
+        getGraphInfo()
         setLoading(false);
       }
     }
   }, [statistics, user]);
 
-  // console.log(statistics)
-  // console.log(topActors)
+  const onMessage = (message, type) => {
+    messageApi.open({
+      type: type,
+      content: message,
+      className: "message"
+    });
+  };
 
-
-  function getInfo() {
+  function getGraphInfo() {
     if (statistics.media_types && statistics.genres.length !== 0) {
       let countArr = [];
       let labelArr = [];
@@ -215,16 +222,35 @@ const StatisticsPage = () => {
   } else {
     return (
       <div>
+        {contextHolder}
         <div style={{ marginBottom: "100px" }}></div>
-
-        {/* <Button type="primary" onClick={() => calculateStatistics(data)}>calculate DATA</Button> */}
-        {/* <Button type="primary" onClick={() => updateAll(user.uid, data)}>calculate DATA</Button> */}
+        <Button
+          type="primary"
+          onClick={async () => {
+            onMessage("Refreshing", "loading");
+            await refreshMembers(data, user.uid, pmID);
+            fetchInitData();
+            onMessage("Refreshed Data", "success");
+          }}
+        >
+          Refresh Data
+        </Button>
 
         <div style={{ marginTop: "20px" }}></div>
-
-        <Card>
-          <Statistic title="Total Watchtime" value={formatTime(statistics.total_minutes, 'H')} />
-        </Card>
+        <div style={{ display: "flex" }}>
+          <Card style={{ width: '50%', marginRight: '16px' }}>
+            <Statistic title="Total Watchtime" value={formatTime(statistics.total_minutes, 'H')} />
+          </Card>
+          <Card style={{ width: '50%', marginRight: '16px' }}>
+            <Statistic title="Average Rating" value={statistics.average_rating} />
+          </Card>
+          <Card style={{ width: '50%', marginRight: '16px' }}>
+            <Statistic title="Longest Movie" value={'Flower Moon'} />
+          </Card>
+          <Card style={{ width: '50%' }}>
+            <Statistic title="Average Rating" value={statistics.average_rating} />
+          </Card>
+        </div>
 
         {/* maybe have a  refresh button like upcoming page and only refresh data when clicked or if never run before... could save on load times for page, but will detract from user experience */}
 
@@ -245,20 +271,21 @@ const StatisticsPage = () => {
 
         <h2>Most Watched Shows</h2>
         <SimpleCarousel items={topMedia.slice(0, 10)} />
-        <h2>Average Rating Given</h2>
-        {statistics.average_rating}
 
-        <MostWatchedList title="Most Watched Actors" items={statistics.actors} />
-        <MostWatchedList title="Most Watched Directors" items={statistics.directors} />
-        <MostWatchedList title="Top Producers" items={statistics.producers} />
-        <MostWatchedList title="DOP" items={statistics.dop} />
-        <MostWatchedList title="sound" items={statistics.sound} />
-        <MostWatchedList title="Editor" items={statistics.editor} />
+        {statistics.principal_members ? <div>
+          <MostWatchedList title="Most Watched Actors" items={statistics.principal_members.actors} />
+          <MostWatchedList title="Most Watched Directors" items={statistics.principal_members.directors} />
+          <MostWatchedList title="Top Producers" items={statistics.principal_members.producers} />
+          <MostWatchedList title="DOP" items={statistics.principal_members.dop} />
+          <MostWatchedList title="sound" items={statistics.principal_members.sound} />
+          <MostWatchedList title="Editor" items={statistics.principal_members.editor} />
+        </div> : null}
 
         <h2>Longest Movie Watched</h2>
         <h2>Number of Rewatched Movies</h2>
         <h2>Oldest and Newest Movies Watched</h2>
         <h2>Percentage of Movies Finished</h2>
+        {/* for this uise that cool %ige comp in ant design */}
         {/* total shows, animes, and movies */}
 
 

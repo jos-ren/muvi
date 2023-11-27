@@ -1,6 +1,6 @@
 import { calculateAverage } from "@/api/utils"
 import { genreCodes } from "@/data"
-import { getCredits } from '@/api/api'
+import { getMediaCredits } from '@/api/api'
 // ------ DATA MANIPULATION ------
 
 const getTotalEpisodes = (data) => {
@@ -73,24 +73,6 @@ const updateGenreStatistics = (statistics, details, minutes) => {
     }
 };
 
-// update counts of directors, and actors
-const updateRoleCounts = (statistics, items, field) => {
-    items.forEach((item) => {
-        const itemIndex = statistics[field].findIndex((o) => o.name === item.name);
-
-        if (itemIndex === -1) {
-            // Item not found, add it to the array
-            statistics[field].push({
-                name: item.name,
-                count: 1,
-                profile_path: item.profile_path,
-            });
-        } else {
-            // Item found, update count
-            statistics[field][itemIndex].count += 1;
-        }
-    });
-};
 
 export const calculateStatistics = async (data, user_id) => {
     let statistics = {
@@ -99,21 +81,19 @@ export const calculateStatistics = async (data, user_id) => {
         genres: [],
         longest_medias: [],
         average_rating: 0,
-        // people
-        actors: [],
-        directors: [],
-        producers: [],
-        dop: [],
-        editor: [],
-        sound: [],
+
+        // // people
+        // actors: [],
+        // directors: [],
+        // producers: [],
+        // dop: [],
+        // editor: [],
+        // sound: [],
     };
 
     let temp_av_rate = [];
 
     if (data.length > 0) {
-        // Create an array to hold all the promises
-        const promises = [];
-
         for (let i = 0; i < data.length; i++) {
             let item = data[i];
             let minutes = 0;
@@ -154,28 +134,9 @@ export const calculateStatistics = async (data, user_id) => {
                 });
 
                 updateGenreStatistics(statistics, details, minutes);
-
-                // Push the promise to the array
-                promises.push(getCredits(key, user_id));
             }
         }
-
-        // this is where most of the load time comes from
-        // Wait for all promises to resolve
-        const allCredits = await Promise.all(promises);
-
-        // Now you can use the generic function for both actors and directors
-        allCredits.forEach((credits) => {
-            updateRoleCounts(statistics, credits[0].cast, 'actors');
-            updateRoleCounts(statistics, credits[0].crew.filter(item => item.job === "Director"), 'directors');
-            updateRoleCounts(statistics, credits[0].crew.filter(item => item.job === "Producer"), 'producers');
-            updateRoleCounts(statistics, credits[0].crew.filter(item => item.job === "Director of Photography"), 'dop');
-            updateRoleCounts(statistics, credits[0].crew.filter(item => item.job === "Editor"), 'editor');
-            updateRoleCounts(statistics, credits[0].crew.filter(item => item.department === "Sound"), 'sound');
-        });
     }
-    // Executive Music Producer
-    // Original Music Composer
 
     statistics.average_rating = calculateAverage(temp_av_rate);
 
