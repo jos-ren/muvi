@@ -15,12 +15,18 @@ export const tmdbSearch = async (value) => {
     return passed
 };
 
-export async function tmdbTrending() {
-    const response = await fetch("https://api.themoviedb.org/3/trending/all/day?language=en-US", options);
+async function fetchMovieData(url) {
+    const response = await fetch(url, options);
     const json = await response.json();
-    let temp = json.results
+    let temp = json.results;
     temp.forEach((item, index) => {
         item.key = index + 1;
-    })
-    return temp
+    });
+    return temp;
+}
+
+export async function tmdbFetchMovies(endpoint) {
+    const baseUrl = "https://api.themoviedb.org/3/";
+    const fullUrl = `${baseUrl}${endpoint}?language=en-US&page=1`;
+    return fetchMovieData(fullUrl);
 }

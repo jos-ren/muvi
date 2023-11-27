@@ -1,11 +1,9 @@
 'use client'
 import React, { useState, useEffect, useRef } from 'react';
 import { useGlobalContext } from '@/context/store.js';
-import { Statistic, Card } from 'antd';
-import { formatTime, capitalizeFirstLetter } from "@/api/utils";
-import { calculateStatistics } from '@/api/api';
-import { Doughnut, Bar } from 'react-chartjs-2';
-import Chart from 'chart.js/auto'
+import { Statistic, Card, Button } from 'antd';
+import { formatTime } from "@/api/utils";
+import { calculateStatistics } from '@/api/statistics';
 import Leaderboard from "@/components/Leaderboard"
 import ShowCard from "@/components/ShowCard"
 import ReactApexChart from 'react-apexcharts'
@@ -13,18 +11,22 @@ import styled from 'styled-components';
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
+import { updateAll, test } from "@/api/api"
+import Image from "next/image";
 
 const SimpleCarousel = ({ items }) => {
   const settings = {
     dots: false,
     infinite: false,
     speed: 500,
-    slidesToShow: 4,
+    slidesToShow: 3.5,
     slidesToScroll: 1,
     // centerMode: true,
     // centerPadding: '16px', // Adjust the spacing between items
     nextArrow: <CustomNextArrow />,
     prevArrow: <CustomPrevArrow />,
+    // autoplay: true,
+    autoplaySpeed: 7500,
   };
 
   return (
@@ -36,7 +38,8 @@ const SimpleCarousel = ({ items }) => {
           time={item.time}
           poster_path={item.image}
           episodes={item.total_watched_eps}
-          index={index+1}
+          my_rating={item.my_rating}
+          index={index + 1}
         />
       ))}
     </Slider>
@@ -85,27 +88,34 @@ const StatisticsPage = () => {
   const [barValues, setBarValues] = useState([]);
   const [barLabels, setBarLabels] = useState([]);
   const [topMedia, setTopMedia] = useState([]);
+  const [topActors, setTopActors] = useState([]);
+  const [topDirectors, setTopDirectors] = useState([]);
 
   useEffect(() => {
-    if (data !== null) {
-      setStatistics(calculateStatistics(data));
-    }
-  }, [data]);
+    const fetchData = async () => {
+      if (data !== null && user !== null) {
+        const newStatistics = await calculateStatistics(data, user.uid);
+        setStatistics(newStatistics);
+      }
+    };
+
+    fetchData();
+  }, [data, user]);
 
   useEffect(() => {
     if (statistics !== null && user !== null) {
-      if (statistics.total_minutes !== 0) {
+      if (statistics.total_minutes !== 0 && statistics.longest_medias) {
         setTopMedia(statistics.longest_medias.slice().sort((a, b) => b.time - a.time))
+        setTopActors(statistics.actors.slice().sort((a, b) => b.count - a.count))
+        setTopDirectors(statistics.directors.slice().sort((a, b) => b.count - a.count))
         getInfo()
         setLoading(false);
       }
     }
   }, [statistics, user]);
 
-  console.log(topMedia)
-
-
-
+  // console.log(statistics)
+  // console.log(topActors)
 
 
   function getInfo() {
@@ -115,14 +125,6 @@ const StatisticsPage = () => {
       let countArrB = [];
       let labelArrB = [];
 
-      // // Use Object.keys to iterate over object properties (keys)
-      // Object.keys(statistics.media_types).forEach((key) => {
-      //   labelArr.push(key);
-      //   countArr.push(formatTime(statistics.media_types[key], "H2"));
-      // });
-      // setPieValues(countArr);
-      // setPieLabels(labelArr);
-      // Use Object.keys to iterate over object properties (keys)
       Object.keys(statistics.media_types).forEach((key) => {
         labelArr.push(key);
         countArr.push(formatTime(statistics.media_types[key], "H2"));
@@ -141,98 +143,6 @@ const StatisticsPage = () => {
       setBarLabels(labelArrB);
     }
   }
-
-
-  // console.log(pieLabels, pieValues, barLabels, barValues)
-
-  // const segmentColors = [
-  //   'rgba(255, 99, 132, 0.8)',
-  //   'rgba(54, 162, 235, 0.8)',
-  //   'rgba(255, 206, 86, 0.8)',
-  //   'rgba(75, 192, 192, 0.8)', // Tealish
-  //   'rgba(153, 102, 255, 0.8)', // Light Purple
-  //   'rgba(255, 159, 64, 0.8)', // Peachy Orange
-  //   'rgba(0, 128, 128, 0.8)', // Dark Teal
-  //   'rgba(255, 140, 0, 0.8)', // Dark Orange
-  //   // Add more colors as needed
-  // ];
-
-  const backgroundColors = [
-    'rgba(255,186,230,0.2)',
-    'rgba(255, 99, 132, 0.2)',
-    'rgba(54, 162, 235, 0.2)',
-    'rgba(255, 206, 86, 0.2)',
-    'rgba(75, 192, 192, 0.2)',
-    'rgba(153, 102, 255, 0.2)',
-    'rgba(255, 159, 64, 0.2)',
-  ]
-  const borderColors = [
-    'rgba(255,133,208,0.8)',
-    'rgba(255, 99, 132, 1)',
-    'rgba(54, 162, 235, 1)',
-    'rgba(255, 206, 86, 1)',
-    'rgba(75, 192, 192, 1)',
-    'rgba(153, 102, 255, 1)',
-    'rgba(255, 159, 64, 1)',
-  ]
-
-  const doughnutChartData = {
-    labels: pieLabels,
-    datasets: [{
-      label: '# Of Hours',
-      data: pieValues,
-      borderWidth: 1,
-      backgroundColor: backgroundColors,
-      borderColor: borderColors,
-    }]
-  };
-
-  const chartOptions = {
-    elements: {
-      arc: {
-        borderWidth: 0,
-      },
-    },
-  };
-
-  const barChartData = {
-    labels: barLabels,
-    datasets: [
-      {
-        label: 'Hours',
-        backgroundColor: 'rgba(75, 192, 192, 0.6)',
-        borderColor: 'rgba(75, 192, 192, 1)',
-        borderWidth: 1,
-        hoverBackgroundColor: 'rgba(75, 192, 192, 0.8)',
-        hoverBorderColor: 'rgba(75, 192, 192, 1)',
-        data: barValues,
-      },
-    ],
-  };
-
-  const barChartOptions = {
-    maintainAspectRatio: false,
-    scales: {
-      x: {
-        beginAtZero: true,
-        // ticks: {
-        //   display: false, // Hide the labels on the x-axis
-        // },
-      },
-      y: {
-        beginAtZero: true,
-        // ticks: {
-        //   display: false, // Hide the labels on the y-axis
-        // },
-      },
-    },
-    indexAxis: 'y',
-    plugins: {
-      legend: {
-        display: false, // Hide the legend
-      },
-    },
-  };
 
   const apexSeries = pieValues;
 
@@ -279,42 +189,60 @@ const StatisticsPage = () => {
     return (
       <div>
         <div style={{ marginBottom: "100px" }}></div>
+
+        {/* <Button type="primary" onClick={() => calculateStatistics(data)}>calculate DATA</Button> */}
+        {/* <Button type="primary" onClick={() => updateAll(user.uid, data)}>calculate DATA</Button> */}
+
+        <div style={{ marginTop: "20px" }}></div>
+
         <Card>
           <Statistic title="Total Watchtime" value={formatTime(statistics.total_minutes, 'H')} />
         </Card>
 
-        <h2>Top Media</h2>
-        <SimpleCarousel items={topMedia.slice(0, 10)} />
+        {/* maybe have a  refresh button like upcoming page and only refresh data when clicked or if never run before... could save on load times for page, but will detract from user experience */}
 
         {/* if smaller viewport, rearrange columns to 1 wide */}
         <TwoColumnsContainer>
           <Column>
-            <h2>Top Genres</h2>
+            <h2>Favorite Genres</h2>
 
             <Leaderboard data={statistics.genres} />
-
-            {/* <Card style={{ maxWidth: '400px', maxHeight: '400px' }}>
-              <Bar
-                data={barChartData}
-                options={barChartOptions}
-                height={350}
-                width={350}
-              />
-            </Card> */}
           </Column>
           <Column>
-            <h2>Media Types Breakdown</h2>
+            <h2>Favorite Medium</h2>
             <Card>
               <ReactApexChart options={apexOptions} series={apexSeries} type="radialBar" height={350} />
             </Card>
-            {/* <Card  >
-              <Doughnut
-                data={doughnutChartData}
-                options={chartOptions}
-              />
-            </Card> */}
           </Column>
         </TwoColumnsContainer>
+
+        <h2>Most Watched Shows</h2>
+        <SimpleCarousel items={topMedia.slice(0, 10)} />
+        <h2>Average Rating Given</h2>
+        {statistics.average_rating}
+        <h2>Most Watched Actor</h2>
+        <ul>
+          {topActors.slice(0, 20).map((item, index) => (
+            <li key={index}>
+              {/* <Image unoptimized height={50} width={30} quality="100" src={"https://image.tmdb.org/t/p/original/" + item.profile_path} alt={"profile_pic"} /> */}
+              {item.count}x - {item.name}
+            </li>
+          ))}
+        </ul>
+        <h2>Most Watched Directors</h2>
+        <ul>
+          {topDirectors.slice(0, 20).map((item, index) => (
+            <li key={index}>
+              {/* <Image unoptimized height={50} width={30} quality="100" src={"https://image.tmdb.org/t/p/original/" + item.profile_path} alt={"profile_pic"} /> */}
+              {item.count}x - {item.name}
+            </li>
+          ))}
+        </ul>
+        <h2>Longest Movie Watched</h2>
+        <h2>Number of Rewatched Movies</h2>
+        <h2>Oldest and Newest Movies Watched</h2>
+        <h2>Percentage of Movies Finished</h2>
+        {/* total shows, animes, and movies */}
 
 
         {/* cards */}

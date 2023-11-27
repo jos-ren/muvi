@@ -13,7 +13,7 @@ const Container = styled.div`
 //   border:1px solid red;
 `;
 
-const ShowCard = ({ title, time, poster_path, episodes, index }) => {
+const ShowCard = ({ title, time, poster_path, episodes, index, my_rating }) => {
     return (
 
         // add ellipsis, better formatting
@@ -29,6 +29,9 @@ const ShowCard = ({ title, time, poster_path, episodes, index }) => {
                     </div>
                     <div>
                         {episodes} Episodes
+                    </div>
+                    <div>
+                        {my_rating} Rating
                     </div>
                 </div>
                 <Image

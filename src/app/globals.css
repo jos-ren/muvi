@@ -85,3 +85,11 @@ body {
   text-overflow: ellipsis;
   overflow: hidden;
 }
+
+ .ant-card-body {
+  padding: 10px !important;
+}
+
+.no-padding-card{
+  width:600px;
+}

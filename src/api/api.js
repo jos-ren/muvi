@@ -1,7 +1,7 @@
-import { getDocs, collection, getDoc, setDoc, addDoc, updateDoc, doc, where, query, writeBatch, FieldPath, collectionGroup, documentId } from "firebase/firestore"
+import { getDocs, collection, getDoc, setDoc, addDoc, updateDoc, doc, where, query, writeBatch, FieldPath, collectionGroup, documentId, deleteField } from "firebase/firestore"
 import { db, auth } from "@/config/firebase.js"
 import { capitalizeFirstLetter } from "@/api/utils"
-import { genreCodes } from "@/data"
+
 
 const options = {
     method: "GET",
@@ -75,8 +75,12 @@ export const createUserMedia = async (o, list_type, user_uid) => {
         })
         let is_anime = o.original_language === "ja" && animation === true ? true : false;
         // get details
-        const response = await fetch("https://api.themoviedb.org/3/" + o.media_type + "/" + o.id + "?language=en-US", options);
-        let details = await response.json();
+        const d_response = await fetch("https://api.themoviedb.org/3/" + o.media_type + "/" + o.id + "?language=en-US", options);
+        let details = await d_response.json();
+        // get credits
+        const c_response = await fetch("https://api.themoviedb.org/3/" + o.media_type + "/" + o.id + "/credits", options);
+        let creditsObj = await c_response.json();
+
         let upcoming_release = o.media_type === "movie" ? details.release_date : (details.next_episode_to_air !== null ? details.next_episode_to_air.air_date : details.last_air_date)
 
         let obj = {
@@ -94,10 +98,16 @@ export const createUserMedia = async (o, list_type, user_uid) => {
             media_type: o.media_type,
             is_anime: is_anime,
             upcoming_release: upcoming_release,
-            details: details
+            details: details,
         };
 
-        await addDoc(subCollectionRef, obj);
+        // Add the main document to the 'MediaList' subcollection
+        const mediaDocRef = await addDoc(subCollectionRef, obj);
+
+        // Create and add the 'Credits' subcollection
+        const creditsSubcollectionRef = collection(mediaDocRef, 'Credits');
+        await addDoc(creditsSubcollectionRef, creditsObj);
+
         // console.log("added: ", o.title)
         return { message: "Added " + title + " to " + capitalizeFirstLetter(list_type), type: "success" };
     } catch (err) {
@@ -174,6 +184,30 @@ export const getUserData = async (user) => {
     }
 };
 
+export const getCredits = async (media_id, user_id) => {
+    try {
+      const userDocRef = doc(db, 'Users', user_id);
+      const mediaListCollectionRef = collection(userDocRef, 'MediaList');
+      const mediaDocRef = doc(mediaListCollectionRef, media_id);
+      const creditsCollectionRef = collection(mediaDocRef, 'Credits');
+      const creditsSnapshot = await getDocs(creditsCollectionRef);
+  
+      // if no data
+      if (creditsSnapshot.empty) {
+        return [];
+      }
+  
+      // Convert the snapshot to an array of credit objects
+      const credits = creditsSnapshot.docs.map((doc) => doc.data());
+  
+      return credits;
+    } catch (err) {
+      console.error('Error in get credits:', err);
+      // Return an empty array in case of an error
+      return [];
+    }
+  };
+
 //  ----- UPDATE -----
 
 export const updateUser = async (user, update_type) => {
@@ -212,6 +246,74 @@ export const updateUserMedia = async (mediaID, userID, updatedData) => {
     }
 }
 
+// // temp function to give all media credits
+// export const updateAll = async (user_uid, data) => {
+//     console.log(user_uid, data)
+
+//     // get credits
+
+//     for (let i = 0; i < data.length; i++) {
+//         const c_response = await fetch("https://api.themoviedb.org/3/" + data[i].media_type + "/" + data[i].tmdb_id + "/credits", options);
+//         let creditData = await c_response.json();
+
+//         await addCreditToMediaList(user_uid, data[i].key, creditData)
+//         // await deleteFieldFromDocument(user_uid, data[i].key)
+
+//         console.log(data[i].title)
+//         // console.log(user_uid, data[i].key, creditData, data[i].title)
+//     }
+// }
+
+// async function addCreditToMediaList(user_id, media_id, creditData) {
+//     try {
+//         // Reference to the user document
+//         const userDocRef = doc(db, 'Users', user_id);
+
+//         // Reference to the MediaList subcollection
+//         const mediaListCollectionRef = collection(userDocRef, 'MediaList');
+
+//         // Reference to the specific media document
+//         const mediaDocRef = doc(mediaListCollectionRef, media_id);
+
+//         // Reference to the Credits subcollection within the media document
+//         const creditsCollectionRef = collection(mediaDocRef, 'Credits');
+
+//         // Generate a new document reference for the credit
+//         const newCreditDocRef = doc(creditsCollectionRef);
+
+//         // Set the data for the credit in the new document
+//         await setDoc(newCreditDocRef, creditData);
+
+//         console.log('Credit added successfully.');
+//     } catch (error) {
+//         console.error('Error adding credit:', error.message);
+//     }
+// }
+
+// async function deleteFieldFromDocument(userId, mediaListDocumentId) {
+//     try {
+//         // Get a reference to the document
+//         const documentRef = doc(db, `Users/${userId}/MediaList`, mediaListDocumentId);
+
+//         // Fetch the document
+//         const documentSnapshot = await getDoc(documentRef);
+
+//         // Check if the document exists
+//         if (documentSnapshot.exists()) {
+//             // Update the document by removing the specified field
+//             await updateDoc(documentRef, {
+//                 'credits': deleteField()
+//             });
+
+//             console.log(`Field CREDITS deleted from the document.`);
+//         } else {
+//             console.log('Document does not exist.');
+//         }
+//     } catch (error) {
+//         console.error('Error deleting field:', error.message);
+//     }
+// }
+
 // to change list type
 export const moveItemList = async (location, userID, selected) => {
     const updatedData = {
@@ -239,8 +341,15 @@ export const refreshUpdate = async (userMedia, user_uid) => {
 
     // if series is returning, check details
     const fetchDetails = async (item) => {
-        const response = await fetch("https://api.themoviedb.org/3/tv/" + item.details.id + "?language=en-US", options);
-        const details = await response.json();
+        // get details
+        const d_response = await fetch("https://api.themoviedb.org/3/" + o.media_type + "/" + o.id + "?language=en-US", options);
+        let details = await d_response.json();
+        // // get credits
+        // const c_response = await fetch("https://api.themoviedb.org/3/" + o.media_type + "/" + o.id + "/credits", options);
+        // let credits = await c_response.json();
+        // // Create and add the 'Credits' subcollection
+        // const creditsSubcollectionRef = collection(mediaDocRef, 'Credits');
+        // await addDoc(creditsSubcollectionRef, creditsObj);
         console.log(item.title);
 
         if (details.next_episode_to_air !== null) {
@@ -290,120 +399,4 @@ export const deleteUserMedia = async (selected, user) => {
     } catch (err) {
         console.error(err);
     }
-};
-
-// --- DATA MANIPULATION --- 
-
-const getTotalEpisodes = (data) => {
-    let accumulator = 0;
-    const seasons = data?.details?.seasons;
-    let i; 
-
-    if (seasons) {
-        let incrementI = true;
-
-        for (i = 0; i < seasons.length; i++) {
-            const season = seasons[i];
-
-            if (season.name !== "Specials") {
-                if (i !== data.my_season) {
-                    accumulator += season.episode_count;
-                } else {
-                    accumulator += data.my_episode;
-                    incrementI = false; // Don't increment i for the next iteration
-                    break; // Break the loop once it reaches your current season
-                }
-            }
-        }
-
-        if (incrementI) {
-            // Increment i for the next iteration if not done in the loop
-            i++;
-        }
-    }
-
-    return accumulator;
-};
-
-export const calculateStatistics = (data) => {
-    let statistics = {
-        total_minutes: 0,
-        media_types: {},
-        genres: [],
-        longest_medias: []
-    };
-
-    for (let i = 0; i < data.length; i++) {
-        let item = data[i];
-        let minutes = 0;
-        let total_watched_eps = 0;
-
-        // Only use SEEN items
-        if (item.list_type === "seen") {
-            const { media_type, details, is_anime, my_episode, my_season, title } = item;
-
-            // If it's a TV show, calculate minutes based on episodes, season, and runtime
-            if (media_type === "tv") {
-
-                if (details.last_episode_to_air !== null) {
-                    // your watched episodes * episode minutes length = watched minutes
-                    total_watched_eps = getTotalEpisodes(item)
-                    minutes = total_watched_eps * details.last_episode_to_air.runtime
-                } else if (details.episode_run_time.length > 0) {
-                    total_watched_eps = getTotalEpisodes(item)
-                    minutes = total_watched_eps * details.episode_run_time[0]
-                } else {
-                    console.error('Error: ', title);
-                }
-            } else if (media_type === "movie") {
-                total_watched_eps = 1;
-                minutes = details.runtime;
-            }
-
-            // Update statistics based on media type
-            const mediaKey = is_anime ? 'anime' : media_type;
-
-            // Initialize the mediatype key if not present
-            if (!statistics.media_types[mediaKey]) {
-                statistics.media_types[mediaKey] = 0;
-            }
-
-            statistics.media_types[mediaKey] += minutes;
-            statistics.total_minutes += minutes;
-
-            // add to longest mediatype array
-            statistics.longest_medias.push({ title: item.title, time: minutes, image: item.details.poster_path, total_watched_eps:total_watched_eps })
-
-            // Update statistics based on genres
-            if (details.genres && details.genres.length > 0) {
-                details.genres.forEach((genre) => {
-                    const genreIndex = statistics.genres.findIndex((g) => g.id === genre.id);
-
-                    if (genreIndex === -1) {
-
-                        // find the corresponding emoji
-                        let emoji = ""
-                        for (const item of genreCodes) {
-                            if (item.value === genre.id) {
-                                emoji = item.emoji
-                            }
-                        }
-
-                        // Genre not found, add it to the array
-                        statistics.genres.push({
-                            id: genre.id,
-                            name: genre.name,
-                            emoji: emoji,
-                            watchtime: minutes,
-                        });
-                    } else {
-                        // Genre found, update watchtime
-                        statistics.genres[genreIndex].watchtime += minutes;
-                    }
-                });
-            }
-        }
-    }
-
-    return statistics;
 };

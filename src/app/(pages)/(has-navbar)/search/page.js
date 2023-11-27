@@ -6,7 +6,10 @@ import Hero from "@/components/Hero.js"
 import styled from "styled-components";
 import { createUserMedia, getUserMedia } from "@/api/api.js"
 import { useGlobalContext } from '@/context/store.js';
-import { tmdbSearch, tmdbTrending } from "@/vendor/vendor"
+import { tmdbSearch, tmdbFetchMovies } from "@/vendor/vendor"
+import Slider from 'react-slick';
+import 'slick-carousel/slick/slick.css';
+import 'slick-carousel/slick/slick-theme.css';
 
 const Body = styled.div`
   display: flex;
@@ -50,8 +53,9 @@ const Grid = styled.div`
   }
 `;
 
+
 export default function Home() {
-  const [trending, setTrending] = useState([]);
+  const [TMDBData, setTMDBData] = useState([]);
   const [search, setSearch] = useState([]);
   const [disableClear, setDisableClear] = useState(true);
   const [messageApi, contextHolder] = message.useMessage();
@@ -74,19 +78,71 @@ export default function Home() {
     onMessage(message, type);
   };
 
+  const SimpleCarousel = ({ items }) => {
+    const settings = {
+      dots: false,
+      infinite: false,
+      speed: 500,
+      slidesToShow: 6, // Number of slides to show at a time
+      slidesToScroll: 1,
+      swipeToSlide: true,
+    };
+
+    return (
+      <Slider {...settings}>
+        {items.map((item, index) => (
+          <div key={index} className="carousel-item">
+            <Card
+              addToSeen={() => handleUserMedia(item, "seen", user)}
+              addToWatchlist={() => handleUserMedia(item, "watchlist", user)}
+              src={"https://image.tmdb.org/t/p/original/" + item.poster_path}
+              alt={item.id}
+              url={"https://www.themoviedb.org/" + item.media_type + "/" + item.id}
+              details={{
+                cardTitle: item.media_type === "movie" ? item.title : item.name,
+                description: item.overview,
+                rating: item.vote_average,
+                vote_count: item.vote_count,
+                release_date: item.release_date,
+                media_type: item.media_type,
+                genre_ids: item.genre_ids,
+              }}
+            />
+          </div>
+        ))}
+      </Slider>
+    );
+  };
+
   useEffect(() => {
     const trendingFetch = async () => {
-      const result = await tmdbTrending();
-      setTrending(result);
+      let temp = {
+        trending: await tmdbFetchMovies("trending/all/day"),
+        // movie: {
+        //   upcoming: await tmdbFetchMovies("movie/upcoming"),
+        //   popular: await tmdbFetchMovies("movie/popular"),
+        //   now_playing: await tmdbFetchMovies("movie/now_playing"),
+        //   top_rated: await tmdbFetchMovies("movie/top_rated"),
+        // },
+        // tv: {
+        //   airing_today: await tmdbFetchMovies("tv/airing_today"),
+        //   on_the_air: await tmdbFetchMovies("tv/on_the_air"),
+        //   popular: await tmdbFetchMovies("tv/popular"),
+        //   top_rated: await tmdbFetchMovies("tv/top_rated"),
+        // },
+      }
+      setTMDBData(temp);
     };
     trendingFetch();
   }, []);
 
+  // console.log(TMDBData)
+
   useEffect(() => {
-    if (user !== null) {
+    if (user !== null && TMDBData.length !== 0) {
       setLoading(false)
     }
-  }, [user]);
+  }, [user, TMDBData]);
 
   if (loading) {
     return <div>
@@ -143,9 +199,8 @@ export default function Home() {
 
           <h2>Trending Shows</h2>
           <Grid>
-            {trending.map((o) => {
-
-              return <Card
+            {TMDBData.trending.map((o) =>
+              <Card
                 key={o.id}
                 addToSeen={() => handleUserMedia(o, "seen", user)}
                 addToWatchlist={() => handleUserMedia(o, "watchlist", user)}
@@ -162,9 +217,34 @@ export default function Home() {
                   genre_ids: o.genre_ids,
                 }}
               />
-            }
             )}
           </Grid>
+          {/* <SimpleCarousel items={TMDBData.trending} /> */}
+
+          {/* <h2>Upcoming Movies</h2>
+          <SimpleCarousel items={TMDBData.movie.upcoming} />
+
+          <h2>Now Playing Movies</h2>
+          <SimpleCarousel items={TMDBData.movie.now_playing} />
+
+          <h2>Popular Movies</h2>
+          <SimpleCarousel items={TMDBData.movie.popular} />
+
+          <h2>Top Rated Movies</h2>
+          <SimpleCarousel items={TMDBData.movie.top_rated} />
+
+          <h2>Now Playing TV</h2>
+          <SimpleCarousel items={TMDBData.tv.airing_today} />
+
+          <h2>On The Air TV</h2>
+          <SimpleCarousel items={TMDBData.tv.on_the_air} />
+
+          <h2>Popular TV</h2>
+          <SimpleCarousel items={TMDBData.tv.popular} />
+
+          <h2>Top Rated TV</h2>
+          <SimpleCarousel items={TMDBData.tv.top_rated} /> */}
+
         </Body>
       </div>
     )

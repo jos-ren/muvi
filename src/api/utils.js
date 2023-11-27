@@ -125,3 +125,14 @@ export function formatTime(totalMinutes, method) {
     return hours
   }
 }
+
+export function calculateAverage(arr) {
+  if (arr.length === 0) {
+    return 0; // handle the case where the array is empty to avoid division by zero
+  }
+
+  const sum = arr.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
+  const average = sum / arr.length;
+  const roundedAverage = average.toFixed(2); // Round to two decimal places
+  return roundedAverage;
+}
