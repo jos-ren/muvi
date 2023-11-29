@@ -13,20 +13,30 @@ const Container = styled.div`
 //   border:1px solid red;
 `;
 
-const ShowCard = ({ title, time, poster_path, episodes, index, my_rating }) => {
+const ShowCard = ({ title, time, poster_path, episodes, index, my_rating, media_type }) => {
     return (
 
         // add ellipsis, better formatting
         <Card style={{ width: "100%", marginTop: '16px', marginRight: "16px" }}>
             <div style={{ display: "flex" }}>
                 <h1>{index}</h1>
-                <div style={{ marginLeft: "10px" }}>
-                    <div>
+                <Image
+                    unoptimized
+                    src={"https://image.tmdb.org/t/p/original/" + poster_path}
+                    alt={title}
+                    width={50}
+                    height={75}
+                    style={{ objectFit: "cover", marginLeft: "10px" }}
+                />
+                <div style={{ marginLeft: "10px", }}>
+                    <div className='ellipsis'>
                         {title}
                     </div>
-                    <div>
+                    {media_type === "movie" ? <div>
+                        {formatTime(time, "DHM")}
+                    </div> : <div>
                         {formatTime(time, "H2")} Hours
-                    </div>
+                    </div>}
                     <div>
                         {episodes} Episodes
                     </div>
@@ -34,14 +44,6 @@ const ShowCard = ({ title, time, poster_path, episodes, index, my_rating }) => {
                         {my_rating} Rating
                     </div>
                 </div>
-                <Image
-                    unoptimized
-                    src={"https://image.tmdb.org/t/p/original/" + poster_path}
-                    alt={title}
-                    width={50}
-                    height={75}
-                    style={{ objectFit: "cover" }}
-                />
             </div>
         </Card>
     );

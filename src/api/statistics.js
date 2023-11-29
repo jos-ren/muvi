@@ -74,21 +74,15 @@ const updateGenreStatistics = (statistics, details, minutes) => {
 };
 
 
-export const calculateStatistics = async (data, user_id) => {
+export const calculateStatistics = async (data) => {
     let statistics = {
         total_minutes: 0,
         media_types: {},
         genres: [],
-        longest_medias: [],
+        longest_tv: [],
+        longest_movie: [],
         average_rating: 0,
-
-        // // people
-        // actors: [],
-        // directors: [],
-        // producers: [],
-        // dop: [],
-        // editor: [],
-        // sound: [],
+        oldest_media:[]
     };
 
     let temp_av_rate = [];
@@ -107,7 +101,7 @@ export const calculateStatistics = async (data, user_id) => {
                 }
 
                 if (media_type === "tv") {
-                    if (details.last_episode_to_air !== null) {
+                    if (details.last_episode_to_air !== null && details.last_episode_to_air.runtime !== null) {
                         total_watched_eps = getTotalEpisodes(item);
                         minutes = total_watched_eps * details.last_episode_to_air.runtime;
                     } else if (details.episode_run_time.length > 0) {
@@ -116,29 +110,43 @@ export const calculateStatistics = async (data, user_id) => {
                     } else {
                         console.error('Error finding episode run_time: ', title);
                     }
+
+                    statistics.longest_tv.push({
+                        title: item.title,
+                        time: minutes,
+                        image: item.details.poster_path,
+                        total_watched_eps: total_watched_eps,
+                        my_rating: my_rating,
+                    });
                 } else if (media_type === "movie") {
-                    total_watched_eps = 1;
                     minutes = details.runtime;
+
+                    statistics.longest_movie.push({
+                        title: item.title,
+                        time: minutes,
+                        image: item.details.poster_path,
+                        my_rating: my_rating,
+                    });
                 }
 
                 const mediaKey = is_anime ? 'anime' : media_type;
 
                 updateMediaTypeStatistics(statistics, mediaKey, minutes);
-
-                statistics.longest_medias.push({
-                    title: item.title,
-                    time: minutes,
-                    image: item.details.poster_path,
-                    total_watched_eps: total_watched_eps,
-                    my_rating: my_rating,
-                });
-
                 updateGenreStatistics(statistics, details, minutes);
+
+                // console.log(item.release_date)
+                statistics.oldest_media.push({
+                    title: item.title,
+                    release_date: item.release_date,
+                });
             }
         }
     }
 
     statistics.average_rating = calculateAverage(temp_av_rate);
+    statistics.longest_tv.sort((a, b) => b.time - a.time);
+    statistics.longest_movie.sort((a, b) => b.time - a.time);
+    statistics.oldest_media.sort((a, b) => new Date(b.release_date) - new Date(a.release_date));
 
     return statistics;
 };

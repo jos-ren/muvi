@@ -8,18 +8,20 @@ import { signOut } from "firebase/auth";
 import { useRouter, usePathname } from 'next/navigation';
 import tmdb from "../../../../public/tmdb.svg";
 import useMediaQuery from '@mui/material/useMediaQuery';
-import { useTheme } from '@mui/material/styles';
+import { useTheme as muiUseTheme } from '@mui/material/styles';
 import { DownOutlined, ArrowRightOutlined, ApartmentOutlined, SettingOutlined } from '@ant-design/icons';
 import { Dropdown } from 'antd';
 import { useGlobalContext } from '@/context/store.js';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function ContentRootLayout({ children }) {
   const router = useRouter()
   const pathName = usePathname()
-  const theme = useTheme();
-  const medium = useMediaQuery(theme.breakpoints.up('md'));
-  const large = useMediaQuery(theme.breakpoints.up('lg'));
+  const muiTheme = muiUseTheme();
+  const medium = useMediaQuery(muiTheme.breakpoints.up('md'));
+  const large = useMediaQuery(muiTheme.breakpoints.up('lg'));
   const { user } = useGlobalContext();
+  const { theme, toggleTheme } = useTheme();
 
   const logOut = async () => {
     try {
@@ -52,8 +54,11 @@ export default function ContentRootLayout({ children }) {
   ];
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }} className={`app ${theme}`}>
       <div className='header' >
+        <div>
+          <button onClick={toggleTheme}>Toggle Theme</button>
+        </div>
         <div className='tab-container'>
           {tabs.map(o => (
             <div

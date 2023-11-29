@@ -2,19 +2,21 @@
 import React, { useState, useEffect } from 'react';
 import { useGlobalContext } from '@/context/store.js';
 import { Statistic, Card, Button, message } from 'antd';
-import { formatTime } from "@/api/utils";
+import { formatTime, capitalizeFirstLetter } from "@/api/utils";
 import { calculateStatistics } from '@/api/statistics';
 import Leaderboard from "@/components/Leaderboard"
 import ShowCard from "@/components/ShowCard"
-import ReactApexChart from 'react-apexcharts'
 import styled from 'styled-components';
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
-import { refreshMembers, getPrincipalMembers } from "@/api/api"
+import { refreshMembers, getPrincipalMembers, test } from "@/api/api"
 import Image from "next/image";
+import dynamic from 'next/dynamic';
+const ApexCharts = dynamic(() => import('react-apexcharts'), { ssr: false });
+import { RightOutlined, LeftOutlined } from '@ant-design/icons'
 
-const SimpleCarousel = ({ items }) => {
+const SimpleCarousel = ({ items, media_type }) => {
   const settings = {
     dots: false,
     infinite: false,
@@ -40,6 +42,7 @@ const SimpleCarousel = ({ items }) => {
           episodes={item.total_watched_eps}
           my_rating={item.my_rating}
           index={index + 1}
+          media_type={media_type}
         />
       ))}
     </Slider>
@@ -47,22 +50,20 @@ const SimpleCarousel = ({ items }) => {
 };
 
 const CustomNextArrow = (props) => {
-  const { className, style, onClick } = props;
+  const { onClick } = props;
   return (
-    <div
-      className={className}
-      style={{ ...style, display: 'block', background: 'black' }}
+    <RightOutlined
+      className={'arrow-right'}
       onClick={onClick}
     />
   );
 };
 
 const CustomPrevArrow = (props) => {
-  const { className, style, onClick } = props;
+  const { onClick } = props;
   return (
-    <div
-      className={className}
-      style={{ ...style, display: 'block', background: 'black' }}
+    <LeftOutlined
+      className={'arrow-left'}
       onClick={onClick}
     />
   );
@@ -73,8 +74,6 @@ const MostWatchedList = ({ title, items }) => (
     <h2>{title}</h2>
     <ul>
       {items
-        .slice()
-        .sort((a, b) => b.count - a.count)
         .slice(0, 20)
         .map((item, index) => (
           <li key={index}>
@@ -114,17 +113,19 @@ const StatisticsPage = () => {
   const [pieLabels, setPieLabels] = useState([]);
   const [barValues, setBarValues] = useState([]);
   const [barLabels, setBarLabels] = useState([]);
-  const [topMedia, setTopMedia] = useState([]);
   const [pmID, setPMID] = useState(null)
   const [messageApi, contextHolder] = message.useMessage();
 
   const fetchInitData = async () => {
     if (data !== null && user !== null) {
+      // get top actors, etc
       const principalMembers = await getPrincipalMembers(user.uid)
       if (principalMembers.length !== 0) {
         setPMID(principalMembers[0].id)
       }
+      // generate stats on movies
       const newStatistics = await calculateStatistics(data, user.uid);
+      // combine
       newStatistics.principal_members = principalMembers[0];
       setStatistics(newStatistics);
     }
@@ -136,8 +137,7 @@ const StatisticsPage = () => {
 
   useEffect(() => {
     if (statistics !== null && user !== null) {
-      if (statistics.total_minutes !== 0 && statistics.longest_medias) {
-        setTopMedia(statistics.longest_medias.slice().sort((a, b) => b.time - a.time))
+      if (statistics.total_minutes !== 0 && statistics.longest_tv) {
         getGraphInfo()
         setLoading(false);
       }
@@ -211,7 +211,7 @@ const StatisticsPage = () => {
   };
 
   // add at least 5 items to see some statistics on your watch habits
-
+  console.log(statistics)
 
   if (loading) {
     return (
@@ -224,19 +224,23 @@ const StatisticsPage = () => {
       <div>
         {contextHolder}
         <div style={{ marginBottom: "100px" }}></div>
-        <Button
-          type="primary"
-          onClick={async () => {
-            onMessage("Refreshing", "loading");
-            await refreshMembers(data, user.uid, pmID);
-            fetchInitData();
-            onMessage("Refreshed Data", "success");
-          }}
-        >
-          Refresh Data
-        </Button>
+        <div style={{ display: "flex", justifyContent: "end" }}>
+          <Button
+            type="primary"
+            onClick={async () => {
+              onMessage("Refreshing", "loading");
+              await refreshMembers(data, user.uid, pmID);
+              fetchInitData();
+              onMessage("Refreshed Data", "success");
+            }}
+          >
+            Refresh Data
+          </Button>
+        </div>
 
-        <div style={{ marginTop: "20px" }}></div>
+
+
+        <div style={{ marginTop: "16px" }}></div>
         <div style={{ display: "flex" }}>
           <Card style={{ width: '50%', marginRight: '16px' }}>
             <Statistic title="Total Watchtime" value={formatTime(statistics.total_minutes, 'H')} />
@@ -244,17 +248,22 @@ const StatisticsPage = () => {
           <Card style={{ width: '50%', marginRight: '16px' }}>
             <Statistic title="Average Rating" value={statistics.average_rating} />
           </Card>
-          <Card style={{ width: '50%', marginRight: '16px' }}>
-            <Statistic title="Longest Movie" value={'Flower Moon'} />
-          </Card>
           <Card style={{ width: '50%' }}>
-            <Statistic title="Average Rating" value={statistics.average_rating} />
+            <div>{statistics.oldest_media[statistics.oldest_media.length - 1].release_date}</div>
+            <Statistic title="Oldest Movie" value={statistics.oldest_media[statistics.oldest_media.length - 1].title} />
+          </Card>
+          <Card style={{ width: '50%', marginRight: '16px' }}>
+            <div>{statistics.oldest_media[0].release_date}</div>
+            <Statistic title="Newest Movie" value={statistics.oldest_media[0].title} />
           </Card>
         </div>
 
-        {/* maybe have a  refresh button like upcoming page and only refresh data when clicked or if never run before... could save on load times for page, but will detract from user experience */}
+        <h2>Number of Rewatched Movies</h2>
 
-        {/* if smaller viewport, rearrange columns to 1 wide */}
+<h2>Percentage of Movies Finished</h2>
+{/* for this uise that cool %ige comp in ant design */}
+{/* total shows, animes, and movies */}
+
         <TwoColumnsContainer>
           <Column>
             <h2>Favorite Genres</h2>
@@ -264,13 +273,17 @@ const StatisticsPage = () => {
           <Column>
             <h2>Favorite Medium</h2>
             <Card>
-              <ReactApexChart options={apexOptions} series={apexSeries} type="radialBar" height={350} />
+              {(typeof window !== 'undefined') &&
+                <ApexCharts options={apexOptions} series={apexSeries} type="radialBar" height={350} width={350} />
+              }
             </Card>
           </Column>
         </TwoColumnsContainer>
 
-        <h2>Most Watched Shows</h2>
-        <SimpleCarousel items={topMedia.slice(0, 10)} />
+        <h2>Top TV</h2>
+        <SimpleCarousel items={statistics.longest_tv.slice(0, 10)} media_type={"tv"} />
+        <h2>Longest Movies</h2>
+        <SimpleCarousel items={statistics.longest_movie.slice(0, 10)} media_type={"movie"} />
 
         {statistics.principal_members ? <div>
           <MostWatchedList title="Most Watched Actors" items={statistics.principal_members.actors} />
@@ -280,45 +293,6 @@ const StatisticsPage = () => {
           <MostWatchedList title="sound" items={statistics.principal_members.sound} />
           <MostWatchedList title="Editor" items={statistics.principal_members.editor} />
         </div> : null}
-
-        <h2>Longest Movie Watched</h2>
-        <h2>Number of Rewatched Movies</h2>
-        <h2>Oldest and Newest Movies Watched</h2>
-        <h2>Percentage of Movies Finished</h2>
-        {/* for this uise that cool %ige comp in ant design */}
-        {/* total shows, animes, and movies */}
-
-
-        {/* cards */}
-
-        {/* <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginBottom: "16px" }}>
-          {statistics.media_types && Object.entries(statistics.media_types).map(([media_type, minutes]) => (
-            <Card key={media_type} >
-              <Statistic title={capitalizeFirstLetter(media_type)} value={formatTime(minutes, "H")} />
-            </Card>
-          ))}
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginTop: "16px" }}>
-          {statistics.genres &&
-            statistics.genres
-              .slice() // Create a copy of the array to avoid mutating the original
-              .sort((a, b) => b.watchtime - a.watchtime) // Sort by watchtime in descending order
-              .map((i, index) => (
-                <Card key={i.id}>
-                  <Statistic
-                    title={
-                      <div>
-                        <span style={{ color: "black" }}>{i.emoji}</span>{" "}
-                        {capitalizeFirstLetter(i.name)}
-                      </div>
-                    }
-                    value={formatTime(i.watchtime, "H")}
-                  />
-                </Card>
-              ))
-          }
-        </div> */}
       </div>
     );
   }

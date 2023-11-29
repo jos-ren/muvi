@@ -2,6 +2,7 @@ const inter = Inter({ subsets: ['latin'] })
 import './globals.css'
 import { Inter } from 'next/font/google'
 import { GlobalProvider } from '@/context/store';
+import { ThemeProvider } from '@/context/ThemeContext';
 
 export const metadata = {
   title: 'Muvi',
@@ -13,9 +14,11 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={inter.className}>
-        <GlobalProvider>
-          {children}
-        </GlobalProvider>
+        <ThemeProvider>
+          <GlobalProvider>
+            {children}
+          </GlobalProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

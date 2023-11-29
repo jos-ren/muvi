@@ -190,7 +190,7 @@ export const getPrincipalMembers = async (uid) => {
         }
 
         // Extract user data from the PrincipalMembers documents
-        const userPrincipalMembers = PrincipalMembersSnapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id  }));
+        const userPrincipalMembers = PrincipalMembersSnapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
         return userPrincipalMembers
 
     } catch (err) {
@@ -265,7 +265,7 @@ export const refreshUpdate = async (userMedia, user_uid) => {
     let returning = userMedia.filter(item => item.details.status === "Returning Series")
 
     // if series is returning, check details
-    const fetchDetails = async (item) => {
+    const fetchTVDetails = async (item) => {
         // get details
         const d_response = await fetch("https://api.themoviedb.org/3/" + item.media_type + "/" + item.tmdb_id + "?language=en-US", options);
         let details = await d_response.json();
@@ -285,20 +285,38 @@ export const refreshUpdate = async (userMedia, user_uid) => {
         }
     };
 
-    const fetchDetailsPromises = returning.map(fetchDetails);
+    const fetchTVDetailsPromises = returning.map(fetchTVDetails);
+    await Promise.all(fetchTVDetailsPromises);
 
-    // Wait for all asynchronous operations to complete
-    await Promise.all(fetchDetailsPromises);
+    // UPDATE MOVIES
+    let movie = userMedia.filter(item => item.title === 'title')
+    // if movie is still unreleased, check if release date changes, status changes, etc
+    const fetchMovieDetails = async (item) => {
+        // get details
+        const d_response = await fetch("https://api.themoviedb.org/3/" + item.media_type + "/" + item.tmdb_id + "?language=en-US", options);
+        let details = await d_response.json();
+        // check differences in title, release_date, status
+        if (details.title !== item.title || details.release_date !== item.upcoming_release || details.status !== item.details.status) {
+            const dataToUpdate = {
+                title: details.title,
+                upcoming_release: details.release_date,
+                release_date: details.release_date,
+                details: details,
+                last_edited: new Date()
+            };
+            await updateUserMedia(item.key, user_uid, dataToUpdate);
+            numUpdated += 1;
+        }
+    };
+
+    const fetchMovieDetailsPromises = movie.map(fetchMovieDetails);
+    await Promise.all(fetchMovieDetailsPromises);
 
     if (numUpdated === 0) {
         return { message: "List is up to date", type: "info" };
     } else {
         return { message: "Refreshed " + numUpdated + " Items", type: "success" };
     }
-
-    // UPDATE MOVIES
-    // need to add logic here...
-    // Movies have status either Planned or !== Released
 }
 
 export const refreshMembers = async (data, user_id, pmID) => {
