@@ -1,20 +1,26 @@
 'use client'
 import React, { useState, useEffect } from 'react';
-import { useGlobalContext } from '@/context/store.js';
-import { Statistic, Card, Button, message } from 'antd';
-import { formatTime, capitalizeFirstLetter } from "@/api/utils";
-import { calculateStatistics } from '@/api/statistics';
-import Leaderboard from "@/components/Leaderboard"
-import ShowCard from "@/components/ShowCard"
 import styled from 'styled-components';
-import Slider from 'react-slick';
-import 'slick-carousel/slick/slick.css';
-import 'slick-carousel/slick/slick-theme.css';
-import { refreshMembers, getPrincipalMembers, test } from "@/api/api"
 import Image from "next/image";
 import dynamic from 'next/dynamic';
+
+import { useGlobalContext } from '@/context/store.js';
+import { formatTime } from "@/utils/utils";
+import { calculateStatistics } from '@/api/statistics';
+import { refreshMembers, getPrincipalMembers } from "@/api/api"
+
+import TopTen from "@/components/statistics/TopTen"
+import MovieCard from "@/components/statistics/MovieCard"
+import SmallStat from '@/components/statistics/SmallStat';
+import Box from "@/components/statistics/Box"
+
+import { Statistic, Card, Button, message } from 'antd';
+import { RightOutlined, LeftOutlined, ReloadOutlined, StarTwoTone } from '@ant-design/icons'
+import 'slick-carousel/slick/slick.css';
+import 'slick-carousel/slick/slick-theme.css';
+import Slider from 'react-slick';
 const ApexCharts = dynamic(() => import('react-apexcharts'), { ssr: false });
-import { RightOutlined, LeftOutlined } from '@ant-design/icons'
+
 
 const SimpleCarousel = ({ items, media_type }) => {
   const settings = {
@@ -34,7 +40,7 @@ const SimpleCarousel = ({ items, media_type }) => {
   return (
     <Slider {...settings}>
       {items.map((item, index) => (
-        <ShowCard
+        <MovieCard
           key={index}
           title={item.title}
           time={item.time}
@@ -100,7 +106,7 @@ const TwoColumnsContainer = styled.div`
 
 const Column = styled.div`
   flex: 1;
-  padding: 16px;
+  // padding: 16px;
   // border: 1px solid #ddd;
   // margin: 8px;
 `;
@@ -223,10 +229,11 @@ const StatisticsPage = () => {
     return (
       <div>
         {contextHolder}
-        <div style={{ marginBottom: "100px" }}></div>
-        <div style={{ display: "flex", justifyContent: "end" }}>
+        <div style={{ marginTop: "145px" }}></div>
+        <div style={{ display: "flex", justifyContent: "end", margin: "20px 0px" }}>
           <Button
             type="primary"
+            icon={<ReloadOutlined />}
             onClick={async () => {
               onMessage("Refreshing", "loading");
               await refreshMembers(data, user.uid, pmID);
@@ -234,49 +241,45 @@ const StatisticsPage = () => {
               onMessage("Refreshed Data", "success");
             }}
           >
-            Refresh Data
+            Refresh
           </Button>
         </div>
-
-
-
-        <div style={{ marginTop: "16px" }}></div>
         <div style={{ display: "flex" }}>
-          <Card style={{ width: '50%', marginRight: '16px' }}>
-            <Statistic title="Total Watchtime" value={formatTime(statistics.total_minutes, 'H')} />
-          </Card>
-          <Card style={{ width: '50%', marginRight: '16px' }}>
-            <Statistic title="Average Rating" value={statistics.average_rating} />
-          </Card>
-          <Card style={{ width: '50%' }}>
-            <div>{statistics.oldest_media[statistics.oldest_media.length - 1].release_date}</div>
-            <Statistic title="Oldest Movie" value={statistics.oldest_media[statistics.oldest_media.length - 1].title} />
-          </Card>
-          <Card style={{ width: '50%', marginRight: '16px' }}>
-            <div>{statistics.oldest_media[0].release_date}</div>
-            <Statistic title="Newest Movie" value={statistics.oldest_media[0].title} />
-          </Card>
+          <SmallStat heading={formatTime(statistics.total_minutes, 'H')} text={"Total Watchtime"} />
+          <SmallStat heading={
+            <>
+              <StarTwoTone twoToneColor="#fadb14" />
+              {statistics.average_rating}
+            </>
+          } text="Average Rating" />
+          <SmallStat heading={statistics.oldest_media[statistics.oldest_media.length - 1].title} text="Oldest Movie" />
+          <SmallStat heading={statistics.oldest_media[0].title} text="Newest Movie" />
         </div>
+
+        <Card style={{ width: '50%', marginRight: '16px' }}>
+          <div>{statistics.oldest_media[0].release_date}</div>
+          <Statistic title="TEST" value={statistics.oldest_media[0].title} />
+        </Card>
 
         <h2>Number of Rewatched Movies</h2>
 
-<h2>Percentage of Movies Finished</h2>
-{/* for this uise that cool %ige comp in ant design */}
-{/* total shows, animes, and movies */}
+        <h2>Percentage of Movies Finished</h2>
+        {/* for this uise that cool %ige comp in ant design */}
+        {/* total shows, animes, and movies */}
 
         <TwoColumnsContainer>
           <Column>
             <h2>Favorite Genres</h2>
 
-            <Leaderboard data={statistics.genres} />
+            <TopTen data={statistics.genres} />
           </Column>
           <Column>
             <h2>Favorite Medium</h2>
-            <Card>
+            <Box>
               {(typeof window !== 'undefined') &&
                 <ApexCharts options={apexOptions} series={apexSeries} type="radialBar" height={350} width={350} />
               }
-            </Card>
+            </Box>
           </Column>
         </TwoColumnsContainer>
 

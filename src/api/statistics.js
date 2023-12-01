@@ -1,4 +1,4 @@
-import { calculateAverage } from "@/api/utils"
+import { calculateAverage } from "@/utils/utils"
 import { genreCodes } from "@/data"
 import { getMediaCredits } from '@/api/api'
 // ------ DATA MANIPULATION ------

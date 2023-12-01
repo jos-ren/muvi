@@ -28,7 +28,7 @@ export const tabs = [
     },
     {
         id: 5,
-        name: "Stats",
+        name: "Statistics",
         icon: <PieChartOutlined />,
         route: "/statistics"
     },

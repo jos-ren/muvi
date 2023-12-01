@@ -147,6 +147,8 @@ const SeenPage = () => {
         });
     };
 
+    console.log(data, "DATA")
+
     const setNull = () => {
         setSeValue(null);
         setEpValue(null);

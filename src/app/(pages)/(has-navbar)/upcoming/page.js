@@ -4,7 +4,7 @@ import { message, Input, Button, Space, Popover } from 'antd';
 import { SearchOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import Highlighter from 'react-highlight-words';
 import MovieTable from "@/components/MovieTable.js"
-import { getDateWeekAgo } from "../../../../api/utils.js"
+import { getDateWeekAgo } from "../../../../utils/utils.js"
 import { poster, type, episode, upcoming_release, genres, status } from "@/columns.js"
 import { getUserMedia, refreshUpdate } from "@/api/api.js"
 import { useGlobalContext } from '@/context/store.js';

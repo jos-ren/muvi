@@ -1,6 +1,6 @@
 import { getDocs, collection, getDoc, setDoc, addDoc, updateDoc, doc, where, query, writeBatch, FieldPath, collectionGroup, documentId, deleteField } from "firebase/firestore"
 import { db, auth } from "@/config/firebase.js"
-import { capitalizeFirstLetter } from "@/api/utils"
+import { capitalizeFirstLetter } from "@/utils/utils"
 
 
 const options = {

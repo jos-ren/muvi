@@ -4,7 +4,7 @@ import { Button, Divider } from 'antd';
 import { CheckOutlined, StarTwoTone } from '@ant-design/icons';
 import { FaRegBookmark } from "react-icons/fa6";
 import { genreCodes } from "@/data"
-import { formatGenres } from "@/api/utils"
+import { formatGenres } from "@/utils/utils"
 import styled from "styled-components";
 import { styled as muiStyled } from '@mui/material/styles';
 import Tooltip, { tooltipClasses } from '@mui/material/Tooltip';

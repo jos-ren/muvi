@@ -2,7 +2,7 @@ import React from 'react';
 import Image from "next/image";
 import styled from "styled-components";
 import { Card, Avatar, List, Statistic } from 'antd';
-import { formatTime } from "@/api/utils";
+import { formatTime } from "@/utils/utils";
 
 const Container = styled.div`
   display: flex;
@@ -13,7 +13,7 @@ const Container = styled.div`
 //   border:1px solid red;
 `;
 
-const ShowCard = ({ title, time, poster_path, episodes, index, my_rating, media_type }) => {
+const MovieCard = ({ title, time, poster_path, episodes, index, my_rating, media_type }) => {
     return (
 
         // add ellipsis, better formatting
@@ -49,4 +49,4 @@ const ShowCard = ({ title, time, poster_path, episodes, index, my_rating, media_
     );
 };
 
-export default ShowCard;
+export default MovieCard;

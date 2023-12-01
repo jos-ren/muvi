@@ -32,6 +32,8 @@ export default function ContentRootLayout({ children }) {
     router.push('/auth')
   };
 
+  console.log(pathName)
+
   const items = [
     {
       key: '1',
@@ -54,7 +56,9 @@ export default function ContentRootLayout({ children }) {
   ];
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }} className={`app ${theme}`}>
+    <div style={pathName === "/statistics" ? {minHeight: "100vh", display: "flex", flexDirection: "column", background: "#f5f7f9"  }: 
+    { minHeight: "100vh", display: "flex", flexDirection: "column", background:"white" }}
+    >
       <div className='header' >
         <div>
           <button onClick={toggleTheme}>Toggle Theme</button>
