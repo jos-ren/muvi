@@ -35,11 +35,11 @@ export default function ContentRootLayout({ children }) {
   console.log(pathName)
 
   const items = [
-    {
-      key: '1',
-      label: <div onClick={() => { router.push('/settings') }}>Settings</div>,
-      icon: <SettingOutlined />,
-    },
+    // {
+    //   key: '1',
+    //   label: <div onClick={() => { router.push('/settings') }}>Settings</div>,
+    //   icon: <SettingOutlined />,
+    // },
     {
       key: '2',
       label: <div onClick={() => { router.push('/admin/dashboard') }}>Admin Dashboard</div>,
@@ -60,9 +60,9 @@ export default function ContentRootLayout({ children }) {
     { minHeight: "100vh", display: "flex", flexDirection: "column", background:"white" }}
     >
       <div className='header' >
-        <div>
+        {/* <div>
           <button onClick={toggleTheme}>Toggle Theme</button>
-        </div>
+        </div> */}
         <div className='tab-container'>
           {tabs.map(o => (
             <div

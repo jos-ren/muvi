@@ -9,10 +9,9 @@ const Container = styled.div`
     align-items: center;
     background:#fff;
     padding:${PADDING};
-    margin: ${MARGIN} 0px;
+    // margin: ${MARGIN} 0px;
     border-radius:${BORDERRADIUS};
     box-shadow: ${BOXSHADOW};
-    margin-right: ${MARGIN};
     width:100%;
 `;
 

@@ -5,7 +5,7 @@ import Image from "next/image";
 import dynamic from 'next/dynamic';
 
 import { useGlobalContext } from '@/context/store.js';
-import { formatTime } from "@/utils/utils";
+import { formatTime, capitalizeFirstLetter } from "@/utils/utils";
 import { calculateStatistics } from '@/api/statistics';
 import { refreshMembers, getPrincipalMembers } from "@/api/api"
 
@@ -14,13 +14,12 @@ import MovieCard from "@/components/statistics/MovieCard"
 import SmallStat from '@/components/statistics/SmallStat';
 import Box from "@/components/statistics/Box"
 
-import { Statistic, Card, Button, message } from 'antd';
-import { RightOutlined, LeftOutlined, ReloadOutlined, StarTwoTone } from '@ant-design/icons'
+import { Button, message, Select, Collapse } from 'antd';
+import { RightOutlined, LeftOutlined, ReloadOutlined, StarTwoTone, DownOutlined } from '@ant-design/icons'
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import Slider from 'react-slick';
 const ApexCharts = dynamic(() => import('react-apexcharts'), { ssr: false });
-
 
 const SimpleCarousel = ({ items, media_type }) => {
   const settings = {
@@ -75,33 +74,13 @@ const CustomPrevArrow = (props) => {
   );
 };
 
-const MostWatchedList = ({ title, items }) => (
-  <>
-    <h2>{title}</h2>
-    <ul>
-      {items
-        .slice(0, 20)
-        .map((item, index) => (
-          <li key={index}>
-            {/* Include your image here if needed */}
-            <Image
-              unoptimized
-              height={50}
-              width={50}
-              quality="100"
-              style={{ objectFit: 'cover' }}
-              src={item.profile_path ? `https://image.tmdb.org/t/p/original/${item.profile_path}` : 'default_avatar.jpg'}
-              alt="profile_pic"
-            />
-            {item.count}x - {item.name}
-          </li>
-        ))}
-    </ul>
-  </>
-);
-
 const TwoColumnsContainer = styled.div`
   display: flex;
+`;
+
+
+const Spacer = styled.div`
+  margin:8px;
 `;
 
 const Column = styled.div`
@@ -111,6 +90,56 @@ const Column = styled.div`
   // margin: 8px;
 `;
 
+let dropdownOptions = [
+  {
+    value: 'actors',
+    label: 'Actors',
+  },
+  {
+    value: 'directors',
+    label: 'Directors',
+  },
+  {
+    value: 'producers',
+    label: 'Producers',
+  },
+  {
+    value: 'dop',
+    label: 'Director of Photography',
+  },
+  {
+    value: 'sound',
+    label: 'Composer',
+  },
+  {
+    value: 'editor',
+    label: 'Editor',
+  },
+]
+
+const text = `
+  A dog is a type of domesticated animal.
+  Known for its loyalty and faithfulness,
+  it can be found as a welcome guest in many households across the world.
+`;
+const collapseItems = [
+  {
+    key: '1',
+    label: 'This is panel header 1',
+    children: <p>{text}</p>,
+  },
+  {
+    key: '2',
+    label: 'This is panel header 2',
+    children: <p>{text}</p>,
+  },
+  {
+    key: '3',
+    label: 'This is panel header 3',
+    children: <p>{text}</p>,
+  },
+];
+
 const StatisticsPage = () => {
   const { user, data } = useGlobalContext();
   const [loading, setLoading] = useState(true);
@@ -119,8 +148,21 @@ const StatisticsPage = () => {
   const [pieLabels, setPieLabels] = useState([]);
   const [barValues, setBarValues] = useState([]);
   const [barLabels, setBarLabels] = useState([]);
+  const [dropdown, setDropdown] = useState('actors');
   const [pmID, setPMID] = useState(null)
   const [messageApi, contextHolder] = message.useMessage();
+
+  console.log(statistics, "STATS")
+
+  const handleChange = (value) => {
+    setDropdown(value)
+  };
+
+  const onChange = (key) => {
+    console.log(key);
+  };
+
+  console.log(dropdown, "dropdown")
 
   const fetchInitData = async () => {
     if (data !== null && user !== null) {
@@ -244,38 +286,29 @@ const StatisticsPage = () => {
             Refresh
           </Button>
         </div>
+
         <div style={{ display: "flex" }}>
           <SmallStat heading={formatTime(statistics.total_minutes, 'H')} text={"Total Watchtime"} />
+          <Spacer />
           <SmallStat heading={
             <>
               <StarTwoTone twoToneColor="#fadb14" />
               {statistics.average_rating}
             </>
           } text="Average Rating" />
+          <Spacer />
           <SmallStat heading={statistics.oldest_media[statistics.oldest_media.length - 1].title} text="Oldest Movie" />
+          <Spacer />
           <SmallStat heading={statistics.oldest_media[0].title} text="Newest Movie" />
         </div>
 
-        <Card style={{ width: '50%', marginRight: '16px' }}>
-          <div>{statistics.oldest_media[0].release_date}</div>
-          <Statistic title="TEST" value={statistics.oldest_media[0].title} />
-        </Card>
-
-        <h2>Number of Rewatched Movies</h2>
-
-        <h2>Percentage of Movies Finished</h2>
-        {/* for this uise that cool %ige comp in ant design */}
-        {/* total shows, animes, and movies */}
-
         <TwoColumnsContainer>
           <Column>
-            <h2>Favorite Genres</h2>
-
             <TopTen data={statistics.genres} />
           </Column>
           <Column>
-            <h2>Favorite Medium</h2>
             <Box>
+              <h2>Hour Distribution</h2>
               {(typeof window !== 'undefined') &&
                 <ApexCharts options={apexOptions} series={apexSeries} type="radialBar" height={350} width={350} />
               }
@@ -283,19 +316,54 @@ const StatisticsPage = () => {
           </Column>
         </TwoColumnsContainer>
 
+        {/* <h2>Number of Rewatched Movies</h2> */}
+
+        {/* <h2>Percentage of Movies Finished</h2> */}
+        {/* for this uise that cool %ige comp in ant design */}
+        {/* total shows, animes, and movies */}
+        {/* a map of whwere each movie is made kinda likea  heat map of countries */}
+
+
         <h2>Top TV</h2>
         <SimpleCarousel items={statistics.longest_tv.slice(0, 10)} media_type={"tv"} />
         <h2>Longest Movies</h2>
         <SimpleCarousel items={statistics.longest_movie.slice(0, 10)} media_type={"movie"} />
 
         {statistics.principal_members ? <div>
-          <MostWatchedList title="Most Watched Actors" items={statistics.principal_members.actors} />
-          <MostWatchedList title="Most Watched Directors" items={statistics.principal_members.directors} />
-          <MostWatchedList title="Top Producers" items={statistics.principal_members.producers} />
-          <MostWatchedList title="DOP" items={statistics.principal_members.dop} />
-          <MostWatchedList title="sound" items={statistics.principal_members.sound} />
-          <MostWatchedList title="Editor" items={statistics.principal_members.editor} />
+
+          <Select
+            defaultValue="Actors"
+            style={{
+              width: 120,
+            }}
+            onChange={handleChange}
+            options={dropdownOptions}
+          />
+
+          <h2>Most Watched {capitalizeFirstLetter(dropdown)}</h2>
+          <ul>
+            {statistics.principal_members[dropdown]
+              .slice(0, 20)
+              .map((item, index) => (
+                <li key={index}>
+                  {/* Include your image here if needed */}
+                  <Image
+                    unoptimized
+                    height={50}
+                    width={50}
+                    quality="100"
+                    style={{ objectFit: 'cover' }}
+                    src={item.profile_path ? `https://image.tmdb.org/t/p/original/${item.profile_path}` : 'default_avatar.jpg'}
+                    alt={item.name}
+                  />
+                  {item.count}x - {item.name}
+                </li>
+              ))}
+          </ul>
         </div> : null}
+
+        <Collapse items={collapseItems} defaultActiveKey={['1']} onChange={onChange} />;
+
       </div>
     );
   }

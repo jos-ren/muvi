@@ -338,12 +338,14 @@ export const refreshMembers = async (data, user_id, pmID) => {
     }
 
     allCredits.forEach((credits) => {
-        updateMemberCounts(principal_members, credits[0].cast, 'actors');
-        updateMemberCounts(principal_members, credits[0].crew.filter(item => item.job === "Director"), 'directors');
-        updateMemberCounts(principal_members, credits[0].crew.filter(item => item.job === "Producer"), 'producers');
-        updateMemberCounts(principal_members, credits[0].crew.filter(item => item.job === "Director of Photography"), 'dop');
-        updateMemberCounts(principal_members, credits[0].crew.filter(item => item.job === "Editor"), 'editor');
-        updateMemberCounts(principal_members, credits[0].crew.filter(item => item.department === "Sound"), 'sound');
+        if (credits.length > 0) {
+            updateMemberCounts(principal_members, credits[0].cast, 'actors');
+            updateMemberCounts(principal_members, credits[0].crew.filter(item => item.job === "Director"), 'directors');
+            updateMemberCounts(principal_members, credits[0].crew.filter(item => item.job === "Producer"), 'producers');
+            updateMemberCounts(principal_members, credits[0].crew.filter(item => item.job === "Director of Photography"), 'dop');
+            updateMemberCounts(principal_members, credits[0].crew.filter(item => item.job === "Editor"), 'editor');
+            updateMemberCounts(principal_members, credits[0].crew.filter(item => item.department === "Sound"), 'sound');
+        }
     });
     // // Executive Music Producer
     // // Original Music Composer
