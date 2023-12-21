@@ -13,9 +13,10 @@ import TopTen from "@/components/statistics/TopTen"
 import MovieCard from "@/components/statistics/MovieCard"
 import SmallStat from '@/components/statistics/SmallStat';
 import Box from "@/components/statistics/Box"
+import Widget from "@/components/statistics/Widget"
 
-import { Button, message, Select, Collapse } from 'antd';
-import { RightOutlined, LeftOutlined, ReloadOutlined, StarTwoTone, DownOutlined } from '@ant-design/icons'
+import { Button, message, Select, Collapse, List, Progress } from 'antd';
+import { RightOutlined, LeftOutlined, ReloadOutlined, StarTwoTone, DownOutlined, StarFilled, ClockCircleFilled, HourglassFilled, ThunderboltFilled } from '@ant-design/icons'
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import Slider from 'react-slick';
@@ -80,7 +81,7 @@ const TwoColumnsContainer = styled.div`
 
 
 const Spacer = styled.div`
-  margin:8px;
+  margin:16px 8px;
 `;
 
 const Column = styled.div`
@@ -288,21 +289,39 @@ const StatisticsPage = () => {
         </div>
 
         <div style={{ display: "flex" }}>
-          <SmallStat heading={formatTime(statistics.total_minutes, 'H')} text={"Total Watchtime"} />
+          <Widget
+            title="Total Watchtime"
+            statistic={formatTime(statistics.total_minutes, 'H')}
+            icon={<ClockCircleFilled style={{ color: 'white' }} />}
+          />
           <Spacer />
-          <SmallStat heading={
-            <>
-              <StarTwoTone twoToneColor="#fadb14" />
-              {statistics.average_rating}
-            </>
-          } text="Average Rating" />
+          <Widget
+            title="Average Rating"
+            statistic={statistics.average_rating}
+            icon={<StarFilled style={{ color: 'white' }} />}
+            // color='#ffcc29'
+          />
+        </div>
+        <Spacer />
+        <div style={{ display: "flex" }}>
+          <Widget
+            title="Oldest Movie"
+            statistic={statistics.oldest_media[statistics.oldest_media.length - 1].title}
+            icon={<HourglassFilled style={{ color: 'white' }} />}
+            // color='#ff4757'
+          />
           <Spacer />
-          <SmallStat heading={statistics.oldest_media[statistics.oldest_media.length - 1].title} text="Oldest Movie" />
-          <Spacer />
-          <SmallStat heading={statistics.oldest_media[0].title} text="Newest Movie" />
+          <Widget
+            title="Newest Movie"
+            statistic={statistics.oldest_media[0].title}
+            icon={<ThunderboltFilled style={{ color: 'white' }} />}
+            // color='#4dff4d'
+          />
         </div>
 
-        <TwoColumnsContainer>
+        {/* <Box><Progress type="dashboard" percent={75} /></Box> */}
+
+        {/* <TwoColumnsContainer>
           <Column>
             <TopTen data={statistics.genres} />
           </Column>
@@ -314,7 +333,7 @@ const StatisticsPage = () => {
               }
             </Box>
           </Column>
-        </TwoColumnsContainer>
+        </TwoColumnsContainer> */}
 
         {/* <h2>Number of Rewatched Movies</h2> */}
 
@@ -324,13 +343,13 @@ const StatisticsPage = () => {
         {/* a map of whwere each movie is made kinda likea  heat map of countries */}
 
 
-        <h2>Top TV</h2>
+        {/* <h2>Top TV</h2>
         <SimpleCarousel items={statistics.longest_tv.slice(0, 10)} media_type={"tv"} />
+
         <h2>Longest Movies</h2>
-        <SimpleCarousel items={statistics.longest_movie.slice(0, 10)} media_type={"movie"} />
+        <SimpleCarousel items={statistics.longest_movie.slice(0, 10)} media_type={"movie"} /> */}
 
-        {statistics.principal_members ? <div>
-
+        {/* {statistics.principal_members ? <div>
           <Select
             defaultValue="Actors"
             style={{
@@ -346,7 +365,6 @@ const StatisticsPage = () => {
               .slice(0, 20)
               .map((item, index) => (
                 <li key={index}>
-                  {/* Include your image here if needed */}
                   <Image
                     unoptimized
                     height={50}
@@ -360,9 +378,9 @@ const StatisticsPage = () => {
                 </li>
               ))}
           </ul>
-        </div> : null}
+        </div> : null} */}
 
-        <Collapse items={collapseItems} defaultActiveKey={['1']} onChange={onChange} />;
+        {/* <Collapse items={collapseItems} defaultActiveKey={['1']} onChange={onChange} /> */}
 
       </div>
     );

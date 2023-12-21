@@ -367,15 +367,18 @@ export const refreshMembers = async (data, user_id, pmID) => {
 
 // update counts of directors, and actors
 const updateMemberCounts = (principal_members, items, field) => {
+    let keyCount = 0;
     items.forEach((item) => {
         const itemIndex = principal_members[field].findIndex((o) => o.name === item.name);
-
         if (itemIndex === -1) {
+            keyCount += 1;
             // Item not found, add it to the array
             principal_members[field].push({
-                name: item.name,
+                label: item.name,
                 count: 1,
                 profile_path: item.profile_path,
+                key: keyCount,
+                children: <p>test</p>,
             });
         } else {
             // Item found, update count
