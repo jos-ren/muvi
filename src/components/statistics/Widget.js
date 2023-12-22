@@ -1,20 +1,6 @@
 import React from 'react';
 import styled from "styled-components";
-import { BORDERRADIUS, PADDING, MARGIN, BOXSHADOW } from "@/utils/constants"
-
-const Container = styled.div`
-    display: flex;
-    // flex-direction:column;
-    justify-content: space-between;
-    align-items: center;
-    background:#fff;
-    padding:${PADDING};
-    // // margin: ${MARGIN} 0px;
-    border-radius:${BORDERRADIUS};
-    // box-shadow: ${BOXSHADOW};
-    width:100%;
-    box-shadow: 0 20px 27px rgba(0,0,0,.05);
-`;
+import Box from './Box'
 
 const ColorBox = styled.div`
     border-radius:8px;
@@ -49,7 +35,7 @@ const Statistic = styled.div`
 
 const Widget = ({ title, statistic, icon, color = '#2389ff' }) => {
     return (
-        <Container>
+        <Box>
             <div>
                 <Title>{title}</Title>
                 <Statistic>{statistic}</Statistic>
@@ -57,7 +43,7 @@ const Widget = ({ title, statistic, icon, color = '#2389ff' }) => {
             <ColorBox color={color}>
                 {icon}
             </ColorBox>
-        </Container>
+        </Box>
     );
 };
 

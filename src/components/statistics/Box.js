@@ -4,14 +4,16 @@ import { BORDERRADIUS, PADDING, MARGIN, BOXSHADOW } from "@/utils/constants"
 
 const Container = styled.div`
     display: flex;
-    flex-direction:column;
-    justify-content: center;
+    // flex-direction:column;
+    justify-content: space-between;
     align-items: center;
     background:#fff;
     padding:${PADDING};
-    // margin: ${MARGIN} 0px;
+    // // margin: ${MARGIN} 0px;
     border-radius:${BORDERRADIUS};
-    box-shadow: ${BOXSHADOW};
+    // box-shadow: ${BOXSHADOW};
+    // width:100%;
+    box-shadow: 0 20px 27px rgba(0,0,0,.05);
     width:100%;
 `;
 

@@ -13,6 +13,7 @@ import TopTen from "@/components/statistics/TopTen"
 import MovieCard from "@/components/statistics/MovieCard"
 import SmallStat from '@/components/statistics/SmallStat';
 import Box from "@/components/statistics/Box"
+import Chart from "@/components/statistics/Chart"
 import Widget from "@/components/statistics/Widget"
 
 import { Button, message, Select, Collapse, List, Progress } from 'antd';
@@ -186,7 +187,7 @@ const StatisticsPage = () => {
 
   useEffect(() => {
     if (statistics !== null && user !== null) {
-      if (statistics.total_minutes !== 0 && statistics.longest_tv) {
+      if (statistics.total_minutes !== 0 && statistics.longest_tv && statistics.principal_members) {
         getGraphInfo()
         setLoading(false);
       }
@@ -299,41 +300,44 @@ const StatisticsPage = () => {
             title="Average Rating"
             statistic={statistics.average_rating}
             icon={<StarFilled style={{ color: 'white' }} />}
-            // color='#ffcc29'
+          // color='#ffcc29'
           />
         </div>
         <Spacer />
         <div style={{ display: "flex" }}>
           <Widget
             title="Oldest Movie"
-            statistic={statistics.oldest_media[statistics.oldest_media.length - 1].title}
+            statistic={statistics.oldest_media[statistics.oldest_media.length - 1].release_date + statistics.oldest_media[statistics.oldest_media.length - 1].title}
             icon={<HourglassFilled style={{ color: 'white' }} />}
-            // color='#ff4757'
+          // color='#ff4757'
           />
           <Spacer />
           <Widget
             title="Newest Movie"
             statistic={statistics.oldest_media[0].title}
             icon={<ThunderboltFilled style={{ color: 'white' }} />}
-            // color='#4dff4d'
+          // color='#4dff4d'
           />
         </div>
 
+        <Spacer />
+        <Select
+            defaultValue="Actors"
+            style={{
+              width: 120,
+            }}
+            onChange={handleChange}
+            options={dropdownOptions}
+          />
+        <Spacer />
+        <Chart data={statistics.principal_members[dropdown].slice(0, 20)} />
+
         {/* <Box><Progress type="dashboard" percent={75} /></Box> */}
 
-        {/* <TwoColumnsContainer>
-          <Column>
-            <TopTen data={statistics.genres} />
-          </Column>
-          <Column>
-            <Box>
-              <h2>Hour Distribution</h2>
-              {(typeof window !== 'undefined') &&
-                <ApexCharts options={apexOptions} series={apexSeries} type="radialBar" height={350} width={350} />
-              }
-            </Box>
-          </Column>
-        </TwoColumnsContainer> */}
+
+        {(typeof window !== 'undefined') &&
+          <ApexCharts options={apexOptions} series={apexSeries} type="radialBar" height={200} width={200} />
+        }
 
         {/* <h2>Number of Rewatched Movies</h2> */}
 
