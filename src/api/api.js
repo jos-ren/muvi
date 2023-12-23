@@ -321,10 +321,11 @@ export const refreshUpdate = async (userMedia, user_uid) => {
 
 export const refreshMembers = async (data, user_id, pmID) => {
     // get all the credits from each document in medialist
-    const promises = [];
-    for (let i = 0; i < data.length; i++) {
-        promises.push(getMediaCredits(data[i].key, user_id));
-    }
+    const promises = data.map(item => {
+        return getMediaCredits(item.key, user_id)
+            .then(credits => ({ mediaData: item, credits }));
+    });
+
     const allCredits = await Promise.all(promises);
 
     // make an array with all the credits and the role, sorted by most to least
@@ -337,16 +338,20 @@ export const refreshMembers = async (data, user_id, pmID) => {
         sound: [],
     }
 
-    allCredits.forEach((credits) => {
-        if (credits.length > 0) {
-            updateMemberCounts(principal_members, credits[0].cast, 'actors');
-            updateMemberCounts(principal_members, credits[0].crew.filter(item => item.job === "Director"), 'directors');
-            updateMemberCounts(principal_members, credits[0].crew.filter(item => item.job === "Producer"), 'producers');
-            updateMemberCounts(principal_members, credits[0].crew.filter(item => item.job === "Director of Photography"), 'dop');
-            updateMemberCounts(principal_members, credits[0].crew.filter(item => item.job === "Editor"), 'editor');
-            updateMemberCounts(principal_members, credits[0].crew.filter(item => item.department === "Sound"), 'sound');
+    for (let i = 0; i < allCredits.length; i++) {
+        const credits = allCredits[i].credits;
+        const mediaData = allCredits[i].mediaData;
+
+        // filter out items which are not SEEN (takes out watchlist items)
+        if (credits.length > 0 && mediaData.list_type === "seen") {
+            updateMemberCounts(principal_members, credits[0].cast, mediaData, 'actors');
+            updateMemberCounts(principal_members, credits[0].crew.filter(item => item.job === "Director"), mediaData, 'directors');
+            updateMemberCounts(principal_members, credits[0].crew.filter(item => item.job === "Producer"), mediaData, 'producers');
+            updateMemberCounts(principal_members, credits[0].crew.filter(item => item.job === "Director of Photography"), mediaData, 'dop');
+            updateMemberCounts(principal_members, credits[0].crew.filter(item => item.job === "Editor"), mediaData, 'editor');
+            updateMemberCounts(principal_members, credits[0].crew.filter(item => item.department === "Sound"), mediaData, 'sound');
         }
-    });
+    }
     // // Executive Music Producer
     // // Original Music Composer
 
@@ -356,8 +361,8 @@ export const refreshMembers = async (data, user_id, pmID) => {
             // Sort the array in descending order based on the "count" property
             principal_members[key].sort((a, b) => b.count - a.count);
 
-            // Keep only the top 100 items
-            principal_members[key] = principal_members[key].slice(0, 100);
+            // Keep only the top 20 items
+            principal_members[key] = principal_members[key].slice(0, 20);
         }
     }
 
@@ -366,7 +371,7 @@ export const refreshMembers = async (data, user_id, pmID) => {
 };
 
 // update counts of directors, and actors
-const updateMemberCounts = (principal_members, items, field) => {
+const updateMemberCounts = (principal_members, items, mediaData, field) => {
     let keyCount = 0;
     items.forEach((item) => {
         const itemIndex = principal_members[field].findIndex((o) => o.name === item.name);
@@ -374,15 +379,33 @@ const updateMemberCounts = (principal_members, items, field) => {
             keyCount += 1;
             // Item not found, add it to the array
             principal_members[field].push({
-                label: item.name,
+                name: item.name,
                 count: 1,
                 profile_path: item.profile_path,
-                key: keyCount,
-                children: <p>test</p>,
+                media: [
+                    {
+                        title: mediaData.title,
+                        poster_path: mediaData.details.poster_path,
+                        my_rating: mediaData.my_rating,
+                        release_date: mediaData.release_date,
+                        link: mediaData.media_type === "movie" ? mediaData.details.imdb_id : mediaData.tmdb_id,
+                        media_type: mediaData.media_type
+                    }
+                ]
             });
         } else {
-            // Item found, update count
+            // Item found, update count && add the mediaData to array
             principal_members[field][itemIndex].count += 1;
+            principal_members[field][itemIndex].media.push({
+                title: mediaData.title,
+                poster_path: mediaData.details.poster_path,
+                my_rating: mediaData.my_rating,
+                release_date: mediaData.release_date,
+                link: mediaData.media_type === "movie" ? mediaData.details.imdb_id : mediaData.tmdb_id,
+                media_type: mediaData.media_type
+            })
+            // Sort the media array by release_date in descending order
+            principal_members[field][itemIndex].media.sort((a, b) => new Date(b.release_date) - new Date(a.release_date));
         }
     });
 };

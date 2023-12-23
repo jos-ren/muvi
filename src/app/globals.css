@@ -180,3 +180,7 @@ body {
   background-color: var(--background-dark);
   color: var(--text-dark);
 }
+
+.ant-collapse-content-box{
+  padding:0px !important;
+}

@@ -15,9 +15,10 @@ import SmallStat from '@/components/statistics/SmallStat';
 import Box from "@/components/statistics/Box"
 import Chart from "@/components/statistics/Chart"
 import Widget from "@/components/statistics/Widget"
+import List from "@/components/statistics/List"
 
-import { Button, message, Select, Collapse, List, Progress } from 'antd';
-import { RightOutlined, LeftOutlined, ReloadOutlined, StarTwoTone, DownOutlined, StarFilled, ClockCircleFilled, HourglassFilled, ThunderboltFilled } from '@ant-design/icons'
+import { Button, message, Select, Progress, Popover } from 'antd';
+import { RightOutlined, LeftOutlined, ReloadOutlined, QuestionCircleOutlined, StarTwoTone, DownOutlined, StarFilled, ClockCircleFilled, HourglassFilled, ThunderboltFilled } from '@ant-design/icons'
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import Slider from 'react-slick';
@@ -146,25 +147,19 @@ const StatisticsPage = () => {
   const { user, data } = useGlobalContext();
   const [loading, setLoading] = useState(true);
   const [statistics, setStatistics] = useState({});
-  const [pieValues, setPieValues] = useState([]);
-  const [pieLabels, setPieLabels] = useState([]);
-  const [barValues, setBarValues] = useState([]);
-  const [barLabels, setBarLabels] = useState([]);
+  const [pieValues] = useState([]);
+  const [pieLabels] = useState([]);
   const [dropdown, setDropdown] = useState('actors');
   const [pmID, setPMID] = useState(null)
   const [messageApi, contextHolder] = message.useMessage();
 
-  console.log(statistics, "STATS")
+  // console.log(statistics, "STATS")
 
   const handleChange = (value) => {
     setDropdown(value)
   };
 
-  const onChange = (key) => {
-    console.log(key);
-  };
-
-  console.log(dropdown, "dropdown")
+  // console.log(dropdown, "dropdown")
 
   const fetchInitData = async () => {
     if (data !== null && user !== null) {
@@ -188,7 +183,6 @@ const StatisticsPage = () => {
   useEffect(() => {
     if (statistics !== null && user !== null) {
       if (statistics.total_minutes !== 0 && statistics.longest_tv && statistics.principal_members) {
-        getGraphInfo()
         setLoading(false);
       }
     }
@@ -201,32 +195,6 @@ const StatisticsPage = () => {
       className: "message"
     });
   };
-
-  function getGraphInfo() {
-    if (statistics.media_types && statistics.genres.length !== 0) {
-      let countArr = [];
-      let labelArr = [];
-      let countArrB = [];
-      let labelArrB = [];
-
-      Object.keys(statistics.media_types).forEach((key) => {
-        labelArr.push(key);
-        countArr.push(formatTime(statistics.media_types[key], "H2"));
-      });
-      // Output the updated countArr
-      countArr.forEach((item, index) => countArr[index] = Math.round(item / formatTime(statistics.total_minutes, "H2") * 100));
-      countArr.sort((a, b) => b - a)
-      setPieValues(countArr);
-      setPieLabels(labelArr);
-
-      statistics.genres.sort((a, b) => b.watchtime - a.watchtime).slice(0, 10).forEach((item) => {
-        labelArrB.push(`${item.emoji} ${item.name}`);
-        countArrB.push(formatTime(item.watchtime, "H2"));
-      });
-      setBarValues(countArrB);
-      setBarLabels(labelArrB);
-    }
-  }
 
   const apexSeries = pieValues;
 
@@ -261,7 +229,8 @@ const StatisticsPage = () => {
   };
 
   // add at least 5 items to see some statistics on your watch habits
-  console.log(statistics)
+  // need to figure out how to set principal members ona new users first time clicking here
+  console.log(statistics, "STATISTICS BABY")
 
   if (loading) {
     return (
@@ -273,8 +242,14 @@ const StatisticsPage = () => {
     return (
       <div>
         {contextHolder}
-        <div style={{ marginTop: "145px" }}></div>
-        <div style={{ display: "flex", justifyContent: "end", margin: "20px 0px" }}>
+        <div style={{ marginTop: "125px" }}></div>
+        <div style={{ display: "flex", justifyContent: "space-between", margin: "20px 0px 0px 0px", alignItems: "center" }}>
+          <div  style={{ display: "flex", alignItems: "center" }}>
+            <h2>Statistics</h2>
+            <Popover trigger="click" content={"Generated from all of the items you've Seen"} >
+              <QuestionCircleOutlined style={{ fontSize: "13px", color: "grey", margin: "6px 0px 0px 10px" }} />
+            </Popover>
+          </div>
           <Button
             type="primary"
             icon={<ReloadOutlined />}
@@ -322,22 +297,34 @@ const StatisticsPage = () => {
 
         <Spacer />
         <Select
-            defaultValue="Actors"
-            style={{
-              width: 120,
-            }}
-            onChange={handleChange}
-            options={dropdownOptions}
-          />
+          defaultValue="Actors"
+          style={{
+            width: 120,
+          }}
+          onChange={handleChange}
+          options={dropdownOptions}
+        />
         <Spacer />
-        <Chart data={statistics.principal_members[dropdown].slice(0, 20)} />
+
+        <Box width="auto">
+          <div style={{ height: '100%', width: "100%" }}>
+            <List items={statistics.principal_members[dropdown].slice(0, 10)} />
+          </div>
+          <div style={{
+            // borderLeft: "1px solid black",
+            height: "250px", margin: "0px 10px"
+          }}></div>
+          <div>
+            <Chart data={statistics.principal_members[dropdown].slice(0, 10)} />
+          </div>
+        </Box>
 
         {/* <Box><Progress type="dashboard" percent={75} /></Box> */}
 
 
-        {(typeof window !== 'undefined') &&
+        {/* {(typeof window !== 'undefined') &&
           <ApexCharts options={apexOptions} series={apexSeries} type="radialBar" height={200} width={200} />
-        }
+        } */}
 
         {/* <h2>Number of Rewatched Movies</h2> */}
 

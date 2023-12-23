@@ -14,12 +14,12 @@ const Container = styled.div`
     // box-shadow: ${BOXSHADOW};
     // width:100%;
     box-shadow: 0 20px 27px rgba(0,0,0,.05);
-    width:100%;
+    width: ${({ width }) => width};
 `;
 
-const Box = ({children}) => {
+const Box = ({children, width='100%'}) => {
     return (
-        <Container>
+        <Container width={width}>
             {children}
         </Container>
     );
