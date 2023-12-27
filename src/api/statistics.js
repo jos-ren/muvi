@@ -1,6 +1,7 @@
 import { calculateAverage } from "@/utils/utils"
 import { genreCodes } from "@/data"
-import { getMediaCredits } from '@/api/api'
+import { countryCodes } from "../../public/countries_data"
+
 // ------ DATA MANIPULATION ------
 
 const getTotalEpisodes = (data) => {
@@ -73,6 +74,59 @@ const updateGenreStatistics = (statistics, details, minutes) => {
     }
 };
 
+// Helper function to update country statistics
+const updateCountriesStatistics = (statistics, details) => {
+    if (details.production_countries && details.production_countries.length > 0) {
+        details.production_countries.forEach((country) => {
+            const countryIndex = statistics.countries.findIndex((i) => i.ISO2 === country.iso_3166_1);
+
+            if (countryIndex === -1) {
+                // change iso2  => iso3 code
+                let iso3 = "";
+                for (const item of countryCodes) {
+                    if (item.iso2 === country.iso_3166_1) {
+                        iso3 = item.iso3;
+                    }
+                }
+                // country not found, add it to the array
+                statistics.countries.push({
+                    ISO2: country.iso_3166_1,
+                    ISO3: iso3,
+                    name: country.name,
+                    amount: 1
+                });
+            } else {
+                // country found, update amount + 1
+                statistics.countries[countryIndex].amount += 1;
+            }
+        });
+    }
+};
+
+// TODO: rework logic here, it not working with smaller amounts of countries
+// need to make it so that countries with same amounts have same scale...
+const setCountriesScale = (countries) => {
+    if (countries.length === 0) {
+        return;
+    }
+
+    // Sort countries by amount in ascending order
+    countries.sort((a, b) => a.amount - b.amount);
+
+    // Calculate the scale for each country
+    const totalCountries = countries.length;
+    const maxScale = 1.0;
+    const minScale = 0.4;
+    const scaleDifferenceFactor = .75; // Adjust this factor to control the scale difference
+
+    for (let i = 0; i < totalCountries; i++) {
+        const rawScale = i * (maxScale - minScale) / (totalCountries - 1);
+        const scale = minScale + rawScale * Math.pow((i + 1) / totalCountries, scaleDifferenceFactor);
+        countries[i].scale = scale;
+    }
+
+    console.log(countries);
+};
 
 export const calculateStatistics = async (data) => {
     let statistics = {
@@ -82,7 +136,8 @@ export const calculateStatistics = async (data) => {
         longest_tv: [],
         longest_movie: [],
         average_rating: 0,
-        oldest_media:[]
+        oldest_media: [],
+        countries: []
     };
 
     let temp_av_rate = [];
@@ -133,6 +188,7 @@ export const calculateStatistics = async (data) => {
 
                 updateMediaTypeStatistics(statistics, mediaKey, minutes);
                 updateGenreStatistics(statistics, details, minutes);
+                updateCountriesStatistics(statistics, details);
 
                 // console.log(item.release_date)
                 statistics.oldest_media.push({
@@ -143,10 +199,15 @@ export const calculateStatistics = async (data) => {
         }
     }
 
+    // sort the stats
     statistics.average_rating = calculateAverage(temp_av_rate);
     statistics.longest_tv.sort((a, b) => b.time - a.time);
     statistics.longest_movie.sort((a, b) => b.time - a.time);
     statistics.oldest_media.sort((a, b) => new Date(b.release_date) - new Date(a.release_date));
+
+    // set the scale for countries...
+    setCountriesScale(statistics.countries)
+
 
     return statistics;
 };

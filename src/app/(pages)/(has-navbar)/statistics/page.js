@@ -16,6 +16,7 @@ import Box from "@/components/statistics/Box"
 import Chart from "@/components/statistics/Chart"
 import Widget from "@/components/statistics/Widget"
 import List from "@/components/statistics/List"
+import WorldMap from "@/components/statistics/WorldMap"
 
 import { Button, message, Select, Progress, Popover } from 'antd';
 import { RightOutlined, LeftOutlined, ReloadOutlined, QuestionCircleOutlined, StarTwoTone, DownOutlined, StarFilled, ClockCircleFilled, HourglassFilled, ThunderboltFilled } from '@ant-design/icons'
@@ -153,13 +154,11 @@ const StatisticsPage = () => {
   const [pmID, setPMID] = useState(null)
   const [messageApi, contextHolder] = message.useMessage();
 
-  // console.log(statistics, "STATS")
+  // console.log(statistics, "STAT")
 
   const handleChange = (value) => {
     setDropdown(value)
   };
-
-  // console.log(dropdown, "dropdown")
 
   const fetchInitData = async () => {
     if (data !== null && user !== null) {
@@ -216,7 +215,6 @@ const StatisticsPage = () => {
             show: true,
             label: 'Total',
             formatter: function (w) {
-              // console.log(w, "w")
               // By default, this function returns the average of all series.
               // The below is just an example to show the use of a custom formatter function
               return formatTime(statistics.total_minutes, "H2") + " Hours"
@@ -230,7 +228,6 @@ const StatisticsPage = () => {
 
   // add at least 5 items to see some statistics on your watch habits
   // need to figure out how to set principal members ona new users first time clicking here
-  console.log(statistics, "STATISTICS BABY")
 
   if (loading) {
     return (
@@ -244,7 +241,7 @@ const StatisticsPage = () => {
         {contextHolder}
         <div style={{ marginTop: "125px" }}></div>
         <div style={{ display: "flex", justifyContent: "space-between", margin: "20px 0px 0px 0px", alignItems: "center" }}>
-          <div  style={{ display: "flex", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center" }}>
             <h2>Statistics</h2>
             <Popover trigger="click" content={"Generated from all of the items you've Seen"} >
               <QuestionCircleOutlined style={{ fontSize: "13px", color: "grey", margin: "6px 0px 0px 10px" }} />
@@ -263,6 +260,12 @@ const StatisticsPage = () => {
             Refresh
           </Button>
         </div>
+
+
+        <Box width="auto">
+          <WorldMap data={statistics.countries}/>
+        </Box>
+        <Spacer />
 
         <div style={{ display: "flex" }}>
           <Widget
@@ -318,6 +321,11 @@ const StatisticsPage = () => {
             <Chart data={statistics.principal_members[dropdown].slice(0, 10)} />
           </div>
         </Box>
+        {/* <div style={{ height: "400px", width: "100%", border: '1px solid red' }}>
+          <AreaMap {...config} />
+        </div> */}
+
+
 
         {/* <Box><Progress type="dashboard" percent={75} /></Box> */}
 
