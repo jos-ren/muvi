@@ -18,12 +18,13 @@ import Widget from "@/components/statistics/Widget"
 import List from "@/components/statistics/List"
 import WorldMap from "@/components/statistics/WorldMap"
 
-import { Button, message, Select, Progress, Popover } from 'antd';
+import { Button, message, Select, Progress, Popover, Tooltip } from 'antd';
 import { RightOutlined, LeftOutlined, ReloadOutlined, QuestionCircleOutlined, StarTwoTone, DownOutlined, StarFilled, ClockCircleFilled, HourglassFilled, ThunderboltFilled } from '@ant-design/icons'
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import Slider from 'react-slick';
 const ApexCharts = dynamic(() => import('react-apexcharts'), { ssr: false });
+import ReactTooltip from "react-tooltip";
 
 const SimpleCarousel = ({ items, media_type }) => {
   const settings = {
@@ -153,7 +154,7 @@ const StatisticsPage = () => {
   const [dropdown, setDropdown] = useState('actors');
   const [pmID, setPMID] = useState(null)
   const [messageApi, contextHolder] = message.useMessage();
-
+  const [tooltipContent, setTooltipContent] = useState("");
   // console.log(statistics, "STAT")
 
   const handleChange = (value) => {
@@ -261,12 +262,6 @@ const StatisticsPage = () => {
           </Button>
         </div>
 
-
-        <Box width="auto">
-          <WorldMap data={statistics.countries}/>
-        </Box>
-        <Spacer />
-
         <div style={{ display: "flex" }}>
           <Widget
             title="Total Watchtime"
@@ -324,6 +319,12 @@ const StatisticsPage = () => {
         {/* <div style={{ height: "400px", width: "100%", border: '1px solid red' }}>
           <AreaMap {...config} />
         </div> */}
+
+        <Spacer />
+        <Box width="auto">
+          <WorldMap data={statistics.countries} />
+        </Box>
+        <Spacer />
 
 
 

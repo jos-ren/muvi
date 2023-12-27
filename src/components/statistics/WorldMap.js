@@ -6,9 +6,10 @@ import {
   Geographies,
   Geography,
   Sphere,
-  Graticule
+  Graticule,
+  ZoomableGroup
 } from "react-simple-maps";
-import ReactTooltip from 'react-tooltip';
+import { Tooltip } from 'antd';
 
 const geoUrl = "/features.json";
 
@@ -16,7 +17,7 @@ const colorScale = scaleLinear()
   .domain([0.29, 0.68])
   .range(["#f0f6fc", "#2389ff"]);
 
-const MapChart = ({ data }) => {
+const MapChart = ({ data, setTooltipContent }) => {
 
   return (
     <ComposableMap
@@ -25,6 +26,8 @@ const MapChart = ({ data }) => {
         scale: 147
       }}
     >
+       <ZoomableGroup center={[0, 0]} zoom={1}>
+
       <Sphere stroke="#E4E5E6" strokeWidth={0.5} />
       <Graticule stroke="#E4E5E6" strokeWidth={0.5} />
       {data.length > 0 && (
@@ -33,16 +36,32 @@ const MapChart = ({ data }) => {
             geographies.map((geo) => {
               const d = data.find((s) => s.ISO3 === geo.id);
               return (
-                <Geography
-                  key={geo.rsmKey}
-                  geography={geo}
-                  fill={d ? colorScale(d["scale"]) : "#F5F4F6"}
-                />
+                <Tooltip
+                key={geo.rsmKey}
+                title={d ? geo.properties.name + ": " + d.amount + "x" : ""}
+                >
+                  <Geography
+                    geography={geo}
+                    fill={d ? colorScale(d["scale"]) : "#F5F4F6"}
+                    style={{
+                      hover: {
+                        fill: "#ff5252",
+                        // outline: "1px solid red",
+                        // cursor:"pointer"
+                      },
+                      pressed: {
+                        fill: "#E42",
+                        outline: "none"
+                      }
+                    }}
+                    />
+                </Tooltip>
               );
             })
           }
         </Geographies>
       )}
+      </ZoomableGroup>
     </ComposableMap>
   );
 };
