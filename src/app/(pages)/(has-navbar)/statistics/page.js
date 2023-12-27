@@ -9,90 +9,21 @@ import { formatTime, capitalizeFirstLetter } from "@/utils/utils";
 import { calculateStatistics } from '@/api/statistics';
 import { refreshMembers, getPrincipalMembers } from "@/api/api"
 
-import TopTen from "@/components/statistics/TopTen"
-import MovieCard from "@/components/statistics/MovieCard"
-import SmallStat from '@/components/statistics/SmallStat';
 import Box from "@/components/statistics/Box"
 import Chart from "@/components/statistics/Chart"
 import Widget from "@/components/statistics/Widget"
 import List from "@/components/statistics/List"
 import WorldMap from "@/components/statistics/WorldMap"
+import HeatMap from "@/components/statistics/HeatMap"
+import HeatMapYear from "@/components/statistics/HeatMapYear"
+import Carousel from "@/components/statistics/Carousel"
 
 import { Button, message, Select, Progress, Popover, Tooltip } from 'antd';
-import { RightOutlined, LeftOutlined, ReloadOutlined, QuestionCircleOutlined, StarTwoTone, DownOutlined, StarFilled, ClockCircleFilled, HourglassFilled, ThunderboltFilled } from '@ant-design/icons'
-import 'slick-carousel/slick/slick.css';
-import 'slick-carousel/slick/slick-theme.css';
-import Slider from 'react-slick';
+import { ReloadOutlined, QuestionCircleOutlined, StarTwoTone, DownOutlined, StarFilled, ClockCircleFilled, HourglassFilled, ThunderboltFilled } from '@ant-design/icons'
 const ApexCharts = dynamic(() => import('react-apexcharts'), { ssr: false });
-import ReactTooltip from "react-tooltip";
-
-const SimpleCarousel = ({ items, media_type }) => {
-  const settings = {
-    dots: false,
-    infinite: false,
-    speed: 1000,
-    slidesToShow: 3.5,
-    slidesToScroll: 3,
-    // centerMode: true,
-    // centerPadding: '16px', // Adjust the spacing between items
-    nextArrow: <CustomNextArrow />,
-    prevArrow: <CustomPrevArrow />,
-    // autoplay: true,
-    autoplaySpeed: 7500,
-  };
-
-  return (
-    <Slider {...settings}>
-      {items.map((item, index) => (
-        <MovieCard
-          key={index}
-          title={item.title}
-          time={item.time}
-          poster_path={item.image}
-          episodes={item.total_watched_eps}
-          my_rating={item.my_rating}
-          index={index + 1}
-          media_type={media_type}
-        />
-      ))}
-    </Slider>
-  );
-};
-
-const CustomNextArrow = (props) => {
-  const { onClick } = props;
-  return (
-    <RightOutlined
-      className={'arrow-right'}
-      onClick={onClick}
-    />
-  );
-};
-
-const CustomPrevArrow = (props) => {
-  const { onClick } = props;
-  return (
-    <LeftOutlined
-      className={'arrow-left'}
-      onClick={onClick}
-    />
-  );
-};
-
-const TwoColumnsContainer = styled.div`
-  display: flex;
-`;
-
 
 const Spacer = styled.div`
   margin:16px 8px;
-`;
-
-const Column = styled.div`
-  flex: 1;
-  // padding: 16px;
-  // border: 1px solid #ddd;
-  // margin: 8px;
 `;
 
 let dropdownOptions = [
@@ -122,29 +53,6 @@ let dropdownOptions = [
   },
 ]
 
-const text = `
-  A dog is a type of domesticated animal.
-  Known for its loyalty and faithfulness,
-  it can be found as a welcome guest in many households across the world.
-`;
-const collapseItems = [
-  {
-    key: '1',
-    label: 'This is panel header 1',
-    children: <p>{text}</p>,
-  },
-  {
-    key: '2',
-    label: 'This is panel header 2',
-    children: <p>{text}</p>,
-  },
-  {
-    key: '3',
-    label: 'This is panel header 3',
-    children: <p>{text}</p>,
-  },
-];
-
 const StatisticsPage = () => {
   const { user, data } = useGlobalContext();
   const [loading, setLoading] = useState(true);
@@ -154,8 +62,8 @@ const StatisticsPage = () => {
   const [dropdown, setDropdown] = useState('actors');
   const [pmID, setPMID] = useState(null)
   const [messageApi, contextHolder] = message.useMessage();
-  const [tooltipContent, setTooltipContent] = useState("");
-  // console.log(statistics, "STAT")
+
+  console.log(statistics, "STAT")
 
   const handleChange = (value) => {
     setDropdown(value)
@@ -262,6 +170,15 @@ const StatisticsPage = () => {
           </Button>
         </div>
 
+        <Box width="auto">
+          <HeatMapYear data={statistics.media_date_years}/>
+        </Box>
+        {/* <Box width="auto">
+          <HeatMap data={statistics.media_dates}/>
+        </Box> */}
+
+        <Spacer />
+
         <div style={{ display: "flex" }}>
           <Widget
             title="Total Watchtime"
@@ -316,71 +233,27 @@ const StatisticsPage = () => {
             <Chart data={statistics.principal_members[dropdown].slice(0, 10)} />
           </div>
         </Box>
-        {/* <div style={{ height: "400px", width: "100%", border: '1px solid red' }}>
-          <AreaMap {...config} />
-        </div> */}
 
         <Spacer />
-        <Box width="auto">
-          <WorldMap data={statistics.countries} />
-        </Box>
+        <div style={{ display: "flex" }}>
+          <Box>
+            <WorldMap data={statistics.countries} />
+          </Box>
+          <Spacer />
+          <Box>
+            {/* <ApexCharts options={apexOptions} series={apexSeries} type="radialBar" height={200} width={200} /> */}
+          </Box>
+        </div>
+
         <Spacer />
 
-
-
-        {/* <Box><Progress type="dashboard" percent={75} /></Box> */}
-
-
-        {/* {(typeof window !== 'undefined') &&
-          <ApexCharts options={apexOptions} series={apexSeries} type="radialBar" height={200} width={200} />
-        } */}
-
-        {/* <h2>Number of Rewatched Movies</h2> */}
-
-        {/* <h2>Percentage of Movies Finished</h2> */}
-        {/* for this uise that cool %ige comp in ant design */}
-        {/* total shows, animes, and movies */}
-        {/* a map of whwere each movie is made kinda likea  heat map of countries */}
-
+        {/* <Progress type="dashboard" percent={75} /> */}
 
         {/* <h2>Top TV</h2>
-        <SimpleCarousel items={statistics.longest_tv.slice(0, 10)} media_type={"tv"} />
+        <Carousel items={statistics.longest_tv.slice(0, 10)} media_type={"tv"} />
 
         <h2>Longest Movies</h2>
-        <SimpleCarousel items={statistics.longest_movie.slice(0, 10)} media_type={"movie"} /> */}
-
-        {/* {statistics.principal_members ? <div>
-          <Select
-            defaultValue="Actors"
-            style={{
-              width: 120,
-            }}
-            onChange={handleChange}
-            options={dropdownOptions}
-          />
-
-          <h2>Most Watched {capitalizeFirstLetter(dropdown)}</h2>
-          <ul>
-            {statistics.principal_members[dropdown]
-              .slice(0, 20)
-              .map((item, index) => (
-                <li key={index}>
-                  <Image
-                    unoptimized
-                    height={50}
-                    width={50}
-                    quality="100"
-                    style={{ objectFit: 'cover' }}
-                    src={item.profile_path ? `https://image.tmdb.org/t/p/original/${item.profile_path}` : 'default_avatar.jpg'}
-                    alt={item.name}
-                  />
-                  {item.count}x - {item.name}
-                </li>
-              ))}
-          </ul>
-        </div> : null} */}
-
-        {/* <Collapse items={collapseItems} defaultActiveKey={['1']} onChange={onChange} /> */}
+        <Carousel items={statistics.longest_movie.slice(0, 10)} media_type={"movie"} /> */}
 
       </div>
     );

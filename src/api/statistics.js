@@ -1,4 +1,4 @@
-import { calculateAverage } from "@/utils/utils"
+import { calculateAverage, timestampToDateString } from "@/utils/utils"
 import { genreCodes } from "@/data"
 import { countryCodes } from "../../public/countries_data"
 
@@ -74,6 +74,48 @@ const updateGenreStatistics = (statistics, details, minutes) => {
     }
 };
 
+// need to decide between date added and date released
+// Helper function to update media date statistics
+const updateMediaDateStatistics = (statistics, item) => {
+    // console.log(timestampToDateString(item.date_added))
+    // console.log(item.release_date)
+
+    // const dateIndex = statistics.media_dates.findIndex((i) => i.date === timestampToDateString(item.date_added));
+    const dateIndex = statistics.media_dates.findIndex((i) => i.date === item.release_date);
+
+    if (dateIndex === -1) {
+        // Date not found, add it to the array
+        statistics.media_dates.push({
+            date: item.release_date,
+            value: 1,
+            title: item.title
+        });
+    } else {
+        // Date found, update value += 1
+        statistics.media_dates[dateIndex].value += 1;
+    }
+};
+const updateMediaDateYearStatistics = (statistics, item) => {
+    // console.log(timestampToDateString(item.date_added))
+    // console.log(item.release_date)
+
+    // const dateIndex = statistics.media_dates.findIndex((i) => i.date === timestampToDateString(item.date_added));
+    const splitDate = item.release_date.split('-');
+    const year = splitDate.slice(0, 2).join('-');
+    const dateIndex = statistics.media_date_years.findIndex((i) => i.date === year);
+
+    if (dateIndex === -1) {
+        // Date not found, add it to the array
+        statistics.media_date_years.push({
+            date: year,
+            value: 1,
+        });
+    } else {
+        // Date found, update value += 1
+        statistics.media_date_years[dateIndex].value += 1;
+    }
+};
+
 // Helper function to update country statistics
 const updateCountriesStatistics = (statistics, details) => {
     if (details.production_countries && details.production_countries.length > 0) {
@@ -137,7 +179,9 @@ export const calculateStatistics = async (data) => {
         longest_movie: [],
         average_rating: 0,
         oldest_media: [],
-        countries: []
+        countries: [],
+        media_dates: [],
+        media_date_years: []
     };
 
     let temp_av_rate = [];
@@ -155,6 +199,7 @@ export const calculateStatistics = async (data) => {
                     temp_av_rate.push(my_rating);
                 }
 
+                // longest_tv and longest_movie
                 if (media_type === "tv") {
                     if (details.last_episode_to_air !== null && details.last_episode_to_air.runtime !== null) {
                         total_watched_eps = getTotalEpisodes(item);
@@ -189,8 +234,9 @@ export const calculateStatistics = async (data) => {
                 updateMediaTypeStatistics(statistics, mediaKey, minutes);
                 updateGenreStatistics(statistics, details, minutes);
                 updateCountriesStatistics(statistics, details);
+                updateMediaDateStatistics(statistics, item);
+                updateMediaDateYearStatistics(statistics, item);
 
-                // console.log(item.release_date)
                 statistics.oldest_media.push({
                     title: item.title,
                     release_date: item.release_date,

@@ -4,7 +4,7 @@ import LegendLite from 'cal-heatmap/plugins/LegendLite';
 import CalendarLabel from 'cal-heatmap/plugins/CalendarLabel';
 import 'cal-heatmap/cal-heatmap.css';
 
-export default function HeatMap({ data }) {
+export default function HeatMapYear({ data }) {
     // if (process.browser) {
     const cal = new CalHeatmap();
     cal.paint(
@@ -20,19 +20,20 @@ export default function HeatMap({ data }) {
             range: 12,
             scale: {
                 color: {
-                    type: 'threshold',
+                    type: 'quantize',
                     // range: ['#4dd05a', '#37a446', '#166b34', '#14432a'],
                     range: ['#b5d4f4', '#6ea3e8', '#2389ff', '#0a3a6b'],
                     // range: ['#4d94d0', '#3783a4', '#16526b', '#14302a'],
-                    domain: [2, 3, 6, 11],
+                    // domain: [1, 5, 10, 15],
+                    domain: [1, 2, 3, 4],
                 },
             },
             domain: {
-                type: 'month',
+                type: 'year',
                 gutter: 4,
                 label: { text: 'MMM', textAlign: 'start', position: 'top' },
             },
-            subDomain: { type: 'ghDay', radius: 2, width: 11, height: 11, gutter: 4 },
+            subDomain: { type: 'month', radius: 2, width: 11, height: 11, gutter: 4 },
             itemSelector: '#ex-ghDay',
         },
         [
@@ -41,7 +42,7 @@ export default function HeatMap({ data }) {
                 {
                     text: function (date, value, dayjsDate) {
                         return (
-                            (value ? value : 'No') + ' movie released ' + dayjsDate.format('dddd, MMMM D, YYYY')
+                            (value ? value : 'No') + ' movie released ' + dayjsDate.format('MMMM, YYYY')
                         );
                     },
                 },
