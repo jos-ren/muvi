@@ -120,7 +120,7 @@ export function formatTime(totalMinutes, method) {
   } else if (method === "H") {
     const hours = Math.round(totalMinutes / 60);
     return `${hours} hours`;
-  }else if (method === "H2") {
+  } else if (method === "H2") {
     const hours = Math.round(totalMinutes / 60);
     return hours
   }
@@ -139,10 +139,17 @@ export function calculateAverage(arr) {
 
 export function timestampToDateString(firestoreTimestamp) {
   const date = firestoreTimestamp.toDate();
-    
+
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
   const day = String(date.getDate()).padStart(2, '0');
 
   return `${year}-${month}-${day}`;
+}
+
+export function minuteToPercentage(item, totalMinutes) {
+  let percentages = '';
+  percentages = Math.round(item / totalMinutes * 100);
+
+  return percentages;
 }

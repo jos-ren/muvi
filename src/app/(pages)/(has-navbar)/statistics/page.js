@@ -5,7 +5,7 @@ import Image from "next/image";
 import dynamic from 'next/dynamic';
 
 import { useGlobalContext } from '@/context/store.js';
-import { formatTime, capitalizeFirstLetter } from "@/utils/utils";
+import { formatTime, capitalizeFirstLetter, minuteToPercentage } from "@/utils/utils";
 import { calculateStatistics } from '@/api/statistics';
 import { refreshMembers, getPrincipalMembers } from "@/api/api"
 
@@ -56,14 +56,14 @@ let dropdownOptions = [
 const StatisticsPage = () => {
   const { user, data } = useGlobalContext();
   const [loading, setLoading] = useState(true);
+  const [addMoreItems, setAddMoreItems] = useState(false);
   const [statistics, setStatistics] = useState({});
-  const [pieValues] = useState([]);
-  const [pieLabels] = useState([]);
   const [dropdown, setDropdown] = useState('actors');
   const [pmID, setPMID] = useState(null)
+  const [noPMs, setNoPMs] = useState(false)
   const [messageApi, contextHolder] = message.useMessage();
 
-  console.log(statistics, "STAT")
+  console.log(data.length, "STAT")
 
   const handleChange = (value) => {
     setDropdown(value)
@@ -73,14 +73,20 @@ const StatisticsPage = () => {
     if (data !== null && user !== null) {
       // get top actors, etc
       const principalMembers = await getPrincipalMembers(user.uid)
+      console.log(principalMembers, "HERE")
       if (principalMembers.length !== 0) {
         setPMID(principalMembers[0].id)
+      } else {
+        setNoPMs(true)
       }
       // generate stats on movies
       const newStatistics = await calculateStatistics(data, user.uid);
       // combine
       newStatistics.principal_members = principalMembers[0];
       setStatistics(newStatistics);
+      if (principalMembers.length !== 0) {
+        setNoPMs(false);
+      }
     }
   };
 
@@ -90,7 +96,7 @@ const StatisticsPage = () => {
 
   useEffect(() => {
     if (statistics !== null && user !== null) {
-      if (statistics.total_minutes !== 0 && statistics.longest_tv && statistics.principal_members) {
+      if (statistics.total_minutes !== 0 && statistics.longest_tv && statistics.media_types) {
         setLoading(false);
       }
     }
@@ -104,44 +110,45 @@ const StatisticsPage = () => {
     });
   };
 
-  const apexSeries = pieValues;
-
-  const apexOptions = {
-    chart: {
-      height: 350,
-      type: 'radialBar',
-    },
-    plotOptions: {
-      radialBar: {
-        dataLabels: {
-          name: {
-            fontSize: '22px',
-          },
-          value: {
-            fontSize: '16px',
-          },
-          total: {
-            show: true,
-            label: 'Total',
-            formatter: function (w) {
-              // By default, this function returns the average of all series.
-              // The below is just an example to show the use of a custom formatter function
-              return formatTime(statistics.total_minutes, "H2") + " Hours"
-            },
-          },
-        },
-      },
-    },
-    labels: pieLabels,
-  };
-
-  // add at least 5 items to see some statistics on your watch habits
-  // need to figure out how to set principal members ona new users first time clicking here
-
   if (loading) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "95vh" }}>
         <h1>Loading...</h1>
+      </div>
+    );
+    // if no items
+  } else if (data.length < 1) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "95vh" }}>
+        <h2>Add at Least 1 Item to view Statistics</h2>
+      </div>
+    );
+    // if no principal members
+  } else if (noPMs) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "95vh" }}>
+        {contextHolder}
+        <Button
+          type="primary"
+          icon={<ReloadOutlined />}
+          onClick={async () => {
+            onMessage("Refreshing", "loading");
+            try {
+              // Use Promise.all to wait for both refreshMembers and fetchInitData
+              await Promise.all([
+                refreshMembers(data, user.uid, pmID),
+                fetchInitData()
+              ]);
+              onMessage("Refreshed Data", "success");
+            } catch (error) {
+              // Handle errors if needed
+              console.error("Error during data refresh:", error);
+              onMessage("Error during data refresh", "error");
+            }
+          }}
+        >
+          Generate Statistics
+        </Button>
       </div>
     );
   } else {
@@ -214,45 +221,99 @@ const StatisticsPage = () => {
 
         <Spacer />
 
-        {/* <div style={{ display: "flex" }}> */}
+
+        <Spacer />
+        <Spacer />
+        <Box width="auto">
+          <div style={{ width: "100%" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <h2>Top People </h2>
+              <Select
+                defaultValue="Actors"
+                style={{
+                  width: 120,
+                }}
+                onChange={handleChange}
+                options={dropdownOptions}
+              />
+            </div>
+            <div style={{ display: "flex" }}>
+              <div style={{ height: '100%', width: "100%" }}>
+                <List items={statistics.principal_members[dropdown].slice(0, 10)} />
+              </div>
+              <div style={{ margin: "0px 10px" }}></div>
+              <div>
+                <Chart data={statistics.principal_members[dropdown].slice(0, 10)} />
+              </div>
+            </div>
+          </div>
+        </Box>
+
+        <Spacer />
+
+        <div style={{ display: "flex" }}>
           <Box>
             <WorldMap data={statistics.countries} />
           </Box>
           <Spacer />
           <Box>
-            {/* <ApexCharts options={apexOptions} series={apexSeries} type="radialBar" height={200} width={200} /> */}
+            <div className='flex'>
+              <ApexCharts
+                series={statistics.media_types.map(item => Math.round(item.watchtime / statistics.total_minutes * 100))}
+                type="radialBar"
+                height={300}
+                width={300}
+                options={{
+                  series: statistics.media_types.map(item => Math.round(item.watchtime / statistics.total_minutes * 100)),
+                  labels: statistics.media_types.map(item => item.name),
+                  chart: {
+                    // height: 350,
+                    type: 'radialBar',
+                  },
+                  plotOptions: {
+                    radialBar: {
+                      dataLabels: {
+                        name: {
+                          fontSize: '22px',
+                        },
+                        value: {
+                          fontSize: '16px',
+                        },
+                        total: {
+                          show: true,
+                          label: 'Total',
+                          formatter: function (w) {
+                            return formatTime(statistics.total_minutes, "H2") + " Hours"
+                          },
+                        },
+                      },
+                    },
+                  },
+                  responsive: [
+                    {
+                      breakpoint: undefined,
+                      options: {},
+                    },
+                  ],
+                }}
+              />
+            </div>
           </Box>
-        {/* </div> */}
-        <Spacer />
-        <Select
-          defaultValue="Actors"
-          style={{
-            width: 120,
-          }}
-          onChange={handleChange}
-          options={dropdownOptions}
-        />
-        <Spacer />
-        <Box width="auto">
-          <div style={{ height: '100%', width: "100%" }}>
-            <List items={statistics.principal_members[dropdown].slice(0, 10)} />
-          </div>
-          <div style={{
-            // borderLeft: "1px solid black",
-            height: "250px", margin: "0px 10px"
-          }}></div>
-          <div>
-            <Chart data={statistics.principal_members[dropdown].slice(0, 10)} />
-          </div>
-        </Box>
+        </div>
 
-        <Spacer />
-
+        {/* <Spacer />
         <Box width="auto">
+          <Progress type="dashboard" percent={75} />
+          <Progress type="dashboard" percent={75} />
+          <Progress type="dashboard" percent={75} />
+        </Box> */}
+
+        {/* <Spacer /> */}
+        {/* <Box width="auto">
+          <HeatMap data={statistics.media_dates} />
           <HeatMapYear data={statistics.media_dates} />
-        </Box>
+        </Box> */}
 
-        {/* <Progress type="dashboard" percent={75} /> */}
 
         {/* <h2>Top TV</h2>
         <Carousel items={statistics.longest_tv.slice(0, 10)} media_type={"tv"} />

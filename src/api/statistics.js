@@ -36,11 +36,19 @@ const getTotalEpisodes = (data) => {
 };
 
 // Helper function to update media type statistics
-const updateMediaTypeStatistics = (statistics, mediaKey, minutes) => {
-    if (!statistics.media_types[mediaKey]) {
-        statistics.media_types[mediaKey] = 0;
+const updateMediaTypeStatistics = (statistics, mediaKey, minutes) => {   
+    const typeIndex = statistics.media_types.findIndex((g) => g.name === mediaKey);
+    
+    if (typeIndex === -1) {
+        // Type not found, add it to the array
+        statistics.media_types.push({
+            name: mediaKey,
+            watchtime: minutes,
+        });
+    } else {
+        // Type found, update watchtime
+        statistics.media_types[typeIndex].watchtime += minutes;
     }
-    statistics.media_types[mediaKey] += minutes;
     statistics.total_minutes += minutes;
 };
 
@@ -77,10 +85,6 @@ const updateGenreStatistics = (statistics, details, minutes) => {
 // need to decide between date added and date released
 // Helper function to update media date statistics
 const updateMediaDateStatistics = (statistics, item) => {
-    // console.log(timestampToDateString(item.date_added))
-    // console.log(item.release_date)
-
-    // const dateIndex = statistics.media_dates.findIndex((i) => i.date === timestampToDateString(item.date_added));
     const dateIndex = statistics.media_dates.findIndex((i) => i.date === item.release_date);
 
     if (dateIndex === -1) {
@@ -96,10 +100,6 @@ const updateMediaDateStatistics = (statistics, item) => {
     }
 };
 const updateMediaDateYearStatistics = (statistics, item) => {
-    // console.log(timestampToDateString(item.date_added))
-    // console.log(item.release_date)
-
-    // const dateIndex = statistics.media_dates.findIndex((i) => i.date === timestampToDateString(item.date_added));
     const splitDate = item.release_date.split('-');
     const year = splitDate.slice(0, 2).join('-');
     const dateIndex = statistics.media_date_years.findIndex((i) => i.date === year);
@@ -166,14 +166,12 @@ const setCountriesScale = (countries) => {
         const scale = minScale + rawScale * Math.pow((i + 1) / totalCountries, scaleDifferenceFactor);
         countries[i].scale = scale;
     }
-
-    console.log(countries);
 };
 
 export const calculateStatistics = async (data) => {
     let statistics = {
         total_minutes: 0,
-        media_types: {},
+        media_types: [],
         genres: [],
         longest_tv: [],
         longest_movie: [],
@@ -250,6 +248,7 @@ export const calculateStatistics = async (data) => {
     statistics.longest_tv.sort((a, b) => b.time - a.time);
     statistics.longest_movie.sort((a, b) => b.time - a.time);
     statistics.oldest_media.sort((a, b) => new Date(b.release_date) - new Date(a.release_date));
+    statistics.media_types.sort((a, b) => b.watchtime - a.watchtime);
 
     // set the scale for countries...
     setCountriesScale(statistics.countries)

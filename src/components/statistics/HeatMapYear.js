@@ -30,7 +30,9 @@ export default function HeatMapYear({ data }) {
     };
 
     const cal = new CalHeatmap();
-    cal.addTemplates(sameRowDayTemplate);
+
+    console.log(cal, "Cal")
+    // cal.addTemplates(sameRowDayTemplate);
     // if (process.browser) {
     cal.paint(
         {

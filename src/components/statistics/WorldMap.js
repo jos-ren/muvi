@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef  } from "react";
 import { csv } from "d3-fetch";
 import { scaleLinear } from "d3-scale";
 import {
@@ -18,6 +18,7 @@ const colorScale = scaleLinear()
   .range(["#f0f6fc", "#2389ff"]);
 
 const MapChart = ({ data }) => {
+  const tooltipRef = useRef ();
 
   return (
     <ComposableMap
@@ -36,10 +37,12 @@ const MapChart = ({ data }) => {
                 const d = data.find((s) => s.ISO3 === geo.id);
                 return (
                   // <Tooltip
+                  //   key={geo.rsmKey}
                   //   title={d ? geo.properties.name + ": " + d.amount + "x" : ""}
-                  // >
-                  <Geography
-                    key={geo.rsmKey}
+                  //   ref={tooltipRef}
+                  //   >
+                    <Geography
+                      key={geo.rsmKey}
                       geography={geo}
                       fill={d ? colorScale(d["scale"]) : "#F5F4F6"}
                       style={{
@@ -53,7 +56,7 @@ const MapChart = ({ data }) => {
                         }
                       }}
                     />
-                  // {/* </Tooltip> */}
+                  // </Tooltip> 
                 );
               })
             }

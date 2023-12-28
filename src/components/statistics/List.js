@@ -3,39 +3,13 @@ import styled from 'styled-components';
 import { Collapse, List as AntList, Button } from 'antd';
 import Image from "next/image";
 
-const ListContainer = styled.div`
-//   width: 300px;
-//   margin: 20px;
-`;
-
-const ListItem = styled.div`
-    background-color: ${({ iseven }) => (iseven === 'true' ? '#fff' : '#f0f0f0')};
-    padding: 10px;
-    border: 1px solid #ccc;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  `;
-
-const AdditionalContent = styled.div`
-  max-height: ${({ isopen }) => (isopen === 'true' ? 'auto' : '0')};
-  overflow: hidden;
-  padding: 10px;
-  border-top: 1px solid #ccc;
-  visibility: ${({ isopen }) => (isopen === 'true' ? 'visible' : 'hidden')};
-  transition: max-height 0.3s ease-in-out, visibility 0.3s ease-in-out; /* Smooth transition animation */
-`;
-
-
 const List = ({ items }) => {
-    // const [expandedItem, setExpandedItem] = useState(null);
-
     return (
-        <div 
-        style={{ height: '300px', overflowY: 'auto' }}
+        <div
+            style={{ height: '100%', overflowY: 'auto' }}
         >
             <Collapse
+                size="small"
                 accordion
                 expandIconPosition='end'
                 items={items.map((item, index) => ({
