@@ -8,6 +8,7 @@ import { useGlobalContext } from '@/context/store.js';
 import { formatTime, capitalizeFirstLetter, minuteToPercentage } from "@/utils/utils";
 import { calculateStatistics } from '@/api/statistics';
 import { refreshMembers, getPrincipalMembers } from "@/api/api"
+import { COLORS } from "@/utils/constants"
 
 import Box from "@/components/statistics/Box"
 import Chart from "@/components/statistics/Chart"
@@ -63,7 +64,7 @@ const StatisticsPage = () => {
   const [noPMs, setNoPMs] = useState(false)
   const [messageApi, contextHolder] = message.useMessage();
 
-  console.log(data.length, "STAT")
+  // console.log(statistics, "STAT")
 
   const handleChange = (value) => {
     setDropdown(value)
@@ -73,7 +74,7 @@ const StatisticsPage = () => {
     if (data !== null && user !== null) {
       // get top actors, etc
       const principalMembers = await getPrincipalMembers(user.uid)
-      console.log(principalMembers, "HERE")
+
       if (principalMembers.length !== 0) {
         setPMID(principalMembers[0].id)
       } else {
@@ -197,7 +198,7 @@ const StatisticsPage = () => {
             title="Average Rating"
             statistic={statistics.average_rating}
             icon={<StarFilled style={{ color: 'white' }} />}
-          // color='#ffcc29'
+            color={COLORS.YELLOW}
           />
         </div>
         <Spacer />
@@ -208,14 +209,14 @@ const StatisticsPage = () => {
               // statistics.oldest_media[statistics.oldest_media.length - 1].release_date +
               statistics.oldest_media[statistics.oldest_media.length - 1].title}
             icon={<HourglassFilled style={{ color: 'white' }} />}
-          // color='#ff4757'
+            color={COLORS.RED}
           />
           <Spacer />
           <Widget
             title="Newest Movie"
             statistic={statistics.oldest_media[0].title}
             icon={<ThunderboltFilled style={{ color: 'white' }} />}
-          // color='#4dff4d'
+            color={COLORS.GREEN}
           />
         </div>
 

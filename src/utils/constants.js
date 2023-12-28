@@ -16,7 +16,9 @@ export const COLORS = {
     BLUE: '#259efa',
     YELLOW: '#fdba3a',
     RED: '#ff5252',
-    PURPLE: '#a73cff',
+    WHITE: '#ffffff',
+    BLACK: '#000000',
+    // PURPLE: '#a73cff',
     // ORANGE: '#ff9f43',
     // PINK: '#ff6b81',
     // CYAN: '#4bcffa',
@@ -25,6 +27,4 @@ export const COLORS = {
     // LIME: '#c0e218',
     // BROWN: '#8d6e63',
     // GREY: '#808080',
-    WHITE: '#ffffff',
-    BLACK: '#000000',
 };
