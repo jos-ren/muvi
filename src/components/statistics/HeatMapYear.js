@@ -3,10 +3,35 @@ import Tooltip from 'cal-heatmap/plugins/Tooltip';
 import LegendLite from 'cal-heatmap/plugins/LegendLite';
 import CalendarLabel from 'cal-heatmap/plugins/CalendarLabel';
 import 'cal-heatmap/cal-heatmap.css';
-
+import { Button } from "antd"
 export default function HeatMapYear({ data }) {
-    // if (process.browser) {
+
+    const sameRowDayTemplate = function (DateHelper) {
+        return {
+            name: 'day_same_row',
+            parent: 'day',
+            rowsCount() {
+                return 1;
+            },
+            columnsCount() {
+                return 31;
+            },
+            mapping: (startDate, endDate, defaultValues) =>
+                DateHelper.intervals('day', startDate, DateHelper.date(endDate)).map(
+                    (d, index) => ({
+                        t: d,
+                        x: index,
+                        y: 0,
+                        ...defaultValues,
+                    })
+                ),
+            // Missing extractUnit property, will be inherit from parent
+        };
+    };
+
     const cal = new CalHeatmap();
+    cal.addTemplates(sameRowDayTemplate);
+    // if (process.browser) {
     cal.paint(
         {
             data: {
@@ -17,23 +42,28 @@ export default function HeatMapYear({ data }) {
             },
             // first day of this year
             date: { start: new Date(new Date().getFullYear(), 0, 1) },
-            range: 12,
             scale: {
                 color: {
                     type: 'quantize',
-                    // range: ['#4dd05a', '#37a446', '#166b34', '#14432a'],
-                    range: ['#b5d4f4', '#6ea3e8', '#2389ff', '#0a3a6b'],
-                    // range: ['#4d94d0', '#3783a4', '#16526b', '#14302a'],
-                    // domain: [1, 5, 10, 15],
+                    range: ['#4dd05a', '#37a446', '#166b34', '#14432a'],
+                    // range: ['#b5d4f4', '#6ea3e8', '#2389ff', '#0a3a6b'],
                     domain: [1, 2, 3, 4],
                 },
             },
+            range: 1,
+            // domain: {
+            //     type: 'year',
+            //     gutter: 4,
+            //     label: { text: 'MMM', textAlign: 'start', position: 'top' },
+            // },
+            // subDomain: { type: 'day', radius: 2, width: 11, height: 11, gutter: 4 },
+
             domain: {
                 type: 'year',
                 gutter: 4,
-                label: { text: 'MMM', textAlign: 'start', position: 'top' },
+                label: { text: 'YYYY', textAlign: 'start', position: 'top' },
             },
-            subDomain: { type: 'month', radius: 2, width: 11, height: 11, gutter: 4 },
+            subDomain: { type: 'day', radius: 2, width: 11, height: 11, gutter: 4 },
             itemSelector: '#ex-ghDay',
         },
         [
@@ -42,7 +72,7 @@ export default function HeatMapYear({ data }) {
                 {
                     text: function (date, value, dayjsDate) {
                         return (
-                            (value ? value : 'No') + ' movie released ' + dayjsDate.format('MMMM, YYYY')
+                            (value ? value : 'No') + ' released on ' + dayjsDate.format('MMMM DD, YYYY')
                         );
                     },
                 },
@@ -85,7 +115,7 @@ export default function HeatMapYear({ data }) {
             }}
         >
             <div id="ex-ghDay" className="margin-bottom--md"></div>
-            <a
+            <Button
                 className="button button--sm button--secondary margin-top--sm"
                 href="#"
                 onClick={e => {
@@ -94,8 +124,9 @@ export default function HeatMapYear({ data }) {
                 }}
             >
                 ← Previous
-            </a>
-            <a
+            </Button>
+
+            <Button
                 className="button button--sm button--secondary margin-top--sm margin-left--xs"
                 href="#"
                 onClick={e => {
@@ -104,7 +135,7 @@ export default function HeatMapYear({ data }) {
                 }}
             >
                 Next →
-            </a>
+            </Button>
             <div style={{ float: 'right', fontSize: 12 }}>
                 <span style={{ color: '#768390' }}>Less</span>
                 <div

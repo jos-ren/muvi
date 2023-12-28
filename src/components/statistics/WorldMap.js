@@ -17,7 +17,7 @@ const colorScale = scaleLinear()
   .domain([0.29, 0.68])
   .range(["#f0f6fc", "#2389ff"]);
 
-const MapChart = ({ data, setTooltipContent }) => {
+const MapChart = ({ data }) => {
 
   return (
     <ComposableMap
@@ -35,18 +35,17 @@ const MapChart = ({ data, setTooltipContent }) => {
               geographies.map((geo) => {
                 const d = data.find((s) => s.ISO3 === geo.id);
                 return (
-                  <Tooltip
+                  // <Tooltip
+                  //   title={d ? geo.properties.name + ": " + d.amount + "x" : ""}
+                  // >
+                  <Geography
                     key={geo.rsmKey}
-                    title={d ? geo.properties.name + ": " + d.amount + "x" : ""}
-                  >
-                    <Geography
                       geography={geo}
                       fill={d ? colorScale(d["scale"]) : "#F5F4F6"}
                       style={{
                         hover: {
                           fill: "#ff5252",
-                          // outline: "1px solid red",
-                          // cursor:"pointer"
+                          outline: "none"
                         },
                         pressed: {
                           fill: "#E42",
@@ -54,7 +53,7 @@ const MapChart = ({ data, setTooltipContent }) => {
                         }
                       }}
                     />
-                  </Tooltip>
+                  // {/* </Tooltip> */}
                 );
               })
             }

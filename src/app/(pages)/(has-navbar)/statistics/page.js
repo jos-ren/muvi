@@ -170,12 +170,12 @@ const StatisticsPage = () => {
           </Button>
         </div>
 
-        <Box width="auto">
-          <HeatMapYear data={statistics.media_date_years}/>
-        </Box>
+
         {/* <Box width="auto">
           <HeatMap data={statistics.media_dates}/>
         </Box> */}
+
+
 
         <Spacer />
 
@@ -197,7 +197,9 @@ const StatisticsPage = () => {
         <div style={{ display: "flex" }}>
           <Widget
             title="Oldest Movie"
-            statistic={statistics.oldest_media[statistics.oldest_media.length - 1].release_date + statistics.oldest_media[statistics.oldest_media.length - 1].title}
+            statistic={
+              // statistics.oldest_media[statistics.oldest_media.length - 1].release_date +
+              statistics.oldest_media[statistics.oldest_media.length - 1].title}
             icon={<HourglassFilled style={{ color: 'white' }} />}
           // color='#ff4757'
           />
@@ -211,6 +213,17 @@ const StatisticsPage = () => {
         </div>
 
         <Spacer />
+
+        {/* <div style={{ display: "flex" }}> */}
+          <Box>
+            <WorldMap data={statistics.countries} />
+          </Box>
+          <Spacer />
+          <Box>
+            {/* <ApexCharts options={apexOptions} series={apexSeries} type="radialBar" height={200} width={200} /> */}
+          </Box>
+        {/* </div> */}
+        <Spacer />
         <Select
           defaultValue="Actors"
           style={{
@@ -220,7 +233,6 @@ const StatisticsPage = () => {
           options={dropdownOptions}
         />
         <Spacer />
-
         <Box width="auto">
           <div style={{ height: '100%', width: "100%" }}>
             <List items={statistics.principal_members[dropdown].slice(0, 10)} />
@@ -235,17 +247,10 @@ const StatisticsPage = () => {
         </Box>
 
         <Spacer />
-        <div style={{ display: "flex" }}>
-          <Box>
-            <WorldMap data={statistics.countries} />
-          </Box>
-          <Spacer />
-          <Box>
-            {/* <ApexCharts options={apexOptions} series={apexSeries} type="radialBar" height={200} width={200} /> */}
-          </Box>
-        </div>
 
-        <Spacer />
+        <Box width="auto">
+          <HeatMapYear data={statistics.media_dates} />
+        </Box>
 
         {/* <Progress type="dashboard" percent={75} /> */}
 
