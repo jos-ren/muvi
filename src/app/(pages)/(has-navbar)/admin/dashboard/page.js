@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import MovieTable from '@/components/MovieTable.js';
 import { message } from 'antd';
 import { useRouter } from 'next/navigation'
-import { formatFSTimestamp } from "../../../../../api/utils.js"
+import { formatFSTimestamp } from "../../../../../utils/utils.js"
 import { getAllUsersData } from "@/api/api.js"
 import { useGlobalContext } from '@/context/store.js';
 

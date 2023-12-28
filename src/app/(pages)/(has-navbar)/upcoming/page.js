@@ -4,7 +4,7 @@ import { message, Input, Button, Space, Popover } from 'antd';
 import { SearchOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import Highlighter from 'react-highlight-words';
 import MovieTable from "@/components/MovieTable.js"
-import { getDateWeekAgo } from "../../../../api/utils.js"
+import { getDateWeekAgo } from "../../../../utils/utils.js"
 import { poster, type, episode, upcoming_release, genres, status } from "@/columns.js"
 import { getUserMedia, refreshUpdate } from "@/api/api.js"
 import { useGlobalContext } from '@/context/store.js';
@@ -110,12 +110,34 @@ const UpcomingPage = () => {
         ...getColumnSearchProps('title'),
     }
 
-    const onMessage = (message, type) => {
-        messageApi.open({
-            type: type,
-            content: message,
-            className: "message"
+    const onMessage = (content, type) => {
+        // Generate a unique key for each message to force removal of the previous message
+        const key = `${type}-${Date.now()}`;
+        return messageApi[type]({
+            content,
+            key,
+            className: 'message',
         });
+    };
+
+    const handleRefreshClick = async () => {
+        // Show loading message
+        onMessage('Refreshing', 'loading');
+
+        const currentMedia = await getUserMedia(user.uid);
+        const { message, type } = await refreshUpdate(currentMedia, user.uid);
+
+        // If the message is not "List is up to date", update the data and show the message
+        if (message !== 'List is up to date') {
+            const updatedMedia = await getUserMedia(user.uid);
+            setData(updatedMedia);
+            messageApi.destroy();
+            onMessage(message, type);
+        } else {
+            // If the message is "List is up to date", hide the loading message
+            messageApi.destroy();
+            onMessage(message, type);
+        }
     };
 
     useEffect(() => {
@@ -145,15 +167,7 @@ const UpcomingPage = () => {
                 for tv: details.next_episode_to_air !== null  */}
             <MovieTable
                 showRefresh
-                onRefresh={async () => {
-                    const currentMedia = await getUserMedia(user.uid);
-                    const { message, type } = await refreshUpdate(currentMedia, user.uid);
-                    if (message !== "List is up to date") {
-                        const updatedMedia = await getUserMedia(user.uid);
-                        setData(updatedMedia);
-                    }
-                    onMessage(message, type)
-                }}
+                onRefresh={handleRefreshClick}
                 pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
                 header={
                     <div style={{ display: "flex", alignItems: "center" }}>

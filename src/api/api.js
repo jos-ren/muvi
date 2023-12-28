@@ -1,6 +1,7 @@
-import { getDocs, collection, getDoc, setDoc, addDoc, updateDoc, doc, where, query, writeBatch, FieldPath, collectionGroup, documentId } from "firebase/firestore"
+import { getDocs, collection, getDoc, setDoc, addDoc, updateDoc, doc, where, query, writeBatch, FieldPath, collectionGroup, documentId, deleteField } from "firebase/firestore"
 import { db, auth } from "@/config/firebase.js"
-import { capitalizeFirstLetter } from "@/api/utils"
+import { capitalizeFirstLetter } from "@/utils/utils"
+
 
 const options = {
     method: "GET",
@@ -11,38 +12,6 @@ const options = {
 };
 
 // ----- CREATE -----
-
-export const uploadJSON = async (user_uid) => {
-    // Fetch the JSON file
-    const response = await fetch('my-data.json');
-
-    // Parse the JSON data
-    const data = await response.json();
-
-    // Iterate over each item and log the id
-    for (let i = 0; i < data.length; i++) {
-        const item = data[i];
-        createUserMedia(item, "list", user_uid)
-    }
-
-    // // replace obj below with this
-    // let obj = {
-    //     tmdb_id: o.details.id,
-    //     // custom fields
-    //     date_added: o.date_added,
-    //     list_type: o.list_type,
-    //     my_season: o.my_season,
-    //     my_episode: o.my_episode,
-    //     my_rating: o.my_rating,
-    //     // data fields
-    //     title: o.title,
-    //     release_date: o.release_date,
-    //     media_type: o.media_type,
-    //     is_anime: o.is_anime,
-    //     upcoming_release: o.upcoming_release,
-    //     details: o.details
-    // };
-}
 
 // adds to a Users/uid/MediaList/uid
 export const createUserMedia = async (o, list_type, user_uid) => {
@@ -74,8 +43,12 @@ export const createUserMedia = async (o, list_type, user_uid) => {
         })
         let is_anime = o.original_language === "ja" && animation === true ? true : false;
         // get details
-        const response = await fetch("https://api.themoviedb.org/3/" + o.media_type + "/" + o.id + "?language=en-US", options);
-        let details = await response.json();
+        const d_response = await fetch("https://api.themoviedb.org/3/" + o.media_type + "/" + o.id + "?language=en-US", options);
+        let details = await d_response.json();
+        // get credits
+        const c_response = await fetch("https://api.themoviedb.org/3/" + o.media_type + "/" + o.id + "/credits", options);
+        let creditsObj = await c_response.json();
+
         let upcoming_release = o.media_type === "movie" ? details.release_date : (details.next_episode_to_air !== null ? details.next_episode_to_air.air_date : details.last_air_date)
 
         let obj = {
@@ -93,10 +66,16 @@ export const createUserMedia = async (o, list_type, user_uid) => {
             media_type: o.media_type,
             is_anime: is_anime,
             upcoming_release: upcoming_release,
-            details: details
+            details: details,
         };
 
-        await addDoc(subCollectionRef, obj);
+        // Add the main document to the 'MediaList' subcollection
+        const mediaDocRef = await addDoc(subCollectionRef, obj);
+
+        // Create and add the 'Credits' subcollection
+        const creditsSubcollectionRef = collection(mediaDocRef, 'Credits');
+        await addDoc(creditsSubcollectionRef, creditsObj);
+
         // console.log("added: ", o.title)
         return { message: "Added " + title + " to " + capitalizeFirstLetter(list_type), type: "success" };
     } catch (err) {
@@ -173,6 +152,54 @@ export const getUserData = async (user) => {
     }
 };
 
+export const getMediaCredits = async (media_id, user_id) => {
+    try {
+        const userDocRef = doc(db, 'Users', user_id);
+        const mediaListCollectionRef = collection(userDocRef, 'MediaList');
+        const mediaDocRef = doc(mediaListCollectionRef, media_id);
+        const creditsCollectionRef = collection(mediaDocRef, 'Credits');
+        const creditsSnapshot = await getDocs(creditsCollectionRef);
+
+        // if no data
+        if (creditsSnapshot.empty) {
+            return [];
+        }
+
+        // Convert the snapshot to an array of credit objects
+        const credits = creditsSnapshot.docs.map((doc) => doc.data());
+
+        return credits;
+    } catch (err) {
+        console.error('Error in get credits:', err);
+        // Return an empty array in case of an error
+        return [];
+    }
+};
+
+// gets the top actors, directors, etc from your movies, basically who shows up the most throughout your MediaList items
+export const getPrincipalMembers = async (uid) => {
+    try {
+        // get a User's PrincipalMembers items
+        const userDocRef = doc(db, 'Users', uid);
+        const PrincipalMembersCollectionRef = collection(userDocRef, 'PrincipalMembers');
+        const PrincipalMembersSnapshot = await getDocs(PrincipalMembersCollectionRef);
+
+        // if no data
+        if (PrincipalMembersSnapshot.empty) {
+            return [];
+        }
+
+        // Extract user data from the PrincipalMembers documents
+        const userPrincipalMembers = PrincipalMembersSnapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+        return userPrincipalMembers
+
+    } catch (err) {
+        console.error('Error in getUserMedia:', err);
+        // Return an empty array in case of an error
+        return [];
+    }
+};
+
 //  ----- UPDATE -----
 
 export const updateUser = async (user, update_type) => {
@@ -202,6 +229,7 @@ export const updateUser = async (user, update_type) => {
         console.error('Error updating/creating user: ', error);
     }
 }
+
 // to change rating, progress, etc
 export const updateUserMedia = async (mediaID, userID, updatedData) => {
     try {
@@ -237,10 +265,10 @@ export const refreshUpdate = async (userMedia, user_uid) => {
     let returning = userMedia.filter(item => item.details.status === "Returning Series")
 
     // if series is returning, check details
-    const fetchDetails = async (item) => {
-        const response = await fetch("https://api.themoviedb.org/3/tv/" + item.details.id + "?language=en-US", options);
-        const details = await response.json();
-        console.log(item.title);
+    const fetchTVDetails = async (item) => {
+        // get details
+        const d_response = await fetch("https://api.themoviedb.org/3/" + item.media_type + "/" + item.tmdb_id + "?language=en-US", options);
+        let details = await d_response.json();
 
         if (details.next_episode_to_air !== null) {
             if (details.next_episode_to_air.air_date !== item.upcoming_release) {
@@ -257,23 +285,148 @@ export const refreshUpdate = async (userMedia, user_uid) => {
         }
     };
 
-    const fetchDetailsPromises = returning.map(fetchDetails);
+    const fetchTVDetailsPromises = returning.map(fetchTVDetails);
+    await Promise.all(fetchTVDetailsPromises);
 
-    // Wait for all asynchronous operations to complete
-    await Promise.all(fetchDetailsPromises);
+    // UPDATE MOVIES
+    let movie = userMedia.filter(item => item.title === 'title')
+    // if movie is still unreleased, check if release date changes, status changes, etc
+    const fetchMovieDetails = async (item) => {
+        // get details
+        const d_response = await fetch("https://api.themoviedb.org/3/" + item.media_type + "/" + item.tmdb_id + "?language=en-US", options);
+        let details = await d_response.json();
+        // check differences in title, release_date, status
+        if (details.title !== item.title || details.release_date !== item.upcoming_release || details.status !== item.details.status) {
+            const dataToUpdate = {
+                title: details.title,
+                upcoming_release: details.release_date,
+                release_date: details.release_date,
+                details: details,
+                last_edited: new Date()
+            };
+            await updateUserMedia(item.key, user_uid, dataToUpdate);
+            numUpdated += 1;
+        }
+    };
 
-    console.log("updated " + numUpdated + " items");
+    const fetchMovieDetailsPromises = movie.map(fetchMovieDetails);
+    await Promise.all(fetchMovieDetailsPromises);
 
     if (numUpdated === 0) {
         return { message: "List is up to date", type: "info" };
     } else {
         return { message: "Refreshed " + numUpdated + " Items", type: "success" };
     }
-
-    // UPDATE MOVIES
-    // need to add logic here...
-    // Movies have status either Planned or !== Released
 }
+
+export const refreshMembers = async (data, user_id, pmID) => {
+    // get all the credits from each document in medialist
+    const promises = data.map(item => {
+        return getMediaCredits(item.key, user_id)
+            .then(credits => ({ mediaData: item, credits }));
+    });
+
+    const allCredits = await Promise.all(promises);
+
+    // make an array with all the credits and the role, sorted by most to least
+    let principal_members = {
+        actors: [],
+        directors: [],
+        producers: [],
+        dop: [],
+        editor: [],
+        sound: [],
+    }
+
+    for (let i = 0; i < allCredits.length; i++) {
+        const credits = allCredits[i].credits;
+        const mediaData = allCredits[i].mediaData;
+
+        // filter out items which are not SEEN (takes out watchlist items)
+        if (credits.length > 0 && mediaData.list_type === "seen") {
+            updateMemberCounts(principal_members, credits[0].cast, mediaData, 'actors');
+            updateMemberCounts(principal_members, credits[0].crew.filter(item => item.job === "Director"), mediaData, 'directors');
+            updateMemberCounts(principal_members, credits[0].crew.filter(item => item.job === "Producer"), mediaData, 'producers');
+            updateMemberCounts(principal_members, credits[0].crew.filter(item => item.job === "Director of Photography"), mediaData, 'dop');
+            updateMemberCounts(principal_members, credits[0].crew.filter(item => item.job === "Editor"), mediaData, 'editor');
+            updateMemberCounts(principal_members, credits[0].crew.filter(item => item.department === "Sound"), mediaData, 'sound');
+        }
+    }
+    // // Executive Music Producer
+    // // Original Music Composer
+
+    // Sort each array based on the "count" property in descending order
+    for (const key in principal_members) {
+        if (principal_members[key].length > 0) {
+            // Sort the array in descending order based on the "count" property
+            principal_members[key].sort((a, b) => b.count - a.count);
+
+            // Keep only the top 20 items
+            principal_members[key] = principal_members[key].slice(0, 20);
+        }
+    }
+
+    // upload this array to User/id/PrincipalMembers, replacing the old one
+    updatePrincipalMembers(pmID, user_id, principal_members)
+};
+
+// update counts of directors, and actors
+const updateMemberCounts = (principal_members, items, mediaData, field) => {
+    let keyCount = 0;
+    items.forEach((item) => {
+        const itemIndex = principal_members[field].findIndex((o) => o.name === item.name);
+        if (itemIndex === -1) {
+            keyCount += 1;
+            // Item not found, add it to the array
+            principal_members[field].push({
+                name: item.name,
+                count: 1,
+                profile_path: item.profile_path,
+                media: [
+                    {
+                        title: mediaData.title,
+                        poster_path: mediaData.details.poster_path,
+                        my_rating: mediaData.my_rating,
+                        release_date: mediaData.release_date,
+                        link: mediaData.media_type === "movie" ? mediaData.details.imdb_id : mediaData.tmdb_id,
+                        media_type: mediaData.media_type
+                    }
+                ]
+            });
+        } else {
+            // Item found, update count && add the mediaData to array
+            principal_members[field][itemIndex].count += 1;
+            principal_members[field][itemIndex].media.push({
+                title: mediaData.title,
+                poster_path: mediaData.details.poster_path,
+                my_rating: mediaData.my_rating,
+                release_date: mediaData.release_date,
+                link: mediaData.media_type === "movie" ? mediaData.details.imdb_id : mediaData.tmdb_id,
+                media_type: mediaData.media_type
+            })
+            // Sort the media array by release_date in descending order
+            principal_members[field][itemIndex].media.sort((a, b) => new Date(b.release_date) - new Date(a.release_date));
+        }
+    });
+};
+
+export const updatePrincipalMembers = async (pmID, user_uid, updatedData) => {
+    try {
+        if (pmID === null) {
+            // Create a new document
+            const userRef = doc(db, 'Users', user_uid);
+            const subCollectionRef = collection(userRef, 'PrincipalMembers');
+            await addDoc(subCollectionRef, updatedData);
+        } else {
+            // Update an existing document
+            const principalMembersRef = doc(db, 'Users', user_uid, 'PrincipalMembers', pmID);
+            await setDoc(principalMembersRef, updatedData);
+        }
+    } catch (err) {
+        console.error(err);
+    }
+};
+
 
 // ----- DELETE -----
 

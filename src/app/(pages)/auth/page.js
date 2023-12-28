@@ -1,10 +1,10 @@
 "use client"
 import React, { useState } from 'react';
 import { Input, message, Divider } from "antd"
-import { auth, googleProvider } from "@/config/firebase"
+import { auth, googleProvider } from "@/config/firebase.js"
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth'
 import CustomButton from "@/components/CustomButton.js"
-import { transformErrorMessage } from "../../../api/utils.js"
+import { transformErrorMessage } from "../../../utils/utils.js"
 import { useRouter } from 'next/navigation'
 
 const Login = () => {

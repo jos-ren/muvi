@@ -5,7 +5,7 @@ import { Button, Tag, Tooltip } from 'antd';
 const dayjs = require('dayjs')
 import styled from "styled-components";
 import { genreCodes } from "./data.js"
-import { formatFSTimestamp } from "./api/utils.js"
+import { formatFSTimestamp } from "./utils/utils.js"
 
 const Block = styled.div`
   margin-right: 3px;
@@ -68,7 +68,7 @@ export const audience_rating = {
 }
 
 const filterType = (value, record) => {
-    console.log(value, record)
+    // console.log(value, record)
     if (value === "anime") {
         if (record.is_anime === true) {
             return true

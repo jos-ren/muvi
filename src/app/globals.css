@@ -85,3 +85,109 @@ body {
   text-overflow: ellipsis;
   overflow: hidden;
 }
+
+.ant-card-body {
+  padding: 10px !important;
+}
+
+.no-padding-card {
+  width: 600px;
+}
+
+/* the slides */
+.slick-slide {
+  margin: 0 5px;
+}
+
+/* the parent */
+.slick-list {
+  /* margin: 0 -27px; */
+  /* width:calc(100% + 200px) */
+  overflow: hidden
+}
+
+.slick-track {
+  /* overflow: hidden */
+  width: 5000px !important;
+  /* white-space: nowrap; */
+  /* Prevent the content from wrapping */
+  /* overflow-x: scroll; */
+  /* border: 1px solid #ddd;  */
+
+}
+
+.ellipsis {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  max-width: 185px;
+}
+
+.arrow-right {
+  font-size: 0;
+  line-height: 0;
+  position: absolute;
+  top: 45%;
+  right: -30px;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.arrow-right svg {
+  height: 100px;
+  width: 100px;
+}
+
+.arrow-left {
+  font-size: 0;
+  line-height: 0;
+  position: absolute;
+  top: 45%;
+  left: -30px;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.arrow-left svg {
+  height: 100px;
+  width: 100px;
+}
+
+/* IMPORTANT  */
+
+:root {
+  --background-light: #fff;
+  --text-light: #000;
+  --secondary-light: #001529;
+  --secondary-text-light: #bbc0c4;
+  /*  */
+  --background-dark: #001529;
+  --text-dark: #fff;
+  --secondary-dark: #102a43;
+  --secondary-text-dark: #7f8fa4;
+}
+
+.app {
+  background-color: var(--background-light);
+  color: var(--text-light);
+}
+
+.app.dark {
+  background-color: var(--background-dark);
+  color: var(--text-dark);
+}
+
+.ant-collapse-content-box{
+  padding:0px !important;
+}
+
+.flex{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}

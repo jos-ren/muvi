@@ -1,4 +1,4 @@
-import { SearchOutlined, CheckOutlined, RiseOutlined, PieChartOutlined } from '@ant-design/icons';
+import { SearchOutlined, CheckOutlined, RiseOutlined, PieChartOutlined, GlobalOutlined } from '@ant-design/icons';
 import { FaRegBookmark } from "react-icons/fa6";
 
 export const tabs = [
@@ -26,11 +26,17 @@ export const tabs = [
         icon: <RiseOutlined />,
         route: "/upcoming"
     },
+    {
+        id: 5,
+        name: "Statistics",
+        icon: <PieChartOutlined />,
+        route: "/statistics"
+    },
     // {
-    //     id: 5,
-    //     name: "Stats",
-    //     icon: <PieChartOutlined />,
-    //     route: "/statistics"
+    //     id: 6,
+    //     name: "Discover",
+    //     icon: <GlobalOutlined />,
+    //     route: "/discover"
     // },
 ]
 
