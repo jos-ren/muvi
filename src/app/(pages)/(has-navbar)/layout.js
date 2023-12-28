@@ -32,7 +32,7 @@ export default function ContentRootLayout({ children }) {
     router.push('/auth')
   };
 
-  console.log(pathName)
+  // console.log(pathName)
 
   const items = [
     // {

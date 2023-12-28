@@ -147,8 +147,6 @@ const SeenPage = () => {
         });
     };
 
-    console.log(data, "DATA")
-
     const setNull = () => {
         setSeValue(null);
         setEpValue(null);
@@ -229,12 +227,12 @@ const SeenPage = () => {
     };
 
     const episodeChange = (value) => {
-        console.log(`selected ${value} episode`);
+        // console.log(`selected ${value} episode`);
         setEpValue(value)
     };
 
     const seasonChange = (value, o) => {
-        console.log(`selected ${value} season`);
+        // console.log(`selected ${value} season`);
         setSeValue(value)
         setEpOptions(getEpOptions({}, value, o.count))
     };

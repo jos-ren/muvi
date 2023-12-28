@@ -31,7 +31,7 @@ export default function HeatMapYear({ data }) {
 
     const cal = new CalHeatmap();
 
-    console.log(cal, "Cal")
+    // console.log(cal, "Cal")
     // cal.addTemplates(sameRowDayTemplate);
     // if (process.browser) {
     cal.paint(
