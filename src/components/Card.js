@@ -1,17 +1,21 @@
-import React from 'react';
-import Image from "next/image";
-import { Button, Divider } from 'antd';
-import { CheckOutlined, StarTwoTone } from '@ant-design/icons';
+import React, { useState } from 'react'; import Image from "next/image";
+import { Button } from 'antd';
+import { CheckOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { FaRegBookmark } from "react-icons/fa6";
-import { genreCodes } from "@/data"
-import { formatGenres } from "@/utils/utils"
 import styled from "styled-components";
-import { styled as muiStyled } from '@mui/material/styles';
-import Tooltip, { tooltipClasses } from '@mui/material/Tooltip';
-import { TiStar } from "react-icons/ti";
 
-const Span = styled.div`
+const Container = styled.div`
     display:flex;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+`;
+
+const Hover = styled.div`
+:hover{
+    cursor:pointer;
+    box-shadow: 3,3,0,0.3
+}
 `;
 
 const Overlay = styled.div`
@@ -42,29 +46,31 @@ const ImageWithOverlay = styled.div`
   }
 `;
 
-const Card = ({ details, addToSeen, addToWatchlist, src, alt, height = 200, width = 133 }) => {
+const Card = ({ details, addToSeen, addToWatchlist, src, alt, height = 200, width = 133, onInfoClick }) => {
+    const [isIconVisible, setIconVisibility] = useState(false);
 
     return (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-            {/* overlay WIP */}
-            
-            {/* <ImageWithOverlay>
-                <Image unoptimized height={height} width={width} quality="75" src={src} alt={alt} style={{ borderRadius: "6px", width: "100%", height: "auto", objectFit: "contain" }} />
-                <Overlay>
-                    <h3>{details.cardTitle}</h3>
-                    <div style={{display:"flex"}}>
-                    {Number.parseFloat(details.rating).toFixed(1)}
-                    <div>{details.release_date}</div>
-                    <div>{details.vote_count}</div>
-                    </div>
-                    <Divider />
-                    <div>{details.media_type}</div>
-                    <div>{formatGenres(details.genre_ids, genreCodes)}</div>
-                    <div className='ellipsis-text'>{details.description}</div>
-                    <div>View More</div>
-                </Overlay>
-            </ImageWithOverlay> */}
-            <Image unoptimized height={height} width={width} quality="75" src={src} alt={alt} style={{ borderRadius: "6px", width: "100%", height: "auto", objectFit: "contain" }} />
+        <Container>
+            <div
+                style={{ position: 'relative', borderRadius: '6px', width: '100%', height: 'auto', display: 'inline-block' }}
+                onMouseOver={() => setIconVisibility(true)}
+                onMouseOut={() => setIconVisibility(false)}
+            >
+                <Hover>
+                    {isIconVisible && (
+                        <InfoCircleOutlined onClick={onInfoClick} style={{ fontSize: '20px', position: 'absolute', top: '-1px', right: '0', zIndex: 1, padding: '10px', color: 'white' }} />
+                    )}
+                </Hover>
+                <Image
+                    unoptimized
+                    height={height}
+                    width={width}
+                    quality="75"
+                    src={src}
+                    alt={alt}
+                    style={{ borderRadius: '6px', width: '100%', height: 'auto', objectFit: 'contain' }}
+                />
+            </div>
 
             <div style={{
                 maxWidth: "200px",
@@ -78,7 +84,7 @@ const Card = ({ details, addToSeen, addToWatchlist, src, alt, height = 200, widt
                 <Button style={{ margin: "5px 5px 0px 0px" }} type="default" onClick={addToSeen} icon={<CheckOutlined />}>Seen</Button>
                 <Button type="default" onClick={addToWatchlist} icon={<FaRegBookmark />}></Button>
             </div>
-        </div>
+        </Container>
     );
 }
 

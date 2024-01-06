@@ -62,6 +62,10 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const { user, data, setData } = useGlobalContext();
 
+  const openLinkInNewTab = (url) => {
+    window.open(url, "_blank");
+  };
+
   const onMessage = (message, type) => {
     messageApi.open({
       type: type,
@@ -93,6 +97,7 @@ export default function Home() {
         {items.map((item, index) => (
           <div key={index} className="carousel-item">
             <Card
+              onInfoClick={() => openLinkInNewTab("https://www.themoviedb.org/" + o.media_type + "/" + o.id)}
               addToSeen={() => handleUserMedia(item, "seen", user)}
               addToWatchlist={() => handleUserMedia(item, "watchlist", user)}
               src={"https://image.tmdb.org/t/p/original/" + item.poster_path}
@@ -175,6 +180,7 @@ export default function Home() {
             <Grid>
               {search.map((o) =>
                 <Card
+                  onInfoClick={() => openLinkInNewTab("https://www.themoviedb.org/" + o.media_type + "/" + o.id)}
                   key={o.id}
                   addToSeen={() => handleUserMedia(o, "seen", user)}
                   addToWatchlist={() => handleUserMedia(o, "watchlist", user)}
@@ -201,6 +207,7 @@ export default function Home() {
           <Grid>
             {TMDBData.trending.map((o) =>
               <Card
+                onInfoClick={() => openLinkInNewTab("https://www.themoviedb.org/" + o.media_type + "/" + o.id)}
                 key={o.id}
                 addToSeen={() => handleUserMedia(o, "seen", user)}
                 addToWatchlist={() => handleUserMedia(o, "watchlist", user)}
