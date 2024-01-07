@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from "styled-components";
-import { BORDERRADIUS, PADDING, BOXSHADOW } from "@/utils/constants"
+import { BORDERRADIUS, PADDING, BOXSHADOW, COLORS } from "@/utils/constants"
 import Image from "next/image"
 import { Tooltip } from 'antd';
 
@@ -15,7 +15,7 @@ const Container = styled.div`
 `;
 
 const Bar = styled.div`
-    background: #2389ff;
+    background: ${COLORS.BLUE};
     width: ${({ width }) => width};
     height: 20px;
     border-bottom-right-radius: 4px;
@@ -29,18 +29,12 @@ const Bar = styled.div`
 // `;
 
 const Chart = ({ data }) => {
-    // Constants for min and max heights
-    const minLength = 10;
-    const maxLength = 200;
+    const highestCount = Math.max(...data.map(actor => actor.count));
 
-    // Function to scale the height based on the data
-    function scaleLength(value) {
-        // Calculate the percentage based on the range of values
-        const percentage = (value - Math.min(...data.map(item => item.count))) / (Math.max(...data.map(item => item.count)) - Math.min(...data.map(item => item.count)));
-        // Scale the height based on the percentage within the range
-        const scaledHeight = minLength + percentage * (maxLength - minLength);
-        return `${scaledHeight}px`;
-    }
+    function scaleLength(count) {
+        // Assuming data is available in the scope or passed as an argument
+        return `${(count / highestCount) * 200}px`;
+      }
 
     return (
         <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", alignItems: "start" }}>

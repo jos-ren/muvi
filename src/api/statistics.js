@@ -36,9 +36,9 @@ const getTotalEpisodes = (data) => {
 };
 
 // Helper function to update media type statistics
-const updateMediaTypeStatistics = (statistics, mediaKey, minutes) => {   
+const updateMediaTypeStatistics = (statistics, mediaKey, minutes) => {
     const typeIndex = statistics.media_types.findIndex((g) => g.name === mediaKey);
-    
+
     if (typeIndex === -1) {
         // Type not found, add it to the array
         statistics.media_types.push({
@@ -168,6 +168,38 @@ const setCountriesScale = (countries) => {
     }
 };
 
+function getRatingRange(rating) {
+    const roundedRating = Math.round(rating);
+    // const ranges = ['1-2', '3-4', '5-6', '7-8', '9-10'];
+    // const ranges = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
+    const ranges = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+    if (roundedRating >= 1 && roundedRating <= 10) {
+        // const index = Math.floor((roundedRating - 1) / 2);
+        const index = Math.floor(roundedRating - 1);
+        return ranges[index];
+    }
+
+    console.log('Invalid rating value:', rating);
+    return null;
+}
+
+const updateStarCount = (statistics, item) => {
+    const ratingRange = getRatingRange(item.my_rating);
+
+    if (ratingRange !== null) {
+        const foundObject = statistics.star_count.find((obj) => obj.title === ratingRange);
+
+        if (foundObject) {
+            foundObject.count += 1;
+        } else {
+            statistics.star_count.push({ title: ratingRange, count: 1 });
+        }
+    } else {
+        console.log('Invalid rating value:', item.my_rating);
+    }
+};
+
 export const calculateStatistics = async (data) => {
     let statistics = {
         total_minutes: 0,
@@ -176,6 +208,7 @@ export const calculateStatistics = async (data) => {
         longest_tv: [],
         longest_movie: [],
         average_rating: 0,
+        star_count: [],
         oldest_media: [],
         countries: [],
         media_dates: [],
@@ -234,6 +267,7 @@ export const calculateStatistics = async (data) => {
                 updateCountriesStatistics(statistics, details);
                 updateMediaDateStatistics(statistics, item);
                 updateMediaDateYearStatistics(statistics, item);
+                updateStarCount(statistics, item);
 
                 statistics.oldest_media.push({
                     title: item.title,
@@ -249,7 +283,11 @@ export const calculateStatistics = async (data) => {
     statistics.longest_movie.sort((a, b) => b.time - a.time);
     statistics.oldest_media.sort((a, b) => new Date(b.release_date) - new Date(a.release_date));
     statistics.media_types.sort((a, b) => b.watchtime - a.watchtime);
-
+    statistics.star_count.sort((a, b) => b.title - a.title);
+    // statistics.star_count.sort((a, b) => {
+    //     // Use localeCompare to compare string values
+    //     return b.title.localeCompare(a.title);
+    // });
     // set the scale for countries...
     setCountriesScale(statistics.countries)
 

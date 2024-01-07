@@ -153,3 +153,9 @@ export function minuteToPercentage(item, totalMinutes) {
 
   return percentages;
 }
+
+export function numDatetoString(inputDate){
+  const date = new Date(inputDate);
+  const options = { year: 'numeric', month: 'short', day: 'numeric' };
+  return date.toLocaleDateString('en-US', options);
+}

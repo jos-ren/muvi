@@ -13,7 +13,7 @@ export const BOXSHADOW = '0px 0px 1px rgba(0, 0, 0, 0.1)';
 
 export const COLORS = {
     GREEN: '#25e6a4',
-    BLUE: '#259efa',
+    BLUE: '#2389ff',
     YELLOW: '#fdba3a',
     RED: '#ff5252',
     WHITE: '#ffffff',
