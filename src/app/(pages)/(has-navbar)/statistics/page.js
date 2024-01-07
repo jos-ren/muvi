@@ -187,55 +187,66 @@ const StatisticsPage = () => {
 
 
         <Spacer />
-        <div style={{display:"flex", width:"100%"}}>
-          <div style={{ display: "flex", flexDirection: "column", width:"100%" }}>
+        <div style={{ display: "flex", width: "100%" }}>
+          <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
             <Widget
               title="Total Watchtime"
               statistic={formatTime(statistics.total_minutes, 'H')}
               icon={<ClockCircleFilled style={{ color: 'white' }} />}
               content={
-                <ApexCharts
-                  series={statistics.media_types.map(item => Math.round(item.watchtime / statistics.total_minutes * 100))}
-                  type="radialBar"
-                  height={300}
-                  width={300}
-                  options={{
-                    series: statistics.media_types.map(item => Math.round(item.watchtime / statistics.total_minutes * 100)),
-                    labels: statistics.media_types.map(item => item.name),
-                    chart: {
-                      // height: 350,
-                      type: 'radialBar',
-                    },
-                    plotOptions: {
-                      radialBar: {
-                        dataLabels: {
-                          name: {
-                            fontSize: '22px',
-                          },
-                          value: {
-                            fontSize: '16px',
-                          },
-                          total: {
-                            show: true,
-                            label: 'Total',
-                            formatter: function (w) {
-                              return formatTime(statistics.total_minutes, "H2") + " Hours"
+                <div style={{ height: "300px", alignItems: "center", justifyContent: "center", display: "flex" }}>
+                  <ApexCharts
+                    series={statistics.media_types.map(item => Math.round(item.watchtime / statistics.total_minutes * 100))}
+                    type="radialBar"
+                    height={300}
+                    width={300}
+                    options={{
+                      series: statistics.media_types.map((item) => Math.round((item.watchtime / statistics.total_minutes) * 100)),
+                      labels: statistics.media_types.map((item) => item.name),
+                      chart: {
+                        type: 'radialBar',
+                      },
+                      plotOptions: {
+                        radialBar: {
+                          dataLabels: {
+                            name: {
+                              fontSize: '22px',
+                            },
+                            value: {
+                              fontSize: '16px',
+                            },
+                            total: {
+                              show: false,
+                              label: 'Total',
+                              formatter: function (w) {
+                                return formatTime(statistics.total_minutes, 'H2') + ' Hours';
+                              },
                             },
                           },
                         },
                       },
-                    },
-                    responsive: [
-                      {
-                        breakpoint: undefined,
-                        options: {},
+                      legend: {
+                        show: true,
+                        position: 'bottom', // You can change the position as needed
+                        horizontalAlign: 'center',
+                        fontSize: '16px',
+                        markers: {
+                          width: 12,
+                          height: 12,
+                        },
                       },
-                    ],
-                  }}
-                />
+                      responsive: [
+                        {
+                          breakpoint: undefined,
+                          options: {},
+                        },
+                      ],
+                    }}
+                  />
+                </div>
               }
             />
-            <div style={{margin:"8px"}}></div>
+            <div style={{ margin: "8px" }}></div>
             <Widget
               title="Oldest Movie"
               statistic={
@@ -246,48 +257,57 @@ const StatisticsPage = () => {
               date={numDatetoString(statistics.oldest_media[statistics.oldest_media.length - 1].release_date)}
             />
           </div>
-          <Spacer/>
-          <div style={{ display: "flex", flexDirection: "column", width:"100%" }}>
+          <Spacer />
+          <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
             <Widget
               title="Average Rating"
               statistic={statistics.average_rating}
               icon={<StarFilled style={{ color: 'white' }} />}
               color={COLORS.YELLOW}
               content={
-                <ApexCharts
-                  options={{
-                    chart: {
-                      type: 'bar',
-                      height: 350,
-                      width: 350
-                    },
-                    plotOptions: {
-                      bar: {
-                        borderRadius: 4,
-                        horizontal: true
+                <div style={{ height: "300px", alignItems: "center", justifyContent: "center", display: "flex" }}>
+                  <ApexCharts
+                    options={{
+                      colors: [COLORS.YELLOW],
+                      chart: {
+                        type: 'bar',
+                        toolbar: {
+                          show: false, // Set this to false to hide the toolbar
+                        },
+                      },
+                      plotOptions: {
+                        bar: {
+                          borderRadius: 4,
+                          horizontal: true
+                        }
+                      },
+                      dataLabels: {
+                        enabled: false
+                      },
+                      xaxis: {
+                        categories: statistics.star_count.map((item) => item.title),
+                        labels: {
+                          show: true, // Set this to false to hide Y-axis labels
+                        },
+                      },
+                      tooltip: {
+                        enabled: true,
+                        y: {
+                          formatter: function (value) {
+                            return `Count: ${value}`;
+                          }
+                        }
                       }
-                    },
-                    dataLabels: {
-                      enabled: false
-                    },
-                    xaxis: {
-                      categories: [
-                        'South Korea',
-                        'Canada',
-                        'United Kingdom',
-                        'Netherlands',
-                        'Italy'
-                      ]
-                    }
-                  }}
-                  series={[{ data: [400, 430, 448, 580, 1380] }]}
-                  type="bar"
-                  height={250}
-                  width={350}
-                />
+                    }}
+                    series={[{ data: statistics.star_count.map((item) => item.count), }]}
+                    type="bar"
+                    height={250}
+                    width={350}
+                  />
+                </div>
               }
             />
-            <div style={{margin:"8px"}}></div>
+            <div style={{ margin: "8px" }}></div>
             <Widget
               title="Newest Movie"
               statistic={statistics.oldest_media[0].title}
@@ -333,47 +353,6 @@ const StatisticsPage = () => {
           </Box>
           <Spacer />
           <Box>
-            {/* <div className='flex'>
-              <ApexCharts
-                series={statistics.media_types.map(item => Math.round(item.watchtime / statistics.total_minutes * 100))}
-                type="radialBar"
-                height={300}
-                width={300}
-                options={{
-                  series: statistics.media_types.map(item => Math.round(item.watchtime / statistics.total_minutes * 100)),
-                  labels: statistics.media_types.map(item => item.name),
-                  chart: {
-                    // height: 350,
-                    type: 'radialBar',
-                  },
-                  plotOptions: {
-                    radialBar: {
-                      dataLabels: {
-                        name: {
-                          fontSize: '22px',
-                        },
-                        value: {
-                          fontSize: '16px',
-                        },
-                        total: {
-                          show: true,
-                          label: 'Total',
-                          formatter: function (w) {
-                            return formatTime(statistics.total_minutes, "H2") + " Hours"
-                          },
-                        },
-                      },
-                    },
-                  },
-                  responsive: [
-                    {
-                      breakpoint: undefined,
-                      options: {},
-                    },
-                  ],
-                }}
-              />
-            </div> */}
           </Box>
         </div>
 

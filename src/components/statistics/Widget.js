@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styled from "styled-components";
 import { BORDERRADIUS, PADDING, MARGIN, BOXSHADOW } from "@/utils/constants"
-import { FaPlus, FaMinus } from "react-icons/fa";
+import { FaAngleDown , FaAngleUp } from "react-icons/fa";
 
 const Box = styled.div`
     display: flex;
@@ -10,15 +10,9 @@ const Box = styled.div`
     align-items: center;
     background:#fff;
     padding:${PADDING};
-    // // margin: ${MARGIN} 0px;
     border-radius:${BORDERRADIUS};
-    // box-shadow: ${BOXSHADOW};
-    // width:100%;
     box-shadow: 0 20px 27px rgba(0,0,0,.05);
-    // width: 100%;
-    &:hover {
-        cursor:pointer;
-    }
+    user-select:none;
 `;
 const ColorBox = styled.div`
     border-radius:8px;
@@ -27,14 +21,12 @@ const ColorBox = styled.div`
     justify-content: center;
     align-items: center;
     background:${({ color }) => (color)};
-    // width:100%;
     padding:16px 22px;
     box-shadow: 0 4px 6px rgba(0,0,0,.12);
 `;
 
 const Title = styled.div`
     font-weight: 600;
-    // color: #8c8c8c;
     font-size: 16px;
     margin-right:10px;
 `;
@@ -45,6 +37,15 @@ const Date = styled.div`
     font-size: 12px;
 `;
 
+const Label = styled.div`
+    display:flex;
+    width:100%;
+    justify-content:space-between;
+    &:hover {
+        cursor:pointer;
+    }
+`;
+
 const Statistic = styled.div`
     white-space: nowrap;
     overflow: hidden;
@@ -53,21 +54,21 @@ const Statistic = styled.div`
     margin-top: 5px;
     color: inherit;
     font-size: 30px;
-    // line-height: 30px;
     width:250px;
 `;
 
 
 const Widget = ({ title, statistic, icon, color = '#2389ff', date, content }) => {
     const [isHovered, setIsHovered] = useState(false);
-    const [isClicked, setIsClicked] = useState(false);
+    const [isClicked, setIsClicked] = useState(true);
 
     return (
-        <Box onClick={() => { setIsClicked(!isClicked) }}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-        >
-            <div style={{ display: "flex", width: "100%", justifyContent:"space-between" }}>
+        <Box>
+            <Label
+                onClick={() => { setIsClicked(!isClicked) }}
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+            >
                 <div style={{ display: "flex" }}>
                     <div>
                         <div style={{ display: "flex", alignItems: "center" }}>
@@ -79,9 +80,9 @@ const Widget = ({ title, statistic, icon, color = '#2389ff', date, content }) =>
                 </div>
 
                 <ColorBox color={color}>
-                    {isHovered ? isClicked ? <FaMinus style={{ color: 'white' }} /> : <FaPlus style={{ color: 'white' }} /> : icon}
+                    {isHovered ? isClicked ? <FaAngleUp  style={{ color: 'white' }} /> : <FaAngleDown style={{ color: 'white' }} /> : icon}
                 </ColorBox>
-            </div>
+            </Label>
 
             {isClicked ? <div>
                 {content}
