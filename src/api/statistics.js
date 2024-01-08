@@ -99,21 +99,22 @@ const updateMediaDateStatistics = (statistics, item) => {
         statistics.media_dates[dateIndex].value += 1;
     }
 };
-const updateMediaDateYearStatistics = (statistics, item) => {
-    const splitDate = item.release_date.split('-');
-    const year = splitDate.slice(0, 2).join('-');
-    const dateIndex = statistics.media_date_years.findIndex((i) => i.date === year);
 
-    if (dateIndex === -1) {
-        // Date not found, add it to the array
-        statistics.media_date_years.push({
-            date: year,
-            value: 1,
-        });
-    } else {
-        // Date found, update value += 1
-        statistics.media_date_years[dateIndex].value += 1;
-    }
+const updateMediaDateDecades = (statistics, item) => {
+    // const splitDate = item.release_date.split('-');
+    // const year = splitDate.slice(0, 2).join('-');
+    // const dateIndex = statistics.media_date_years.findIndex((i) => i.date === year);
+
+    // if (dateIndex === -1) {
+    //     // Date not found, add it to the array
+    //     statistics.media_date_years.push({
+    //         date: year,
+    //         value: 1,
+    //     });
+    // } else {
+    //     // Date found, update value += 1
+    //     statistics.media_date_years[dateIndex].value += 1;
+    // }
 };
 
 // Helper function to update country statistics
@@ -179,8 +180,6 @@ function getRatingRange(rating) {
         const index = Math.floor(roundedRating - 1);
         return ranges[index];
     }
-
-    console.log('Invalid rating value:', rating);
     return null;
 }
 
@@ -196,7 +195,7 @@ const updateStarCount = (statistics, item) => {
             statistics.star_count.push({ title: ratingRange, count: 1 });
         }
     } else {
-        console.log('Invalid rating value:', item.my_rating);
+        // console.log('Invalid rating value:', item.my_rating);
     }
 };
 
@@ -212,7 +211,7 @@ export const calculateStatistics = async (data) => {
         oldest_media: [],
         countries: [],
         media_dates: [],
-        media_date_years: []
+        media_date_decades: []
     };
 
     let temp_av_rate = [];
@@ -266,7 +265,7 @@ export const calculateStatistics = async (data) => {
                 updateGenreStatistics(statistics, details, minutes);
                 updateCountriesStatistics(statistics, details);
                 updateMediaDateStatistics(statistics, item);
-                updateMediaDateYearStatistics(statistics, item);
+                updateMediaDateDecades(statistics, item);
                 updateStarCount(statistics, item);
 
                 statistics.oldest_media.push({
