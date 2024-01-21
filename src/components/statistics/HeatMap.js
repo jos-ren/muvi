@@ -81,7 +81,7 @@ const HeatMap = ({ data, highestValue }) => {
   }, [data, highestValue]);
 
   return (
-    <div style={{width:"100%", height:"100%", display:"flex", flexDirection:"column", justifyContent:"center", alignItems:"center", border:"1px solid red"}}>
+    <div style={{width:"100%", height:"100%", display:"flex", flexDirection:"column", justifyContent:"center", alignItems:"center"}}>
       <div ref={chartRef} data={data}></div>
       <div style={{height:"14px"}}>{tooltipText}</div>
     </div>
