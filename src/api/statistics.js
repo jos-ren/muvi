@@ -99,20 +99,52 @@ const updateMediaDateStatistics = (statistics, item) => {
         statistics.media_dates[dateIndex].value += 1;
     }
 };
-const updateMediaDateYearStatistics = (statistics, item) => {
-    const splitDate = item.release_date.split('-');
-    const year = splitDate.slice(0, 2).join('-');
-    const dateIndex = statistics.media_date_years.findIndex((i) => i.date === year);
 
-    if (dateIndex === -1) {
-        // Date not found, add it to the array
-        statistics.media_date_years.push({
-            date: year,
-            value: 1,
-        });
+function translateYearToNumber(year) {
+    // Check if the year is the start of a decade
+    if (year % 10 === 0) {
+        return 1;
+    }
+
+    // Calculate the decade start year
+    const decadeStart = Math.floor(year / 10) * 10;
+
+    // Calculate the difference between the input year and the decade start year
+    const difference = year - decadeStart;
+
+    // Map the difference to a number between 2 and 10
+    const translatedNumber = Math.min(9, difference) + 1;
+
+    return translatedNumber;
+}
+
+const updateMediaDateDecades = (statistics, item) => {
+    const splitDate = item.release_date.split('-');
+    const year = parseInt(splitDate[0]);  // Convert the year to a number
+
+    // LEFT OFF HEREEEE
+    // NEED FIX
+    // Calculate the variable as the difference between the year and the nearest decade
+    const variable = translateYearToNumber(year)
+
+    // Determine the decade based on the year
+    const decade = (Math.floor(year / 10) * 10).toString().slice(-2);
+
+    const group = `${year.toString().substring(0, 2) + decade}s`;
+
+    // Find the index of the decade in the array
+    const decadeIndex = statistics.decades.findIndex((entry) => entry.group === group && entry.variable === variable);
+
+    if (decadeIndex !== -1) {
+        // Decade found, update value += 1
+        statistics.decades[decadeIndex].value += 1;
     } else {
-        // Date found, update value += 1
-        statistics.media_date_years[dateIndex].value += 1;
+        // Decade not found, add it to the array
+        statistics.decades.push({
+            group: group,
+            variable: variable,
+            value: 1  // Start with 1 since it's the first occurrence
+        });
     }
 };
 
@@ -179,8 +211,6 @@ function getRatingRange(rating) {
         const index = Math.floor(roundedRating - 1);
         return ranges[index];
     }
-
-    console.log('Invalid rating value:', rating);
     return null;
 }
 
@@ -196,9 +226,45 @@ const updateStarCount = (statistics, item) => {
             statistics.star_count.push({ title: ratingRange, count: 1 });
         }
     } else {
-        console.log('Invalid rating value:', item.my_rating);
+        // console.log('Invalid rating value:', item.my_rating);
     }
 };
+
+// todo: make it 1950s not 50s
+const setInitialDecades = (statistics) => {
+    // Loop through the years from 1950 to 1960
+    for (let year = 1950; year <= 2020; year += 10) {
+        // Create an array to store objects for each decade
+        let decadeArray = [];
+
+        // Generate 8 arrays with variables ranging from 1 to 10 for each decade
+        for (let variable = 1; variable <= 10; variable++) {
+            let groupObject = {
+                group: year + "s",
+                variable: variable,
+                value: 0
+            };
+
+            // Push the object to the decade array
+            decadeArray.push(groupObject);
+        }
+
+        // Concatenate the decade array to the main array
+        statistics.decades = statistics.decades.concat(decadeArray);
+    }
+}
+
+function findHighestValue(data) {
+    let highestValue = Number.MIN_VALUE; // Initialize with the smallest possible number
+
+    for (const entry of data) {
+        if (entry.value > highestValue) {
+            highestValue = entry.value;
+        }
+    }
+
+    return highestValue;
+}
 
 export const calculateStatistics = async (data) => {
     let statistics = {
@@ -212,10 +278,14 @@ export const calculateStatistics = async (data) => {
         oldest_media: [],
         countries: [],
         media_dates: [],
-        media_date_years: []
+        // need to add a list of movies in that year, and the full year
+        decades: [],
+        highest_decade_values: 0
     };
 
     let temp_av_rate = [];
+
+    setInitialDecades(statistics)
 
     if (data.length > 0) {
         for (let i = 0; i < data.length; i++) {
@@ -266,7 +336,7 @@ export const calculateStatistics = async (data) => {
                 updateGenreStatistics(statistics, details, minutes);
                 updateCountriesStatistics(statistics, details);
                 updateMediaDateStatistics(statistics, item);
-                updateMediaDateYearStatistics(statistics, item);
+                updateMediaDateDecades(statistics, item);
                 updateStarCount(statistics, item);
 
                 statistics.oldest_media.push({
@@ -290,6 +360,7 @@ export const calculateStatistics = async (data) => {
     // });
     // set the scale for countries...
     setCountriesScale(statistics.countries)
+    statistics.highest_decade_values = findHighestValue(statistics.decades);
 
 
     return statistics;

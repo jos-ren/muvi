@@ -15,9 +15,8 @@ import Chart from "@/components/statistics/Chart"
 import Widget from "@/components/statistics/Widget"
 import List from "@/components/statistics/List"
 import WorldMap from "@/components/statistics/WorldMap"
-import Rating from "@/components/statistics/Rating"
 import HeatMap from "@/components/statistics/HeatMap"
-import HeatMapYear from "@/components/statistics/HeatMapYear"
+import Rating from "@/components/statistics/Rating"
 import Carousel from "@/components/statistics/Carousel"
 
 import { Button, message, Select, Progress, Popover, Tooltip } from 'antd';
@@ -28,6 +27,15 @@ const Spacer = styled.div`
   margin:16px 8px;
 `;
 
+const CustomWrapper = styled.div`
+  width: 100%;
+  height: 100%;
+  svg:nth-child(2) {
+  display:none
+  }
+`;
+
+// should generate these from statistics.principa...
 let dropdownOptions = [
   {
     value: 'actors',
@@ -353,6 +361,9 @@ const StatisticsPage = () => {
           </Box>
           <Spacer />
           <Box>
+            <CustomWrapper>
+              <HeatMap data={statistics.decades} highestValue={statistics.highest_decade_values}/>
+            </CustomWrapper>
           </Box>
         </div>
 
@@ -363,11 +374,12 @@ const StatisticsPage = () => {
           <Progress type="dashboard" percent={75} />
         </Box> */}
 
-        {/* <Spacer /> */}
-        {/* <Box width="auto">
-          <HeatMap data={statistics.media_dates} />
-          <HeatMapYear data={statistics.media_dates} />
-        </Box> */}
+        <Spacer />
+        <Box width="auto">
+          {/* <HeatMap data={statistics.media_dates} /> */}
+
+          {/* <HeatMapYear data={statistics.media_dates} /> */}
+        </Box>
 
 
         {/* <h2>Top TV</h2>
