@@ -11,37 +11,36 @@ import {
 import { Tooltip } from 'antd';
 import ReactTooltip from 'react-tooltip';
 const geoUrl = "/features.json";
+import { COLORS } from "@/utils/constants"
 
 const colorScale = scaleLinear()
   .domain([0.29, 0.68])
-  .range(["#f0f6fc", "#2389ff"]);
+  .range(["#f0f6fc", COLORS.BLUE]);
 
 const MapChart = ({ data }) => {
   const [tooltipText, setTooltipText] = useState('')
 
-
-
   const [position, setPosition] = useState([0, 0]);
   const [zoom, setZoom] = useState(1);
 
-  const handleZoomIn = () => {
-    setZoom(zoom * 1.2);
-  };
+  // const handleZoomIn = () => {
+  //   setZoom(zoom * 1.2);
+  // };
 
-  const handleZoomOut = () => {
-    setZoom(zoom / 1.2);
-  };
+  // const handleZoomOut = () => {
+  //   setZoom(zoom / 1.2);
+  // };
 
-  console.log(zoom)
+  // console.log(zoom)
 
-  const [moveEnd, setMoveEnd] = useState(null);
+  // const [moveEnd, setMoveEnd] = useState(null);
 
-  useEffect(() => {
-    if (moveEnd) {
-      setZoom(moveEnd.zoom);
-      setPosition(moveEnd.coordinates);
-    }
-  }, [moveEnd]);
+  // useEffect(() => {
+  //   if (moveEnd) {
+  //     setZoom(moveEnd.zoom);
+  //     setPosition(moveEnd.coordinates);
+  //   }
+  // }, [moveEnd]);
 
   return (
     <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
@@ -53,7 +52,9 @@ const MapChart = ({ data }) => {
           scale: 147
         }}
       >
-        <ZoomableGroup zoom={zoom} center={position} onMoveEnd={setMoveEnd}>
+        {/* <ZoomableGroup zoom={zoom} center={position} 
+        // onMoveEnd={setMoveEnd}
+        > */}
           <Sphere stroke="#E4E5E6" strokeWidth={0.5} />
           <Graticule stroke="#E4E5E6" strokeWidth={0.5} />
           {data.length > 0 && (
@@ -68,7 +69,7 @@ const MapChart = ({ data }) => {
                       fill={d ? colorScale(d["scale"]) : "#F5F4F6"}
                       style={{
                         hover: {
-                          fill: "#ff5252",
+                          fill: COLORS.RED,
                           outline: "none"
                         },
                         pressed: {
@@ -84,7 +85,7 @@ const MapChart = ({ data }) => {
               }
             </Geographies>
           )}
-        </ZoomableGroup>
+        {/* </ZoomableGroup> */}
       </ComposableMap>
       <div style={{ height: "14px" }}>{tooltipText}</div>
     </div>
