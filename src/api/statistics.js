@@ -122,9 +122,6 @@ const updateMediaDateDecades = (statistics, item) => {
     const splitDate = item.release_date.split('-');
     const year = parseInt(splitDate[0]);  // Convert the year to a number
 
-    // LEFT OFF HEREEEE
-    // NEED FIX
-    // Calculate the variable as the difference between the year and the nearest decade
     const variable = translateYearToNumber(year)
 
     // Determine the decade based on the year
@@ -266,7 +263,31 @@ function findHighestValue(data) {
     return highestValue;
 }
 
+function findFavDecade(data) {
+    let groupTotals = {};
+
+    data.forEach(array => {
+        if (!groupTotals[array.group]) {
+            groupTotals[array.group] = 0; // Initialize the total for this group if it doesn't exist
+        }
+        groupTotals[array.group] += array.value; // Add the value to the total for this group
+    });
+
+    let maxGroup = null;
+    let maxValue = 0;
+
+    for (let group in groupTotals) {
+        if (groupTotals[group] > maxValue) {
+            maxValue = groupTotals[group];
+            maxGroup = group;
+        }
+    }
+    
+    return maxGroup;
+}
+
 export const calculateStatistics = async (data) => {
+    // TODO: find which of these stats is useless and remove it
     let statistics = {
         total_minutes: 0,
         media_types: [],
@@ -278,15 +299,14 @@ export const calculateStatistics = async (data) => {
         oldest_media: [],
         countries: [],
         media_dates: [],
-        // need to add a list of movies in that year, and the full year
         decades: [],
-        highest_decade_values: 0
     };
 
     let temp_av_rate = [];
 
     setInitialDecades(statistics)
 
+    // Generate the stats
     if (data.length > 0) {
         for (let i = 0; i < data.length; i++) {
             let item = data[i];
@@ -354,13 +374,12 @@ export const calculateStatistics = async (data) => {
     statistics.oldest_media.sort((a, b) => new Date(b.release_date) - new Date(a.release_date));
     statistics.media_types.sort((a, b) => b.watchtime - a.watchtime);
     statistics.star_count.sort((a, b) => b.title - a.title);
-    // statistics.star_count.sort((a, b) => {
-    //     // Use localeCompare to compare string values
-    //     return b.title.localeCompare(a.title);
-    // });
+
     // set the scale for countries...
     setCountriesScale(statistics.countries)
-    statistics.highest_decade_values = findHighestValue(statistics.decades);
+    statistics.decades.highest_decade_values = findHighestValue(statistics.decades);
+    statistics.decades.fav_decade = findFavDecade(statistics.decades);
+    statistics.countries.total_unique = statistics.countries.length;
 
 
     return statistics;

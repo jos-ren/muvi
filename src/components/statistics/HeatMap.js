@@ -36,7 +36,7 @@ const HeatMap = ({ data, highestValue }) => {
       .padding(0.1);
 
     const myColor = d3.scaleLinear()
-      .range(["#f0f6fc", "#2389ff"])
+      .range(["#f0f6fc", COLORS.GREEN])
       .domain([0, highestValue]);
 
     const svg = d3.select(chartRef.current)
@@ -68,8 +68,8 @@ const HeatMap = ({ data, highestValue }) => {
           .style("stroke", "black")
           .style("opacity", 1)
         var year = d.group.slice(0, -2) + (d.variable - 1) % 10;
-        console.log(d)
-        setTooltipText("watched " + d.value + " movies in " + year)
+        // console.log(d)
+        setTooltipText("Watched " + d.value + " items from " + year)
       })
       .on("mouseleave", function () {
         d3.select(this)

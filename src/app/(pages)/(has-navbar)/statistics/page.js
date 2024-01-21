@@ -21,6 +21,8 @@ import Carousel from "@/components/statistics/Carousel"
 
 import { Button, message, Select, Progress, Popover, Tooltip } from 'antd';
 import { ReloadOutlined, QuestionCircleOutlined, StarTwoTone, DownOutlined, StarFilled, ClockCircleFilled, HourglassFilled, ThunderboltFilled } from '@ant-design/icons'
+import { FaGlobeAmericas } from "react-icons/fa";
+import { AiFillFire } from "react-icons/ai";
 const ApexCharts = dynamic(() => import('react-apexcharts'), { ssr: false });
 
 const Spacer = styled.div`
@@ -73,7 +75,7 @@ const StatisticsPage = () => {
   const [noPMs, setNoPMs] = useState(false)
   const [messageApi, contextHolder] = message.useMessage();
 
-  console.log(statistics, "STAT")
+  // console.log(statistics, "STAT")
 
   const handleChange = (value) => {
     setDropdown(value)
@@ -198,9 +200,22 @@ const StatisticsPage = () => {
         <div style={{ display: "flex", width: "100%" }}>
           <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
             <Widget
+              title="Unique Countries"
+              statistic={statistics.countries.total_unique}
+              icon={<FaGlobeAmericas style={{ color: 'white', fontSize: "16px" }} />}
+              color={COLORS.BLUE}
+              content={
+                <div style={{ height: "300px", width: '375px', alignItems: "center", justifyContent: "center", display: "flex" }}>
+                  <WorldMap data={statistics.countries} />
+                </div>
+              }
+            />
+            <div style={{ margin: "8px" }}></div>
+            <Widget
               title="Total Watchtime"
               statistic={formatTime(statistics.total_minutes, 'H')}
               icon={<ClockCircleFilled style={{ color: 'white' }} />}
+              color={COLORS.RED}
               content={
                 <div style={{ height: "300px", alignItems: "center", justifyContent: "center", display: "flex" }}>
                   <ApexCharts
@@ -254,18 +269,20 @@ const StatisticsPage = () => {
                 </div>
               }
             />
-            <div style={{ margin: "8px" }}></div>
+            {/* <div style={{ margin: "8px" }}></div>
             <Widget
               title="Oldest Movie"
               statistic={
                 // statistics.oldest_media[statistics.oldest_media.length - 1].release_date +
                 statistics.oldest_media[statistics.oldest_media.length - 1].title}
               icon={<HourglassFilled style={{ color: 'white' }} />}
-              color={COLORS.RED}
+              color={COLORS.ORANGE}
               date={numDatetoString(statistics.oldest_media[statistics.oldest_media.length - 1].release_date)}
-            />
+            /> */}
           </div>
+
           <Spacer />
+
           <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
             <Widget
               title="Average Rating"
@@ -317,18 +334,33 @@ const StatisticsPage = () => {
             />
             <div style={{ margin: "8px" }}></div>
             <Widget
+              title="Favorite Decade"
+              statistic={statistics.decades.fav_decade}
+              icon={<AiFillFire style={{ color: 'white' }} />}
+              color={COLORS.GREEN}
+              content={
+                <div style={{ height: "300px", width: '100%', alignItems: "center", justifyContent: "center", display: "flex" }}>
+                  <CustomWrapper>
+                    <HeatMap data={statistics.decades} highestValue={statistics.decades.highest_decade_values} />
+                  </CustomWrapper>
+                </div>
+              }
+            />
+            {/* <div style={{ margin: "8px" }}></div>
+            <Widget
               title="Newest Movie"
               statistic={statistics.oldest_media[0].title}
               icon={<ThunderboltFilled style={{ color: 'white' }} />}
-              color={COLORS.GREEN}
+              color={COLORS.PURPLE}
               date={numDatetoString(statistics.oldest_media[0].release_date)}
-            />
+            /> */}
           </div>
         </div>
 
-
         <Spacer />
-        <Box width="auto">
+        {/* MAKE A SPACE HERE where you select a stat, then iot generates the data */}
+
+        {/* <Box width="auto">
           <div style={{ width: "100%" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <h2>Top People </h2>
@@ -351,21 +383,8 @@ const StatisticsPage = () => {
               </div>
             </div>
           </div>
-        </Box>
+        </Box> */}
 
-        <Spacer />
-
-        <div style={{ display: "flex" }}>
-          <Box>
-            <WorldMap data={statistics.countries} />
-          </Box>
-          <Spacer />
-          <Box>
-            <CustomWrapper>
-              <HeatMap data={statistics.decades} highestValue={statistics.highest_decade_values}/>
-            </CustomWrapper>
-          </Box>
-        </div>
 
         {/* <Spacer />
         <Box width="auto">
@@ -374,19 +393,18 @@ const StatisticsPage = () => {
           <Progress type="dashboard" percent={75} />
         </Box> */}
 
-        <Spacer />
-        <Box width="auto">
-          {/* <HeatMap data={statistics.media_dates} /> */}
 
-          {/* <HeatMapYear data={statistics.media_dates} /> */}
-        </Box>
+        {/* <HeatMap data={statistics.media_dates} /> */}
+
+        {/* <HeatMapYear data={statistics.media_dates} /> */}
 
 
-        {/* <h2>Top TV</h2>
+
+        <h2>Top TV</h2>
         <Carousel items={statistics.longest_tv.slice(0, 10)} media_type={"tv"} />
 
         <h2>Longest Movies</h2>
-        <Carousel items={statistics.longest_movie.slice(0, 10)} media_type={"movie"} /> */}
+        <Carousel items={statistics.longest_movie.slice(0, 10)} media_type={"movie"} />
 
       </div>
     );
