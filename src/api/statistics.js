@@ -211,6 +211,12 @@ function getRatingRange(rating) {
     return null;
 }
 
+const setInitialStarCount = (statistics) => {
+    for (let i = 0; i < 10; i++) {
+        statistics.star_count.push({title: i + 1, count: 0});
+    }
+};
+
 const updateStarCount = (statistics, item) => {
     const ratingRange = getRatingRange(item.my_rating);
 
@@ -282,7 +288,7 @@ function findFavDecade(data) {
             maxGroup = group;
         }
     }
-    
+
     return maxGroup;
 }
 
@@ -305,6 +311,7 @@ export const calculateStatistics = async (data) => {
     let temp_av_rate = [];
 
     setInitialDecades(statistics)
+    setInitialStarCount(statistics)
 
     // Generate the stats
     if (data.length > 0) {

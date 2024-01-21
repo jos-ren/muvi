@@ -32,8 +32,8 @@ const Spacer = styled.div`
 const CustomWrapper = styled.div`
   width: 100%;
   height: 100%;
-  svg:nth-child(2) {
-  display:none
+  svg:nth-child(n+2) {
+    display: none;
   }
 `;
 
