@@ -29,3 +29,4 @@
 <h1>Screenshot</h1>
 
 ![image](https://github.com/jos-ren/muvi/assets/60946895/80b17e41-83c7-46e9-925e-35075b332202)
+![image](https://github.com/jos-ren/muvi/assets/60946895/b69d64de-8824-485e-a3e3-26b8a90ccb58)
