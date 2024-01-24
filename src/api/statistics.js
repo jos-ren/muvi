@@ -4,6 +4,8 @@ import { countryCodes } from "../../public/countries_data"
 
 // ------ DATA MANIPULATION ------
 
+// need to get total episodes here as well
+
 const getTotalEpisodes = (data) => {
     let accumulator = 0;
     const seasons = data?.details?.seasons;
@@ -33,6 +35,24 @@ const getTotalEpisodes = (data) => {
     }
 
     return accumulator;
+};
+
+// todo
+const getTotalEpisodesAllSeasons = (data) => {
+    let totalEpisodes = 0;
+    const seasons = data?.details?.seasons;
+
+    if (seasons) {
+        // console.log(seasons, "seasons")
+        for (let i = 0; i < seasons.length; i++) {
+            const season = seasons[i];
+
+            if (season.name !== "Specials") {
+                totalEpisodes += season.episode_count;
+            }
+        }
+    }
+    return totalEpisodes;
 };
 
 // Helper function to update media type statistics
@@ -213,7 +233,7 @@ function getRatingRange(rating) {
 
 const setInitialStarCount = (statistics) => {
     for (let i = 0; i < 10; i++) {
-        statistics.star_count.push({title: i + 1, count: 0});
+        statistics.star_count.push({ title: i + 1, count: 0 });
     }
 };
 
@@ -292,6 +312,23 @@ function findFavDecade(data) {
     return maxGroup;
 }
 
+const setTVCompletionPercentage = (statistics) => {
+    console.log(statistics.longest_tv, "longest tv")
+    let accumulator = 0;
+
+    for (let i = 0; i < statistics.longest_tv.length; i++) {
+        if (statistics.longest_tv[i].total_watched_eps === statistics.longest_tv[i].total_eps) {
+            accumulator += 1;
+        }
+    }
+
+    statistics.tv_completed = {
+        percent: Math.round(accumulator / statistics.longest_tv.length * 100),
+        watched: accumulator,
+        total: statistics.longest_tv.length
+    }
+}
+
 export const calculateStatistics = async (data) => {
     // TODO: find which of these stats is useless and remove it
     let statistics = {
@@ -306,6 +343,7 @@ export const calculateStatistics = async (data) => {
         countries: [],
         media_dates: [],
         decades: [],
+        tv_completed: []
     };
 
     let temp_av_rate = [];
@@ -319,6 +357,7 @@ export const calculateStatistics = async (data) => {
             let item = data[i];
             let minutes = 0;
             let total_watched_eps = 0;
+            let total_eps = 0;
 
             if (item.list_type === "seen") {
                 const { media_type, details, is_anime, my_rating, title, key } = item;
@@ -327,13 +366,16 @@ export const calculateStatistics = async (data) => {
                     temp_av_rate.push(my_rating);
                 }
 
+
                 // longest_tv and longest_movie
                 if (media_type === "tv") {
                     if (details.last_episode_to_air !== null && details.last_episode_to_air.runtime !== null) {
                         total_watched_eps = getTotalEpisodes(item);
+                        total_eps = getTotalEpisodesAllSeasons(item);
                         minutes = total_watched_eps * details.last_episode_to_air.runtime;
                     } else if (details.episode_run_time.length > 0) {
                         total_watched_eps = getTotalEpisodes(item);
+                        total_eps = getTotalEpisodesAllSeasons(item);
                         minutes = total_watched_eps * details.episode_run_time[0];
                     } else {
                         console.error('Error finding episode run_time: ', title);
@@ -345,6 +387,7 @@ export const calculateStatistics = async (data) => {
                         image: item.details.poster_path,
                         total_watched_eps: total_watched_eps,
                         my_rating: my_rating,
+                        total_eps: total_eps
                     });
                 } else if (media_type === "movie") {
                     minutes = details.runtime;
@@ -354,6 +397,7 @@ export const calculateStatistics = async (data) => {
                         time: minutes,
                         image: item.details.poster_path,
                         my_rating: my_rating,
+                        total_episodes: 0
                     });
                 }
 
@@ -382,6 +426,7 @@ export const calculateStatistics = async (data) => {
     statistics.media_types.sort((a, b) => b.watchtime - a.watchtime);
     statistics.star_count.sort((a, b) => b.title - a.title);
 
+    setTVCompletionPercentage(statistics);
     // set the scale for countries...
     setCountriesScale(statistics.countries)
     statistics.decades.highest_decade_values = findHighestValue(statistics.decades);

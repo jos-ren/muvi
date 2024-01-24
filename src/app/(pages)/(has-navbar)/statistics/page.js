@@ -8,21 +8,24 @@ import { useGlobalContext } from '@/context/store.js';
 import { formatTime, numDatetoString } from "@/utils/utils";
 import { calculateStatistics } from '@/api/statistics';
 import { refreshMembers, getPrincipalMembers } from "@/api/api"
-import { COLORS } from "@/utils/constants"
+import { COLORS, GAP } from "@/utils/constants"
 
 import Box from "@/components/statistics/Box"
 import Chart from "@/components/statistics/Chart"
 import Widget from "@/components/statistics/Widget"
+import SmallWidget from "@/components/statistics/SmallWidget"
 import List from "@/components/statistics/List"
 import WorldMap from "@/components/statistics/WorldMap"
 import HeatMap from "@/components/statistics/HeatMap"
 import Rating from "@/components/statistics/Rating"
 import Carousel from "@/components/statistics/Carousel"
+import BigNums from "@/components/statistics/BigNums"
 
-import { Button, message, Select, Progress, Popover, Tooltip } from 'antd';
-import { ReloadOutlined, QuestionCircleOutlined, StarTwoTone, DownOutlined, StarFilled, ClockCircleFilled, HourglassFilled, ThunderboltFilled } from '@ant-design/icons'
+import { Button, message, Select, Progress, Popover, Tooltip, Statistic } from 'antd';
+import { ReloadOutlined, LikeOutlined, QuestionCircleOutlined, StarTwoTone, DownOutlined, StarFilled, ClockCircleFilled, HourglassFilled, ThunderboltFilled } from '@ant-design/icons'
 import { FaGlobeAmericas } from "react-icons/fa";
-import { AiFillFire } from "react-icons/ai";
+import { FaBuildingColumns } from 'react-icons/fa6';
+import { FaHeart } from "react-icons/fa6";
 const ApexCharts = dynamic(() => import('react-apexcharts'), { ssr: false });
 
 const Spacer = styled.div`
@@ -74,8 +77,9 @@ const StatisticsPage = () => {
   const [pmID, setPMID] = useState(null)
   const [noPMs, setNoPMs] = useState(false)
   const [messageApi, contextHolder] = message.useMessage();
+  const [hover, setHover] = useState(false);
 
-  // console.log(statistics, "STAT")
+  console.log(statistics, "STAT")
 
   const handleChange = (value) => {
     setDropdown(value)
@@ -194,11 +198,40 @@ const StatisticsPage = () => {
           <HeatMap data={statistics.media_dates}/>
         </Box> */}
 
-
-
         <Spacer />
-        <div style={{ display: "flex", width: "100%" }}>
-          <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
+        <div style={{ display: "flex", width: "100%", gap: GAP }}>
+          <div style={{ display: "flex", flexDirection: "column", width: "100%", gap: GAP }}>
+            <div style={{ display: "flex", width: "100%", gap: "16px" }}>
+              <SmallWidget
+                title={"Completed TV Series"}
+                content={
+                  <div
+                    onMouseEnter={() => setHover(true)}
+                    onMouseLeave={() => setHover(false)}
+                  >
+                    <Progress
+                      type="dashboard"
+                      percent={statistics.tv_completed.percent}
+                      format={percent => hover ? `${statistics.tv_completed.watched}/${statistics.tv_completed.total}` : `${percent}%`}
+                    />
+                  </div>
+                }
+              />
+              <SmallWidget
+                style={{
+                  width: "100%",
+                  border: "1px solid black",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  display: "flex"
+                }}
+                title={"Total Seen"}
+                content={
+                  // <Statistic title="Feedback" value={1128} prefix={<LikeOutlined />} />
+                  <BigNums content={statistics.oldest_media.length} />
+                }
+              />
+            </div>
             <Widget
               title="Unique Countries"
               statistic={statistics.countries.total_unique}
@@ -210,7 +243,6 @@ const StatisticsPage = () => {
                 </div>
               }
             />
-            <div style={{ margin: "8px" }}></div>
             <Widget
               title="Total Watchtime"
               statistic={formatTime(statistics.total_minutes, 'H')}
@@ -280,10 +312,7 @@ const StatisticsPage = () => {
               date={numDatetoString(statistics.oldest_media[statistics.oldest_media.length - 1].release_date)}
             /> */}
           </div>
-
-          <Spacer />
-
-          <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
+          <div style={{ display: "flex", flexDirection: "column", width: "100%", gap: GAP }}>
             <Widget
               title="Average Rating"
               statistic={statistics.average_rating}
@@ -332,11 +361,10 @@ const StatisticsPage = () => {
                 </div>
               }
             />
-            <div style={{ margin: "8px" }}></div>
             <Widget
               title="Favorite Decade"
               statistic={statistics.decades.fav_decade}
-              icon={<AiFillFire style={{ color: 'white' }} />}
+              icon={<FaHeart style={{ color: 'white' }} />}
               color={COLORS.GREEN}
               content={
                 <div style={{ height: "300px", width: '100%', alignItems: "center", justifyContent: "center", display: "flex" }}>
@@ -400,11 +428,11 @@ const StatisticsPage = () => {
 
 
 
-        <h2>Top TV</h2>
+        {/* <h2>Top TV</h2>
         <Carousel items={statistics.longest_tv.slice(0, 10)} media_type={"tv"} />
 
         <h2>Longest Movies</h2>
-        <Carousel items={statistics.longest_movie.slice(0, 10)} media_type={"movie"} />
+        <Carousel items={statistics.longest_movie.slice(0, 10)} media_type={"movie"} /> */}
 
       </div>
     );
