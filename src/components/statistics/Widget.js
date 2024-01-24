@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styled from "styled-components";
 import { BORDERRADIUS, PADDING, MARGIN, BOXSHADOW } from "@/utils/constants"
-import { FaAngleDown , FaAngleUp } from "react-icons/fa";
+import { FaAngleDown, FaAngleUp } from "react-icons/fa";
 
 const Box = styled.div`
     display: flex;
@@ -71,16 +71,13 @@ const Widget = ({ title, statistic, icon, color = '#2389ff', date, content }) =>
             >
                 <div style={{ display: "flex" }}>
                     <div>
-                        <div style={{ display: "flex", alignItems: "center" }}>
-                            <Title>{title}</Title>
-                            <Date>{date}</Date>
-                        </div>
+                        <Title>{title}</Title>
                         <Statistic>{statistic}</Statistic>
                     </div>
                 </div>
 
                 <ColorBox color={color}>
-                    {isHovered ? isClicked ? <FaAngleUp  style={{ color: 'white' }} /> : <FaAngleDown style={{ color: 'white' }} /> : icon}
+                    {isHovered ? isClicked ? <FaAngleUp style={{ color: 'white' }} /> : <FaAngleDown style={{ color: 'white' }} /> : icon}
                 </ColorBox>
             </Label>
 
