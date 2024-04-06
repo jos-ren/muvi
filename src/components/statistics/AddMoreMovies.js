@@ -1,10 +1,22 @@
 import React from 'react';
 import styled from "styled-components";
-import Box from "@/components/statistics/Box"
 import { PiPulseBold } from "react-icons/pi";
+import { BORDERRADIUS, PADDING, MARGIN, BOXSHADOW, COLORS } from "@/utils/constants"
 
-const Text = styled.div`
-    margin:0px;
+const Box = styled.div`
+    display: flex;
+    // flex-direction:column;
+    justify-content: space-between;
+    align-items: center;
+    background: ${COLORS.BLUE};
+    color: ${COLORS.WHITE};
+    padding:${PADDING};
+    // // margin: ${MARGIN} 0px;
+    border-radius:${BORDERRADIUS};
+    // box-shadow: ${BOXSHADOW};
+    // width:100%;
+    box-shadow: 0 20px 27px rgba(0,0,0,.05);
+    width: 100%;
 `;
 
 const AddMoreMovies = ({ heading, text }) => {
