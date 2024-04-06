@@ -20,6 +20,7 @@ import HeatMap from "@/components/statistics/HeatMap"
 import Rating from "@/components/statistics/Rating"
 import Carousel from "@/components/statistics/Carousel"
 import BigNums from "@/components/statistics/BigNums"
+import AddMoreMovies from '@/components/statistics/AddMoreMovies'
 
 import { Button, message, Select, Progress, Popover, Tooltip, Statistic } from 'antd';
 import { ReloadOutlined, LikeOutlined, QuestionCircleOutlined, StarTwoTone, DownOutlined, StarFilled, ClockCircleFilled, HourglassFilled, ThunderboltFilled } from '@ant-design/icons'
@@ -78,20 +79,23 @@ const StatisticsPage = () => {
   const [noPMs, setNoPMs] = useState(false)
   const [messageApi, contextHolder] = message.useMessage();
   const [hover, setHover] = useState(false);
+  const [noItems, setNoItems] = useState(false);
 
   const handleChange = (value) => {
     setDropdown(value)
   };
 
   const fetchInitData = async () => {
+    data.length === 0 ? setNoItems(true) : setNoItems(false);
     if (data !== null && user !== null) {
       // get top actors, etc
       const principalMembers = await getPrincipalMembers(user.uid)
 
-      if (principalMembers.length !== 0) {
+      if (principalMembers !== undefined && principalMembers.length !== 0) {
         setPMID(principalMembers[0].id)
       } else {
-        setNoPMs(true)
+        // will generate the principal members...
+        refreshMembers(data, user.uid, pmID)
       }
       // generate stats on movies
       const newStatistics = await calculateStatistics(data, user.uid);
@@ -106,13 +110,11 @@ const StatisticsPage = () => {
 
   useEffect(() => {
     fetchInitData();
-  }, [data, user]);
+  }, [user, data]);
 
   useEffect(() => {
-    if (statistics !== null && user !== null) {
-      if (statistics.total_minutes !== 0 && statistics.longest_tv && statistics.media_types) {
-        setLoading(false);
-      }
+    if (statistics !== null && Object.keys(statistics).length > 0 && user !== null) {
+      setLoading(false);
     }
   }, [statistics, user]);
 
@@ -124,45 +126,25 @@ const StatisticsPage = () => {
     });
   };
 
+  const placeholder_media_types = [
+    {
+      name: "tv",
+      watchtime: 1
+    },
+    {
+      name: "anime",
+      watchtime: 1
+    },
+    {
+      name: "movie",
+      watchtime: 1
+    }
+  ]
+
   if (loading) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "95vh" }}>
         <h1>Loading...</h1>
-      </div>
-    );
-    // if no items
-  } else if (data.length < 1) {
-    return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "95vh" }}>
-        <h2>Add at Least 1 Item to view Statistics</h2>
-      </div>
-    );
-    // if no principal members
-  } else if (noPMs) {
-    return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "95vh" }}>
-        {contextHolder}
-        <Button
-          type="primary"
-          icon={<ReloadOutlined />}
-          onClick={async () => {
-            onMessage("Refreshing", "loading");
-            try {
-              // Use Promise.all to wait for both refreshMembers and fetchInitData
-              await Promise.all([
-                refreshMembers(data, user.uid, pmID),
-                fetchInitData()
-              ]);
-              onMessage("Refreshed Data", "success");
-            } catch (error) {
-              // Handle errors if needed
-              console.error("Error during data refresh:", error);
-              onMessage("Error during data refresh", "error");
-            }
-          }}
-        >
-          Generate Statistics
-        </Button>
       </div>
     );
   } else {
@@ -173,7 +155,7 @@ const StatisticsPage = () => {
         <div style={{ display: "flex", justifyContent: "space-between", margin: "20px 0px 0px 0px", alignItems: "center" }}>
           <div style={{ display: "flex", alignItems: "center" }}>
             <h2>Statistics</h2>
-            <Popover trigger="click" content={"Generated from all of the items you've Seen"} >
+            <Popover trigger="hover" content={"Generated from all of the items you've Seen"} >
               <QuestionCircleOutlined style={{ fontSize: "13px", color: "grey", margin: "6px 0px 0px 10px" }} />
             </Popover>
           </div>
@@ -192,10 +174,16 @@ const StatisticsPage = () => {
         </div>
 
 
+
         {/* <Box width="auto">
           <HeatMap data={statistics.media_dates}/>
         </Box> */}
-
+        {statistics.oldest_media.length < 5 ? <>
+          <Spacer />
+          <div style={{ display: "flex", width: "100%" }}>
+            <AddMoreMovies />
+          </div>
+        </> : <></>}
         <Spacer />
         <div style={{ display: "flex", width: "100%", gap: GAP }}>
           <div style={{ display: "flex", flexDirection: "column", width: "100%", gap: GAP }}>
@@ -209,7 +197,7 @@ const StatisticsPage = () => {
                   >
                     <Progress
                       type="dashboard"
-                      percent={statistics.tv_completed.percent}
+                      percent={statistics.tv_completed ? statistics.tv_completed.percent : 0}
                       format={percent => hover ? `${statistics.tv_completed.watched}/${statistics.tv_completed.total}` : `${percent}%`}
                     />
                   </div>
@@ -226,36 +214,40 @@ const StatisticsPage = () => {
                 title={"Total Seen"}
                 content={
                   // <Statistic title="Feedback" value={1128} prefix={<LikeOutlined />} />
-                  <BigNums content={statistics.oldest_media.length} />
+                  <BigNums content={statistics.oldest_media ? statistics.oldest_media.length : 0} />
                 }
               />
             </div>
             <Widget
               title="Unique Countries"
-              statistic={statistics.countries.total_unique}
+              statistic={statistics.countries.length !== 0 ? statistics.countries.total_unique : 0}
               icon={<FaGlobeAmericas style={{ color: 'white', fontSize: "16px" }} />}
               color={COLORS.BLUE}
               content={
                 <div style={{ height: "300px", width: '375px', alignItems: "center", justifyContent: "center", display: "flex" }}>
-                  <WorldMap data={statistics.countries} />
+                  <WorldMap data={statistics.countries.length !== 0 ? statistics.countries : [{}]} />
                 </div>
               }
             />
             <Widget
               title="Total Watchtime"
-              statistic={formatTime(statistics.total_minutes, 'H')}
+              statistic={statistics.total_minutes !== 0 ? formatTime(statistics.total_minutes, 'H') : 0 + " Hours"}
               icon={<ClockCircleFilled style={{ color: 'white' }} />}
               color={COLORS.RED}
               content={
                 <div style={{ height: "300px", alignItems: "center", justifyContent: "center", display: "flex" }}>
                   <ApexCharts
-                    series={statistics.media_types.map(item => Math.round(item.watchtime / statistics.total_minutes * 100))}
+                    series={statistics.media_types.length !== 0 ? statistics.media_types.map(item => Math.round(item.watchtime / statistics.total_minutes * 100)) : placeholder_media_types.map((item) => Math.round((item.watchtime / statistics.total_minutes) * 100))}
                     type="radialBar"
                     height={300}
                     width={300}
                     options={{
-                      series: statistics.media_types.map((item) => Math.round((item.watchtime / statistics.total_minutes) * 100)),
-                      labels: statistics.media_types.map((item) => item.name),
+                      series: statistics.media_types.length !== 0 ?
+                        statistics.media_types.map((item) => Math.round((item.watchtime / statistics.total_minutes) * 100)) :
+                        placeholder_media_types.map((item) => Math.round((item.watchtime / statistics.total_minutes) * 100)),
+                      labels: statistics.media_types.length !== 0 ?
+                        statistics.media_types.map((item) => item.name) :
+                        placeholder_media_types.map((item) => item.name),
                       chart: {
                         type: 'radialBar',
                       },
@@ -280,7 +272,7 @@ const StatisticsPage = () => {
                       },
                       legend: {
                         show: true,
-                        position: 'bottom', // You can change the position as needed
+                        position: 'bottom',
                         horizontalAlign: 'center',
                         fontSize: '16px',
                         markers: {
@@ -324,7 +316,7 @@ const StatisticsPage = () => {
                       chart: {
                         type: 'bar',
                         toolbar: {
-                          show: false, // Set this to false to hide the toolbar
+                          show: false,
                         },
                       },
                       plotOptions: {
@@ -339,7 +331,7 @@ const StatisticsPage = () => {
                       xaxis: {
                         categories: statistics.star_count.map((item) => item.title),
                         labels: {
-                          show: true, // Set this to false to hide Y-axis labels
+                          show: true,
                         },
                       },
                       tooltip: {
@@ -361,7 +353,7 @@ const StatisticsPage = () => {
             />
             <Widget
               title="Favorite Decade"
-              statistic={statistics.decades.fav_decade}
+              statistic={statistics.decades.fav_decade ? statistics.decades.fav_decade : "0"}
               icon={<FaHeart style={{ color: 'white' }} />}
               color={COLORS.GREEN}
               content={
