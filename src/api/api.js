@@ -443,3 +443,14 @@ export const deleteUserMedia = async (selected, user) => {
         console.error(err);
     }
 };
+
+// ---
+
+export const hideUpcomingItem = async (userID, mediaID, isHidden) => {
+    try {
+        // set is_hidden to true of the media item
+        await updateDoc(doc(db, 'Users', userID, 'MediaList', mediaID), { is_hidden: isHidden });
+    } catch (err) {
+        console.error(err);
+    }
+}

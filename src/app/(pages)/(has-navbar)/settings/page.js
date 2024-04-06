@@ -1,15 +1,16 @@
 "use client";
 import { useEffect, useState } from 'react';
-import { message, Button } from 'antd';
-import Image from 'next/image'
-import { formatFSTimestamp } from "../../../../utils/utils.js"
+import { message, Button, Popover } from 'antd';
 import { useGlobalContext } from '@/context/store.js';
-import { uploadJSON } from '@/api/api.js'
+import MovieTable from "@/components/MovieTable.js"
+import { poster } from "@/columns.js"
+import { hideUpcomingItem } from "@/api/api.js"
+import { QuestionCircleOutlined } from '@ant-design/icons';
 
 const SettingsPage = () => {
     const [messageApi, contextHolder] = message.useMessage();
     const [loading, setLoading] = useState(true);
-    const { user } = useGlobalContext();
+    const { user, data, setData } = useGlobalContext();
 
     useEffect(() => {
         if (user !== null) {
@@ -17,8 +18,38 @@ const SettingsPage = () => {
         }
     }, [user]);
 
-    // run a function on first login to grab email, name, photourl
-    // lastlogintime might not be needed, it might already be in firestore
+    const onMessage = (content, type) => {
+        // Generate a unique key for each message to force removal of the previous message
+        const key = `${type}-${Date.now()}`;
+        return messageApi[type]({
+            content,
+            key,
+            className: 'message',
+        });
+    };
+
+
+    const title = {
+        title: 'Title',
+        dataIndex: 'title',
+        key: 'title',
+        // ...getColumnSearchProps('title'),
+    }
+
+    const unhide_items = {
+        title: '',
+        render: (data) => {
+            return <div style={{display:"flex", justifyContent:"flex-end", marginRight:"10px"}}>
+                <Button onClick={() => { hideUpcomingItem(user.uid, data.key, false), onMessage('Unhid ' + data.title, 'success') }}>Unhide</Button>
+            </div> 
+        }
+    }
+
+    const hiddenItemsColumns = [
+        poster,
+        title,
+        unhide_items
+    ];
 
     if (loading) {
         return <div>
@@ -29,33 +60,26 @@ const SettingsPage = () => {
     } else {
         return <div>
             {contextHolder}
-
             <h1 style={{ marginTop: "100px" }}>Settings</h1>
-            {user.photoURL ?
-                <Image unoptimized height={150} width={150} quality="100" src={user.photoURL} alt={"profile_pic"} /> :
-                <Image unoptimized height={150} width={150} quality="100" src={"default_avatar.jpg"} alt={"profile_pic"} />
-            }
-            <div style={{ display: "flex" }}>
-                <div>Email: </div>
-                <div>{user.email}</div>
-            </div>
-            <div style={{ display: "flex" }}>
-                <div>Name: </div>
-                <div>{user.displayName}</div>
-            </div>
-            <div style={{ display: "flex" }}>
-                <div>Last Login: </div>
-                <div>{formatFSTimestamp(user.lastLoginTime, 2)}</div>
-            </div>
-            <div style={{ display: "flex" }}>
-                <div>Role: </div>
-                <div>{user.role}</div>
-            </div>
-            <br />
-            <div>Delete Account</div>
-            <div>Export Data</div>
-            <br/>
-            {/* <Button type='primary' onClick={()=>uploadJSON(user.uid)}>Upload Data</Button> */}
+            <MovieTable
+                // showRefresh
+                // onRefresh={handleRefreshClick}
+                pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
+                header={
+                    <div style={{ display: "flex", alignItems: "center" }}>
+                    <div>Hidden Items</div>
+                    <Popover trigger="hover" content={"These are items which you have hidden from your upcoming list."} >
+                        <QuestionCircleOutlined style={{ fontSize: "13px", color: "grey", margin: "6px 0px 0px 10px" }} />
+                    </Popover>
+                </div>
+                }
+                columns={hiddenItemsColumns}
+                // filters data to be at the most a week old and not hidden
+                data={data.filter(item => item.is_hidden === true)}
+                rowSelection={false}
+                size="small"
+            />
+
         </div>
     }
 }

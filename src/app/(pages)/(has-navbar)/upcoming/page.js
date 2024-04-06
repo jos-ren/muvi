@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { message, Input, Button, Space, Popover } from 'antd';
+import { message, Input, Button, Space, Popover, Dropdown } from 'antd';
 import { SearchOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import Highlighter from 'react-highlight-words';
 import MovieTable from "@/components/MovieTable.js"
@@ -8,6 +8,10 @@ import { getDateWeekAgo } from "../../../../utils/utils.js"
 import { poster, type, episode, upcoming_release, genres, status } from "@/columns.js"
 import { getUserMedia, refreshUpdate } from "@/api/api.js"
 import { useGlobalContext } from '@/context/store.js';
+import { HiOutlineDotsVertical } from "react-icons/hi";
+import { IoMdEyeOff } from "react-icons/io";
+import { hideUpcomingItem } from "@/api/api.js"
+import styled from "styled-components";
 
 const UpcomingPage = () => {
     const [messageApi, contextHolder] = message.useMessage();
@@ -110,6 +114,50 @@ const UpcomingPage = () => {
         ...getColumnSearchProps('title'),
     }
 
+    const IconHover = styled.div`
+        cursor: pointer;
+        // border: 1px solid #d9d9d9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+
+    const edit_upcoming = {
+        title: '',
+        render: (data) => {
+            const items = [
+                {
+                    key: '1',
+                    label: (
+                        <div style={{ display: "flex", gap: "4px", alignItems: "center", justifyContent: "center" }}
+                            onClick={() => {
+                                hideUpcomingItem(user.uid, data.key, true),
+                                    onMessage('Hid ' + data.title, 'success')
+                            }}
+                        >
+                            <IoMdEyeOff />
+                            <div>
+                                Hide
+                            </div>
+                        </div>
+                    ),
+                },
+            ];
+
+
+            return <IconHover>
+                <Dropdown
+                    menu={{
+                        items,
+                    }}
+                    placement="bottomLeft"
+                >
+                    <HiOutlineDotsVertical size={16} />
+                </Dropdown>
+            </IconHover>
+        }
+    }
+
     const onMessage = (content, type) => {
         // Generate a unique key for each message to force removal of the previous message
         const key = `${type}-${Date.now()}`;
@@ -153,7 +201,8 @@ const UpcomingPage = () => {
         episode,
         type,
         genres,
-        status
+        status,
+        edit_upcoming
     ];
 
     if (loading) {
@@ -178,7 +227,8 @@ const UpcomingPage = () => {
                     </div>
                 }
                 columns={upcomingColumns}
-                data={data.filter(item => new Date(item.upcoming_release) > getDateWeekAgo())}
+                // filters data to be at the most a week old and not hidden
+                data={data.filter(item => new Date(item.upcoming_release) > getDateWeekAgo() && item.is_hidden !== true)}
                 rowSelection={false}
             />
         </div>

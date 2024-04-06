@@ -7,7 +7,7 @@ const Container = styled.div`
     margin-top:125px;
 `;
 
-const MovieTable = ({ header, onRemove, disableButtons, columns, data, rowSelection, onChange, showRemove = false, showMove = false, showRefresh = false, onRefresh, pagination, moveKeyword, onMove, }) => {
+const MovieTable = ({ header, onRemove, disableButtons, columns, data, rowSelection, onChange, showRemove = false, showMove = false, showRefresh = false, onRefresh, pagination, moveKeyword, onMove, size = "medium" }) => {
     return (
         <Container>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -52,6 +52,7 @@ const MovieTable = ({ header, onRemove, disableButtons, columns, data, rowSelect
                 dataSource={data}
                 pagination={pagination}
                 rowSelection={rowSelection}
+                size={size}
             // tableLayout={"auto"}
             />
         </Container>

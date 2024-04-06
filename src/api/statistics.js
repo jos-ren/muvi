@@ -313,7 +313,6 @@ function findFavDecade(data) {
 }
 
 const setTVCompletionPercentage = (statistics) => {
-    console.log(statistics.longest_tv, "longest tv")
     let accumulator = 0;
 
     for (let i = 0; i < statistics.longest_tv.length; i++) {

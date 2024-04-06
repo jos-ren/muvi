@@ -9,10 +9,11 @@ import { useRouter, usePathname } from 'next/navigation';
 import tmdb from "../../../../public/tmdb.svg";
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme as muiUseTheme } from '@mui/material/styles';
-import { DownOutlined, ArrowRightOutlined, ApartmentOutlined, SettingOutlined } from '@ant-design/icons';
+import { DownOutlined, ArrowRightOutlined, ApartmentOutlined, SettingOutlined, UserOutlined } from '@ant-design/icons';
 import { Dropdown, Button } from 'antd';
 import { useGlobalContext } from '@/context/store.js';
 import { useTheme } from '@/context/ThemeContext';
+import { FaAngleDown } from "react-icons/fa";
 
 export default function ContentRootLayout({ children }) {
   const router = useRouter()
@@ -32,22 +33,25 @@ export default function ContentRootLayout({ children }) {
     router.push('/auth')
   };
 
-  // console.log(pathName)
-
   const items = [
+    {
+      key: '1',
+      label: <div onClick={() => { router.push('/settings') }}>Settings</div>,
+      icon: <SettingOutlined />,
+    },
+    {
+      key: '2',
+      label: <div onClick={() => { router.push('/profile') }}>Profile</div>,
+      icon: <UserOutlined />,
+    },
     // {
-    //   key: '1',
-    //   label: <div onClick={() => { router.push('/settings') }}>Settings</div>,
-    //   icon: <SettingOutlined />,
-    // },
-    // {
-    //   key: '2',
+    //   key: '?',
     //   label: <div onClick={() => { router.push('/admin/dashboard') }}>Admin Dashboard</div>,
     //   icon: <ApartmentOutlined />,
     // },
-    // {
-    //   type: 'divider',
-    // },
+    {
+      type: 'divider',
+    },
     {
       key: '3',
       label: <div onClick={logOut}>Logout</div>,
@@ -77,16 +81,16 @@ export default function ContentRootLayout({ children }) {
           ))}
         </div>
         <div style={{ position: "absolute", right: "15px", display: "flex", alignItems: "center" }}>
-          <Image unoptimized height={30} width={30} quality="100" src={user ? user.photoURL : "default_avatar.jpg"} alt={"profile_pic"} style={{ borderRadius: "50%", marginRight: "10px" }} />
-          <Button onClick={logOut}>Logout</Button>
-          {/* <div style={{ marginRight: "10px" }}>{user ? user.email : ""}</div>
+          {/* <Image unoptimized height={30} width={30} quality="100" src={user ? user.photoURL : "default_avatar.jpg"} alt={"profile_pic"} style={{ borderRadius: "50%", marginRight: "10px" }} />
+          <Button onClick={logOut}>Logout</Button> */}
 
           <Dropdown arrow menu={{ items }} trigger={['click']} placement="bottomRight" overlayClassName="nav-dropdown">
             <div style={{ cursor: "pointer", display: "flex", alignItems: "center" }}>
               <Image unoptimized height={30} width={30} quality="100" src={user ? user.photoURL : "default_avatar.jpg"} alt={"profile_pic"} style={{ borderRadius: "50%", marginRight: "10px" }} />
-              <DownOutlined />
+              {/* <div style={{ marginRight: "10px" }}>{user ? user.displayName : ""}</div> */}
+              <FaAngleDown />
             </div>
-          </Dropdown> */}
+          </Dropdown>
         </div>
       </div>
 
