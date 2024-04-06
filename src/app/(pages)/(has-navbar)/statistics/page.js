@@ -79,8 +79,6 @@ const StatisticsPage = () => {
   const [messageApi, contextHolder] = message.useMessage();
   const [hover, setHover] = useState(false);
 
-  console.log(statistics, "STAT")
-
   const handleChange = (value) => {
     setDropdown(value)
   };
