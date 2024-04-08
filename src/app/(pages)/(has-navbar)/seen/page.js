@@ -324,11 +324,12 @@ const SeenPage = () => {
         setModalData(data)
 
         if (data.media_type !== "movie") {
+            console.log(data.is_anime, data.is_seasonal_anime)
             if (data.is_anime === true && data.is_seasonal_anime === false) {
-                setEpOptions(getEpOptions(data, data.my_season, null, data.is_seasonal_anime));
+                setEpOptions(getEpOptions(data, 1, null, false));
             } else {
                 setSeOptions(getSeOptions(data));
-                setEpOptions(getEpOptions(data, data.my_season, null, data.is_seasonal_anime));
+                setEpOptions(getEpOptions(data, data.my_season, null, true));
             }
         }
         setOpen(true);
@@ -368,7 +369,7 @@ const SeenPage = () => {
         let temp = []
         let num = ""
         // this works because i think the modalIsSeasonalAnime lags behind a bit, it works so i wont question it lol
-        if (modalIsAnime && is_seasonal_value !== true) {
+        if ((modalIsAnime || data.is_anime) && is_seasonal_value !== true) {
             num = data.details.number_of_episodes
         } else {
             if (count) {
