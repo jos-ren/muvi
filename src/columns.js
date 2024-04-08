@@ -1,11 +1,12 @@
 import Image from "next/image";
 // import {getColumnSearchProps} from "./src/app/page"
-import { StarTwoTone } from '@ant-design/icons';
+import { StarTwoTone, StarOutlined } from '@ant-design/icons';
 import { Button, Tag, Tooltip } from 'antd';
 const dayjs = require('dayjs')
 import styled from "styled-components";
 import { genreCodes } from "./data.js"
 import { formatFSTimestamp } from "./utils/utils.js"
+import { PiStarFourFill } from "react-icons/pi";
 
 const Block = styled.div`
   margin-right: 3px;
@@ -30,6 +31,26 @@ export const poster = {
         height={75}
         style={{ objectFit: "cover" }}
     />
+}
+
+export const episode_difference = {
+    title: 'Unwatched Episodes',
+    dataIndex: 'episode_difference',
+    sorter: (a, b) => b.episode_difference - a.episode_difference,
+    render: (episode_difference) => {
+        return episode_difference
+    }
+}
+
+export const latest_episode_date = {
+    title: 'Last Aired',
+    dataIndex: 'latest_episode_date',
+    // defaultSortOrder: 'descend',
+    sorter: (a, b) => new Date(b.latest_episode_date) - new Date(a.latest_episode_date),
+    render: (latest_episode_date) => {
+        const date = new Date(latest_episode_date)
+        return <div>{date.toLocaleDateString('en-US', { dateStyle: "medium", })}</div>
+    }
 }
 
 export const date_added = {
@@ -211,12 +232,34 @@ export const status = {
     }
 }
 
-export const view = {
-    title: 'Details',
-    // dataIndex: 'data.details.vote_average',
-    // sorter: (a, b) => a.data.details.vote_average - b.data.details.vote_average,
+export const my_rating = {
+    title: 'My Rating',
+    dataIndex: 'my_rating',
+    sorter: (a, b) => a.my_rating - b.my_rating,
+    render: (my_rating) => {
+        return <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <div>
+                {my_rating !== 0 ? <StarTwoTone twoToneColor="#fadb14" /> : <StarOutlined />}
+                <> </>
+                {Number.parseFloat(my_rating).toFixed(1)}
+            </div>
+        </div>
+    }
+}
+
+export const currently_airing = {
+    title: '',
     render: (data) => {
-        let link = data.media_type === "movie" ? "https://www.imdb.com/title/" + data.details.imdb_id : "https://www.themoviedb.org/tv/" + data.details.id
-        return <Button type="link" href={link} target="_blank">View</Button>
+        const oneMonthFromNow = new Date();
+        oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+        if (new Date(data.upcoming_release) <= oneMonthFromNow && new Date(data.upcoming_release) >= oneWeekAgo) {
+            return <Tooltip title="Recent Release">
+                <PiStarFourFill />
+            </Tooltip>
+        }
     }
 }

@@ -1,17 +1,39 @@
 import React from 'react';
 import styled from "styled-components";
-import { Table, Button } from 'antd';
+import { Table, Button, Checkbox } from 'antd';
 import { DeleteOutlined, SwapOutlined, ReloadOutlined } from '@ant-design/icons';
 
-const Container = styled.div`
-    margin-top:125px;
-`;
 
-const MovieTable = ({ header, onRemove, disableButtons, columns, data, rowSelection, onChange, showRemove = false, showMove = false, showRefresh = false, onRefresh, pagination, moveKeyword, onMove, size = "medium" }) => {
+const MovieTable = ({
+    header,
+    onRemove,
+    disableButtons,
+    columns,
+    data,
+    rowSelection,
+    onChange,
+    showCurrentlyAiring = false,
+    showRemove = false,
+    showMove = false,
+    showRefresh = false,
+    onRefresh,
+    pagination,
+    moveKeyword,
+    onMove,
+    size = "medium",
+    checkboxOnChange,
+    hasTopMargin = true
+}) => {
     return (
-        <Container>
+        <div style={{ marginTop: hasTopMargin ? "125px" : "40px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <h2>{header}</h2>
+                <div style={{ display: "flex", gap: "20px", alignItems: 'center' }}>
+                    <h2>{header}</h2>
+                    {showCurrentlyAiring ?
+                        <div style={{ marginTop: "3px" }}>
+                            <Checkbox defaultChecked onChange={checkboxOnChange}>Currently Airing</Checkbox>
+                        </div> : null}
+                </div>
                 <div>
                     {showMove ?
                         <Button
@@ -55,7 +77,7 @@ const MovieTable = ({ header, onRemove, disableButtons, columns, data, rowSelect
                 size={size}
             // tableLayout={"auto"}
             />
-        </Container>
+        </div>
     );
 }
 

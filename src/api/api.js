@@ -1,7 +1,7 @@
 import { getDocs, collection, getDoc, setDoc, addDoc, updateDoc, doc, where, query, writeBatch, FieldPath, collectionGroup, documentId, deleteField } from "firebase/firestore"
 import { db, auth } from "@/config/firebase.js"
 import { capitalizeFirstLetter } from "@/utils/utils"
-
+import { getTotalEpisodes } from "@/api/statistics.js"
 
 const options = {
     method: "GET",
@@ -259,10 +259,13 @@ export const moveItemList = async (location, userID, selected) => {
 };
 
 export const refreshUpdate = async (userMedia, user_uid) => {
-    // UPDATE TV
     let numUpdated = 0;
+
+    // UPDATE TV
     // TV shows have a status either "Returning Series" or "Ended" or "Cancelled"
     let returning = userMedia.filter(item => item.details.status === "Returning Series")
+
+    // there could be a future bug related to relying on "Returning Series" status
 
     // if series is returning, check details
     const fetchTVDetails = async (item) => {
@@ -289,8 +292,9 @@ export const refreshUpdate = async (userMedia, user_uid) => {
     await Promise.all(fetchTVDetailsPromises);
 
     // UPDATE MOVIES
-    let movie = userMedia.filter(item => item.title === 'title')
-    // if movie is still unreleased, check if release date changes, status changes, etc
+    // checks for movies that have a release_date greater than 1 month before today
+    let movie = userMedia.filter(item => item.media_type === 'movie' && new Date(item.upcoming_release) > new Date().setMonth(new Date().getMonth() - 1))
+    // check for changes in title, release_date, status
     const fetchMovieDetails = async (item) => {
         // get details
         const d_response = await fetch("https://api.themoviedb.org/3/" + item.media_type + "/" + item.tmdb_id + "?language=en-US", options);
@@ -453,4 +457,40 @@ export const hideUpcomingItem = async (userID, mediaID, isHidden) => {
     } catch (err) {
         console.error(err);
     }
+}
+
+export const getBacklogData = (data) => {
+    let unfinishedShows = []
+    let tvData = data.filter(item => item.media_type === "tv")
+    tvData.forEach(element => {
+        // check if they are hidden
+        if (element.is_hidden === true) return;
+
+        let details = element.details;
+        let my_current_episode;
+        if (element.list_type === "watchlist") {
+            my_current_episode = 1;
+        } else if (element.is_anime === true) {
+            my_current_episode = element.my_episode;
+        } else {
+            my_current_episode = getTotalEpisodes(element);
+        }
+        if (my_current_episode < details.number_of_episodes) {
+            let episode_difference = details.number_of_episodes - my_current_episode;
+            unfinishedShows.push({
+                key: element.key,
+                title: element.title,
+                episode_difference: episode_difference,
+                my_episode: element.my_episode,
+                my_season: element.my_season,
+                date_added_muvi: element.date_added,
+                is_currently_airing: details.next_episode_to_air !== null ? true : false,
+                latest_episode_date: details.next_episode_to_air !== null ?
+                    details.next_episode_to_air.air_date : details.last_episode_to_air.air_date,
+                details: details,
+                list_type: element.list_type
+            })
+        }
+    });
+    return unfinishedShows;
 }
