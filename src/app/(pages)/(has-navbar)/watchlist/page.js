@@ -1,15 +1,16 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { message, Input, Button, Space } from 'antd';
-import { SearchOutlined } from '@ant-design/icons';
+import { message, Input, Button, Space, Dropdown } from 'antd';
+import { SearchOutlined, SwapOutlined, DeleteOutlined } from '@ant-design/icons';
 import Highlighter from 'react-highlight-words';
 import MovieTable from "@/components/MovieTable.js"
 import { poster, date_added, release_date, audience_rating, type, genres, view } from "@/columns.js"
 import { deleteUserMedia, moveItemList, getUserMedia } from "@/api/api.js"
 import { useGlobalContext } from '@/context/store.js';
+import { TbExternalLink } from "react-icons/tb";
+import { HiOutlineDotsHorizontal } from "react-icons/hi";
 
-const SeenPage = () => {
-    const [userMedia, setUserMedia] = useState([]);
+const WatchlistPage = () => {
     const [selected, setSelected] = useState([]);
     const [messageApi, contextHolder] = message.useMessage();
     const [disableButtons, setDisableButtons] = useState(true);
@@ -133,6 +134,83 @@ const SeenPage = () => {
         }
     }, [user]);
 
+        // THIS SHOULD ALWAYS BE THE SAME AS THE ONES IN UPCOMING, SEEN, WATCHLIST (minus hide)
+        const actions = {
+            title: '',
+            render: (data) => {
+                const items = [
+                    {
+                        key: '2',
+                        label: (
+                            <div style={{ display: "flex", gap: "6px", alignItems: "center", justifyContent: "start" }}
+                                onClick={async () => {
+                                    await moveItemList("seen", user.uid, [data.key]);
+                                    const result = await getUserMedia(user.uid);
+                                    setData(result);
+                                    onMessage("Moved " + data.title + " to Seen", "success");
+                                }}>
+                                <SwapOutlined />
+                                <div>
+                                    Move to Seen
+                                </div>
+                            </div>
+                        ),
+                    },
+                    {
+                        type: 'divider',
+                    },
+                    {
+                        key: '3',
+                        label: (
+                            <div style={{ display: "flex", gap: "6px", alignItems: "center", justifyContent: "start" }}
+                                onClick={async () => {
+                                    await deleteUserMedia([data.key], user);
+                                    const result = await getUserMedia(user.uid);
+                                    setData(result);
+                                    onMessage("Deleted " + data.title, "success");
+                                }}>
+                                <DeleteOutlined />
+                                <div>
+                                    Remove
+                                </div>
+                            </div>
+                        ),
+                    },
+                    {
+                        type: 'divider',
+                    },
+                    {
+                        key: '4',
+                        label: (
+                            <div style={{ display: "flex", gap: "6px", alignItems: "center", justifyContent: "start" }}
+                                onClick={() => { window.open(data.media_type === "movie" ? "https://www.imdb.com/title/" + data.details.imdb_id : "https://www.themoviedb.org/tv/" + data.details.id, '_blank') }}>
+                                <TbExternalLink />
+                                <div>
+                                    More Details
+                                </div>
+                            </div>
+                        ),
+                    },
+                ];
+    
+                return <div style={{
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                }}>
+                    <Dropdown
+                        menu={{
+                            items,
+                        }}
+                        placement="bottomLeft"
+                    >
+                        <HiOutlineDotsHorizontal size={16} />
+                    </Dropdown>
+                </div>
+            }
+        }
+
     const watchlistColumns = [
         poster,
         title,
@@ -141,7 +219,7 @@ const SeenPage = () => {
         audience_rating,
         type,
         genres,
-        view
+        actions
     ];
 
     if (loading) {
@@ -178,4 +256,4 @@ const SeenPage = () => {
     }
 };
 
-export default SeenPage;
+export default WatchlistPage;

@@ -6,19 +6,20 @@ import { countryCodes } from "../../public/countries_data"
 
 // need to get total episodes here as well
 
-const getTotalEpisodes = (data) => {
+export const getTotalEpisodes = (data) => {
     let accumulator = 0;
     const seasons = data?.details?.seasons;
     let i;
 
+    
     if (seasons) {
         let incrementI = true;
-
+        
         for (i = 0; i < seasons.length; i++) {
             const season = seasons[i];
-
+            
             if (season.name !== "Specials") {
-                if (i !== data.my_season) {
+                if (i+1 <= data.my_season) {
                     accumulator += season.episode_count;
                 } else {
                     accumulator += data.my_episode;
@@ -27,32 +28,13 @@ const getTotalEpisodes = (data) => {
                 }
             }
         }
-
+        
         if (incrementI) {
             // Increment i for the next iteration if not done in the loop
             i++;
         }
     }
-
     return accumulator;
-};
-
-// todo
-const getTotalEpisodesAllSeasons = (data) => {
-    let totalEpisodes = 0;
-    const seasons = data?.details?.seasons;
-
-    if (seasons) {
-        // console.log(seasons, "seasons")
-        for (let i = 0; i < seasons.length; i++) {
-            const season = seasons[i];
-
-            if (season.name !== "Specials") {
-                totalEpisodes += season.episode_count;
-            }
-        }
-    }
-    return totalEpisodes;
 };
 
 // Helper function to update media type statistics
@@ -370,11 +352,11 @@ export const calculateStatistics = async (data) => {
                 if (media_type === "tv") {
                     if (details.last_episode_to_air !== null && details.last_episode_to_air.runtime !== null) {
                         total_watched_eps = getTotalEpisodes(item);
-                        total_eps = getTotalEpisodesAllSeasons(item);
+                        total_eps = item.details.number_of_episodes;
                         minutes = total_watched_eps * details.last_episode_to_air.runtime;
                     } else if (details.episode_run_time.length > 0) {
                         total_watched_eps = getTotalEpisodes(item);
-                        total_eps = getTotalEpisodesAllSeasons(item);
+                        total_eps = item.details.number_of_episodes;
                         minutes = total_watched_eps * details.episode_run_time[0];
                     } else {
                         console.error('Error finding episode run_time: ', title);

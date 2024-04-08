@@ -181,13 +181,77 @@ body {
   color: var(--text-dark);
 }
 
-.ant-collapse-content-box{
-  padding:0px !important;
+.ant-collapse-content-box {
+  padding: 0px !important;
 }
 
-.flex{
+.flex {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
+}
+
+.centered-modal-buttons .ant-modal-footer {
+  margin-top: 40px;
+  display: flex;
+  justify-content: center;
+}
+
+.progress-container {
+  display: flex;
+  gap: 10px;
+  height: 30px;
+  margin-top: 10px;
+}
+
+.is_seasonal {
+  margin-left: 4px;
+}
+
+.review-container {
+  margin-top: -6px;
+}
+.modal-inputs{
+  width:70px;
+}
+.modal-episode-input{
+  min-width:70px;
+}
+
+@media (max-width: 500px) {
+  .progress-container {
+    flex-direction: column;
+  }
+
+  .review-s {
+    margin-top: 78px;
+  }
+
+  .review-ns {
+    margin-top: 30px;
+  }
+
+  .review-tv {
+    margin-top: 35px;
+  }
+
+  .review-container {
+    margin-top: -6px;
+  }
+
+  .episode-container {
+    margin-top: 8px;
+  }
+
+  .is_seasonal {
+    margin-left: 0px;
+    margin-top: 4px;
+  }
+  .modal-inputs{
+    width:100%;
+  }
+  .modal-episode-input{
+    width:100%;
+  }
 }

@@ -1,25 +1,32 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { message, Input, Button, Space, Popover, Dropdown } from 'antd';
-import { SearchOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { message, Input, Button, Space, Popover, Dropdown, Tooltip } from 'antd';
+import { SearchOutlined, QuestionCircleOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import Highlighter from 'react-highlight-words';
 import MovieTable from "@/components/MovieTable.js"
 import { getDateWeekAgo } from "../../../../utils/utils.js"
-import { poster, type, episode, upcoming_release, genres, status } from "@/columns.js"
+import { poster, type, episode, upcoming_release, genres, status, episode_difference, latest_episode_date } from "@/columns.js"
 import { getUserMedia, refreshUpdate } from "@/api/api.js"
 import { useGlobalContext } from '@/context/store.js';
-import { HiOutlineDotsVertical } from "react-icons/hi";
+import { HiOutlineDotsHorizontal } from "react-icons/hi";
 import { IoMdEyeOff } from "react-icons/io";
-import { hideUpcomingItem } from "@/api/api.js"
+import { hideUpcomingItem, getBacklogData, deleteUserMedia } from "@/api/api.js"
 import styled from "styled-components";
+import { TbExternalLink } from "react-icons/tb";
 
 const UpcomingPage = () => {
     const [messageApi, contextHolder] = message.useMessage();
     const [searchText, setSearchText] = useState('');
     const [searchedColumn, setSearchedColumn] = useState('');
+    const [backlogData, setBacklogData] = useState([]);
     const searchInput = useRef(null);
     const [loading, setLoading] = useState(true);
     const { user, data, setData } = useGlobalContext();
+    const [showCurrentlyAiring, setShowCurrentlyAiring] = useState(true);
+
+    const filteredBacklogData = showCurrentlyAiring
+        ? backlogData.filter(item => item.is_currently_airing)
+        : backlogData;
 
     const handleSearch = (selectedKeys, confirm, dataIndex) => {
         confirm();
@@ -114,27 +121,21 @@ const UpcomingPage = () => {
         ...getColumnSearchProps('title'),
     }
 
-    const IconHover = styled.div`
-        cursor: pointer;
-        // border: 1px solid #d9d9d9;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    `;
-
-    const edit_upcoming = {
+    // THIS SHOULD ALWAYS BE THE SAME AS THE ONES IN UPCOMING, SEEN, WATCHLIST
+    const actions = {
         title: '',
         render: (data) => {
             const items = [
                 {
                     key: '1',
                     label: (
-                        <div style={{ display: "flex", gap: "4px", alignItems: "center", justifyContent: "center" }}
-                            onClick={() => {
-                                hideUpcomingItem(user.uid, data.key, true),
-                                    onMessage('Hid ' + data.title, 'success')
-                            }}
-                        >
+                        <div style={{ display: "flex", gap: "6px", alignItems: "center", justifyContent: "start" }}
+                            onClick={async () => {
+                                await hideUpcomingItem(user.uid, data.key, true);
+                                const result = await getUserMedia(user.uid);
+                                setData(result);
+                                onMessage('Hid ' + data.title, 'success');
+                            }}>
                             <IoMdEyeOff />
                             <div>
                                 Hide
@@ -142,19 +143,59 @@ const UpcomingPage = () => {
                         </div>
                     ),
                 },
+                {
+                    type: 'divider',
+                },
+                {
+                    key: '2',
+                    label: (
+                        <div style={{ display: "flex", gap: "6px", alignItems: "center", justifyContent: "start" }}
+                            onClick={async () => {
+                                await deleteUserMedia([data.key], user);
+                                const result = await getUserMedia(user.uid);
+                                setData(result);
+                                onMessage("Deleted " + data.title, "success");
+                            }}>
+                            <DeleteOutlined />
+                            <div>
+                                {/* Remove from {data.list_type === "seen" ? "Seen" : "Watchlist"} */}
+                                Remove
+                            </div>
+                        </div>
+                    ),
+                },
+                {
+                    type: 'divider',
+                },
+                {
+                    key: '3',
+                    label: (
+                        <div style={{ display: "flex", gap: "6px", alignItems: "center", justifyContent: "start" }}
+                            onClick={() => { window.open(data.media_type === "movie" ? "https://www.imdb.com/title/" + data.details.imdb_id : "https://www.themoviedb.org/tv/" + data.details.id, '_blank') }}>
+                            <TbExternalLink />
+                            <div>
+                                More Details
+                            </div>
+                        </div>
+                    ),
+                },
             ];
 
-
-            return <IconHover>
+            return <div style={{
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+            }}            >
                 <Dropdown
                     menu={{
                         items,
                     }}
                     placement="bottomLeft"
                 >
-                    <HiOutlineDotsVertical size={16} />
+                    <HiOutlineDotsHorizontal size={16} />
                 </Dropdown>
-            </IconHover>
+            </div>
         }
     }
 
@@ -190,9 +231,21 @@ const UpcomingPage = () => {
 
     useEffect(() => {
         if (user !== null) {
-            setLoading(false);
+            if (data.length > 0) {
+                const res = getBacklogData(data);
+                setBacklogData(res);
+                setLoading(false);
+            }
+
+            // If there is no data, set loading to false after 2 seconds
+            if (data.length === 0) {
+                setTimeout(() => {
+                    setLoading(false);
+                }, 2000);
+            }
         }
-    }, [user]);
+    }, [user, data]);
+
 
     const upcomingColumns = [
         upcoming_release,
@@ -202,7 +255,17 @@ const UpcomingPage = () => {
         type,
         genres,
         status,
-        edit_upcoming
+        actions
+    ];
+
+    // in the new table
+    // add these columns:  my current episode,
+    const backlogColumns = [
+        latest_episode_date,
+        poster,
+        title,
+        episode_difference,
+        actions
     ];
 
     if (loading) {
@@ -220,8 +283,8 @@ const UpcomingPage = () => {
                 pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
                 header={
                     <div style={{ display: "flex", alignItems: "center" }}>
-                        <div>Your Upcoming Shows</div>
-                        <Popover trigger="click" content={"Generated from items you have added to your Seen & Watchlists. Displays items which are coming out soon."} >
+                        <div>Your Upcoming</div>
+                        <Popover trigger="hover" content={"Generated from items you have added to your Seen & Watchlists. Displays items which are coming out soon."} >
                             <QuestionCircleOutlined style={{ fontSize: "13px", color: "grey", margin: "6px 0px 0px 10px" }} />
                         </Popover>
                     </div>
@@ -230,6 +293,21 @@ const UpcomingPage = () => {
                 // filters data to be at the most a week old and not hidden
                 data={data.filter(item => new Date(item.upcoming_release) > getDateWeekAgo() && item.is_hidden !== true)}
                 rowSelection={false}
+            />
+            <MovieTable
+                // showRefresh
+                // onRefresh={handleRefreshClick}
+                pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
+                header={
+                    <div style={{ display: "flex", alignItems: "center" }}>
+                        <div>Episode Backlog</div>
+                    </div>
+                }
+                columns={backlogColumns}
+                data={filteredBacklogData}
+                showCurrentlyAiring={true}
+                checkboxOnChange={(e) => setShowCurrentlyAiring(e.target.checked)}
+                hasTopMargin={false}
             />
         </div>
     };

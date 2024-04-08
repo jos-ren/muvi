@@ -6,6 +6,7 @@ import MovieTable from "@/components/MovieTable.js"
 import { poster } from "@/columns.js"
 import { hideUpcomingItem } from "@/api/api.js"
 import { QuestionCircleOutlined } from '@ant-design/icons';
+import { getUserMedia } from "@/api/api.js"
 
 const SettingsPage = () => {
     const [messageApi, contextHolder] = message.useMessage();
@@ -39,9 +40,14 @@ const SettingsPage = () => {
     const unhide_items = {
         title: '',
         render: (data) => {
-            return <div style={{display:"flex", justifyContent:"flex-end", marginRight:"10px"}}>
-                <Button onClick={() => { hideUpcomingItem(user.uid, data.key, false), onMessage('Unhid ' + data.title, 'success') }}>Unhide</Button>
-            </div> 
+            return <div style={{ display: "flex", justifyContent: "flex-end", marginRight: "10px" }}>
+                <Button onClick={async () => {
+                    await hideUpcomingItem(user.uid, data.key, false);
+                    const result = await getUserMedia(user.uid);
+                    setData(result);
+                    onMessage('Unhid ' + data.title, 'success');
+                }}>Unhide</Button>
+            </div>
         }
     }
 
@@ -64,14 +70,15 @@ const SettingsPage = () => {
             <MovieTable
                 // showRefresh
                 // onRefresh={handleRefreshClick}
+                hasTopMargin={false}
                 pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
                 header={
                     <div style={{ display: "flex", alignItems: "center" }}>
-                    <div>Hidden Items</div>
-                    <Popover trigger="hover" content={"These are items which you have hidden from your upcoming list."} >
-                        <QuestionCircleOutlined style={{ fontSize: "13px", color: "grey", margin: "6px 0px 0px 10px" }} />
-                    </Popover>
-                </div>
+                        <div>Hidden Items</div>
+                        <Popover trigger="hover" content={"These are items which you have hidden from your Upcoming page."} >
+                            <QuestionCircleOutlined style={{ fontSize: "13px", color: "grey", margin: "6px 0px 0px 10px" }} />
+                        </Popover>
+                    </div>
                 }
                 columns={hiddenItemsColumns}
                 // filters data to be at the most a week old and not hidden
