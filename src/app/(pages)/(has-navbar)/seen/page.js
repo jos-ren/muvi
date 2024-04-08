@@ -324,7 +324,6 @@ const SeenPage = () => {
         setModalData(data)
 
         if (data.media_type !== "movie") {
-            console.log(data.is_anime, data.is_seasonal_anime)
             if (data.is_anime === true && data.is_seasonal_anime === false) {
                 setEpOptions(getEpOptions(data, 1, null, false));
             } else {
