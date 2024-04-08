@@ -151,7 +151,6 @@ const UpcomingPage = () => {
                     label: (
                         <div style={{ display: "flex", gap: "6px", alignItems: "center", justifyContent: "start" }}
                             onClick={async () => {
-                                console.log([data.key], user)
                                 await deleteUserMedia([data.key], user);
                                 const result = await getUserMedia(user.uid);
                                 setData(result);
@@ -236,6 +235,13 @@ const UpcomingPage = () => {
                 const res = getBacklogData(data);
                 setBacklogData(res);
                 setLoading(false);
+            }
+
+            // If there is no data, set loading to false after 2 seconds
+            if (data.length === 0) {
+                setTimeout(() => {
+                    setLoading(false);
+                }, 2000);
             }
         }
     }, [user, data]);
