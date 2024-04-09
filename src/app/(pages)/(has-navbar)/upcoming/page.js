@@ -295,8 +295,6 @@ const UpcomingPage = () => {
                 rowSelection={false}
             />
             <MovieTable
-                // showRefresh
-                // onRefresh={handleRefreshClick}
                 pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
                 header={
                     <div style={{ display: "flex", alignItems: "center" }}>

@@ -1,7 +1,7 @@
 import { getDocs, collection, getDoc, setDoc, addDoc, updateDoc, doc, where, query, writeBatch, FieldPath, collectionGroup, documentId, deleteField } from "firebase/firestore"
 import { db, auth } from "@/config/firebase.js"
 import { capitalizeFirstLetter } from "@/utils/utils"
-import { getTotalEpisodes } from "@/api/statistics.js"
+import { getTotalEpisodes, getAllTotalEpisodes } from "@/api/statistics.js"
 
 const options = {
     method: "GET",
@@ -459,6 +459,7 @@ export const hideUpcomingItem = async (userID, mediaID, isHidden) => {
     }
 }
 
+// TODO: fix bug here!!!
 export const getBacklogData = (data) => {
     let unfinishedShows = []
     let tvData = data.filter(item => item.media_type === "tv")
@@ -468,15 +469,36 @@ export const getBacklogData = (data) => {
 
         let details = element.details;
         let my_current_episode;
+        let most_recent_episode = details.number_of_episodes;
+
+        if (element.details.next_episode_to_air !== null && new Date(element.details.next_episode_to_air.air_date) > new Date()) {
+            // if more than one season, add the previous seasons to it
+            if (element.details.number_of_seasons > 1 && element.title !== "One Piece") {
+                most_recent_episode = getAllTotalEpisodes(element)
+            } else {
+                if (element.details.last_episode_to_air !== null) {
+                    most_recent_episode = element.details.last_episode_to_air.episode_number;
+                } else {
+                    most_recent_episode = element.details.next_episode_to_air.episode_number-1;
+                }
+                console.log(element.title, element, most_recent_episode, my_current_episode)
+            }
+        }
+
         if (element.list_type === "watchlist") {
-            my_current_episode = 1;
-        } else if (element.is_anime === true) {
+            my_current_episode = 0;
+        } else if (element.is_anime === true && element.is_seasonal_anime === false) {
             my_current_episode = element.my_episode;
         } else {
             my_current_episode = getTotalEpisodes(element);
         }
-        if (my_current_episode < details.number_of_episodes) {
-            let episode_difference = details.number_of_episodes - my_current_episode;
+
+        if (element.title === "Spice and Wolf: MERCHANT MEETS THE WISE WOLF") {
+            console.log(my_current_episode, most_recent_episode, element)
+        }
+
+        if (my_current_episode < most_recent_episode) {
+            let episode_difference = most_recent_episode - my_current_episode;
             unfinishedShows.push({
                 key: element.key,
                 title: element.title,
@@ -486,7 +508,8 @@ export const getBacklogData = (data) => {
                 date_added_muvi: element.date_added,
                 is_currently_airing: details.next_episode_to_air !== null ? true : false,
                 latest_episode_date: details.next_episode_to_air !== null ?
-                    details.next_episode_to_air.air_date : details.last_episode_to_air.air_date,
+                    details.next_episode_to_air.air_date : (details.last_episode_to_air !== null ?
+                        details.last_episode_to_air.air_date : null),
                 details: details,
                 list_type: element.list_type
             })

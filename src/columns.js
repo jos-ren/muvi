@@ -167,13 +167,26 @@ export const episode = {
         return <>
             {
                 data.media_type === "movie" ? "" :
-                    <div style={{ display: "flex" }}>
-                        {!data.is_anime ? <Block style={{ padding: "0px 5px", fontSize: "9pt" }}>S : {season}</Block> : <></>}
-                        {episode > 999 ?
-                            <Block style={{ padding: "0px 5px", fontSize: "9pt", minWidth: "44px" }}>E : {episode}</Block> :
-                            <Block style={{ padding: "0px 5px", fontSize: "9pt" }}>E : {episode}</Block>
-                        }
-                        <div style={{ marginLeft: "2px" }}>{text.slice(0, 7) === "Episode" ? "" : text}</div>
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <div style={{ display: "flex" }}>
+                            {!data.is_anime || (data.is_seasonal_anime && data.is_anime) ?
+                                <Block style={{
+                                    padding: "0px 5px",
+                                    fontSize: "9pt",
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                }}>S : {season}</Block> :
+                                <></>}
+                            <Block style={{
+                                padding: "0px 5px",
+                                fontSize: "9pt",
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                            }}>E : {episode}</Block>
+                            <div style={{ marginLeft: "2px" }}>{text.slice(0, 7) === "Episode" ? "" : text}</div>
+                        </div>
                     </div>
             }
         </>
