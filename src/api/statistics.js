@@ -11,15 +11,15 @@ export const getTotalEpisodes = (data) => {
     const seasons = data?.details?.seasons;
     let i;
 
-    
+
     if (seasons) {
         let incrementI = true;
-        
+
         for (i = 0; i < seasons.length; i++) {
             const season = seasons[i];
-            
+
             if (season.name !== "Specials") {
-                if (i+1 <= data.my_season) {
+                if (i + 1 <= data.my_season) {
                     accumulator += season.episode_count;
                 } else {
                     accumulator += data.my_episode;
@@ -28,7 +28,32 @@ export const getTotalEpisodes = (data) => {
                 }
             }
         }
-        
+
+        if (incrementI) {
+            // Increment i for the next iteration if not done in the loop
+            i++;
+        }
+    }
+    return accumulator;
+};
+
+// for getting all total episodes for a show. doesn't stop where you left off
+export const getAllTotalEpisodes = (data) => {
+    let accumulator = 0;
+    const seasons = data?.details?.seasons;
+    let i;
+
+    if (seasons) {
+        let incrementI = true;
+
+        for (i = 0; i < seasons.length; i++) {
+            const season = seasons[i];
+
+            if (season.name !== "Specials") {
+                accumulator += season.episode_count;
+            }
+        }
+
         if (incrementI) {
             // Increment i for the next iteration if not done in the loop
             i++;
