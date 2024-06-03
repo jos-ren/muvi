@@ -6,14 +6,17 @@ import { countryCodes } from "../../public/countries_data"
 
 // need to get total episodes here as well
 
-export const getTotalEpisodes = (data) => {
+export const getMyTotalEpisodes = (data) => {
     let accumulator = 0;
     const seasons = data?.details?.seasons;
     let i;
 
-
     if (seasons) {
         let incrementI = true;
+
+        if (seasons.length === 1) {
+            return data.my_episode
+        }
 
         for (i = 0; i < seasons.length; i++) {
             const season = seasons[i];
@@ -51,6 +54,48 @@ export const getAllTotalEpisodes = (data) => {
 
             if (season.name !== "Specials") {
                 accumulator += season.episode_count;
+            }
+        }
+
+        if (incrementI) {
+            // Increment i for the next iteration if not done in the loop
+            i++;
+        }
+    }
+    return accumulator;
+};
+
+// for getting all total episodes for a show. doesn't take into account yet to be released episodes
+export const getAllCurrentTotalEpisodes = (data) => {
+    let accumulator = 0;
+    const seasons = data?.details?.seasons;
+    let i;
+
+    if (data.is_anime && !data.is_seasonal_anime) {
+        return data.details.next_episode_to_air.episode_number
+    }
+
+    if (seasons) {
+        let incrementI = true;
+
+        for (i = 0; i < seasons.length; i++) {
+            const season = seasons[i];
+            if (season.name !== "Specials") {
+                //if not the last season in the array
+                if (i + 1 !== seasons.length) {
+                    accumulator += season.episode_count;
+                } else {
+                    //check the current date and see whether the next episode is in the future or not
+                    const today = new Date();
+                    const next_episode_date = new Date(data.details.next_episode_to_air.air_date);
+                    if (today < next_episode_date) {
+                        accumulator += data.details.last_episode_to_air.episode_number;
+                    } else {
+                        accumulator += data.details.next_episode_to_air.episode_number;
+                    }
+                    incrementI = false; // Don't increment i for the next iteration
+                    break; // Break the loop once it reaches the last season
+                }
             }
         }
 
@@ -100,10 +145,12 @@ const updateGenreStatistics = (statistics, details, minutes) => {
                     name: genre.name,
                     emoji: emoji,
                     watchtime: minutes,
+                    count: 1
                 });
             } else {
                 // Genre found, update watchtime
                 statistics.genres[genreIndex].watchtime += minutes;
+                statistics.genres[genreIndex].count += 1;
             }
         });
     }
@@ -376,11 +423,11 @@ export const calculateStatistics = async (data) => {
                 // longest_tv and longest_movie
                 if (media_type === "tv") {
                     if (details.last_episode_to_air !== null && details.last_episode_to_air.runtime !== null) {
-                        total_watched_eps = getTotalEpisodes(item);
+                        total_watched_eps = getMyTotalEpisodes(item);
                         total_eps = item.details.number_of_episodes;
                         minutes = total_watched_eps * details.last_episode_to_air.runtime;
                     } else if (details.episode_run_time.length > 0) {
-                        total_watched_eps = getTotalEpisodes(item);
+                        total_watched_eps = getMyTotalEpisodes(item);
                         total_eps = item.details.number_of_episodes;
                         minutes = total_watched_eps * details.episode_run_time[0];
                     } else {
@@ -431,6 +478,7 @@ export const calculateStatistics = async (data) => {
     statistics.oldest_media.sort((a, b) => new Date(b.release_date) - new Date(a.release_date));
     statistics.media_types.sort((a, b) => b.watchtime - a.watchtime);
     statistics.star_count.sort((a, b) => b.title - a.title);
+    statistics.genres.sort((a, b) => b.count - a.count);
 
     setTVCompletionPercentage(statistics);
     // set the scale for countries...
