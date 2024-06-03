@@ -76,6 +76,7 @@ export default function Home() {
 
   const handleUserMedia = async (o, list_type, user) => {
     const { message, type } = await createUserMedia(o, list_type, user.uid);
+    console.log(message, "msg")
     // need to set data here after it is finished creating
     const result = await getUserMedia(user.uid)
     setData(result)

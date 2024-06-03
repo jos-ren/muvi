@@ -1,7 +1,7 @@
 import { getDocs, collection, getDoc, setDoc, addDoc, updateDoc, doc, where, query, writeBatch, FieldPath, collectionGroup, documentId, deleteField } from "firebase/firestore"
 import { db, auth } from "@/config/firebase.js"
 import { capitalizeFirstLetter } from "@/utils/utils"
-import { getTotalEpisodes, getAllTotalEpisodes } from "@/api/statistics.js"
+import { getMyTotalEpisodes, getAllCurrentTotalEpisodes } from "@/api/statistics.js"
 
 const options = {
     method: "GET",
@@ -25,11 +25,21 @@ export const createUserMedia = async (o, list_type, user_uid) => {
 
     // If already added to user's list return a warning
     if (!notAdded) {
-        return { message: "Already Added", type: "warning" }
+        if (querySnapshot.docs.length > 0) {
+            const docData = querySnapshot.docs[0].data();
+            if(docData.list_type === list_type) {
+                return { message: "Already Added", type: "warning" }
+            } else {
+                // if they want to switch list type
+                const dataToUpdate = { list_type: list_type, last_edited: new Date() };
+                await updateDoc(doc(subCollectionRef, querySnapshot.docs[0].id), dataToUpdate);
+                return { message: "Moved to " + capitalizeFirstLetter(list_type), type: "success" };
+            }
+        }
     }
 
-    try {
 
+    try {
         // --- ORGANIZING DATA ---
         let title = o.media_type === "movie" ? o.title : o.name;
         let release_date = o.media_type === "movie" ? o.release_date : o.first_air_date;
@@ -471,30 +481,33 @@ export const getBacklogData = (data) => {
         let my_current_episode;
         let most_recent_episode = details.number_of_episodes;
 
-        if (element.details.next_episode_to_air !== null && new Date(element.details.next_episode_to_air.air_date) >= new Date()) {
-            // if more than one season, add the previous seasons to it
-            if (element.details.number_of_seasons > 1) {
-                most_recent_episode = getAllTotalEpisodes(element)
-            } else {
-                if (element.details.last_episode_to_air !== null) {
-                    most_recent_episode = element.details.last_episode_to_air.episode_number;
-                } else {
-                    most_recent_episode = element.details.next_episode_to_air.episode_number - 1;
-                }
-            }
-        }
+        let dateSevenDaysAgo = new Date();
+        dateSevenDaysAgo.setDate(dateSevenDaysAgo.getDate() - 7);
 
         if (element.list_type === "watchlist") {
             my_current_episode = 0;
         } else if (element.is_anime === true && element.is_seasonal_anime === false) {
             my_current_episode = element.my_episode;
         } else {
-            my_current_episode = getTotalEpisodes(element);
+            my_current_episode = getMyTotalEpisodes(element);
         }
 
-        if(element.title === "One Piece") {
-            most_recent_episode = element.details.next_episode_to_air.episode_number;
+        // if the show is currently airing
+        if (element.details.next_episode_to_air !== null && new Date(element.details.next_episode_to_air.air_date) >= dateSevenDaysAgo) {
+            most_recent_episode = getAllCurrentTotalEpisodes(element)
+            // console.log(my_current_episode, most_recent_episode, element.title, element)
         }
+
+        // if (element.title === "One Piece") {
+        //     most_recent_episode = element.details.next_episode_to_air.episode_number;
+        // }
+
+        // if (element.title === "Demon Slayer: Kimetsu no Yaiba" || element.title === "That Time I Got Reincarnated as a Slime" || element.title === "One Piece") {
+        //     console.log(my_current_episode, most_recent_episode, element)
+        // }
+
+
+        //one piece, demon slayer, konosuba
 
         if (my_current_episode < most_recent_episode) {
             let episode_difference = most_recent_episode - my_current_episode;

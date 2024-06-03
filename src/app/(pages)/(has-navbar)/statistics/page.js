@@ -21,6 +21,7 @@ import Rating from "@/components/statistics/Rating"
 import Carousel from "@/components/statistics/Carousel"
 import BigNums from "@/components/statistics/BigNums"
 import AddMoreMovies from '@/components/statistics/AddMoreMovies'
+import Favorites from '@/components/statistics/Favorites'
 
 import { Button, message, Select, Progress, Popover, Tooltip, Statistic } from 'antd';
 import { ReloadOutlined, LikeOutlined, QuestionCircleOutlined, StarTwoTone, DownOutlined, StarFilled, ClockCircleFilled, HourglassFilled, ThunderboltFilled } from '@ant-design/icons'
@@ -184,6 +185,10 @@ const StatisticsPage = () => {
             <AddMoreMovies />
           </div>
         </> : <></>}
+        <Spacer />
+        <div style={{ display: "flex", width: "100%", gap: GAP }}>
+          <Favorites title={"Most Watched"} data={statistics}></Favorites>
+        </div>
         <Spacer />
         <div style={{ display: "flex", width: "100%", gap: GAP }}>
           <div style={{ display: "flex", flexDirection: "column", width: "100%", gap: GAP }}>
