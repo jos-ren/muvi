@@ -151,7 +151,7 @@ const UpcomingPage = () => {
                     label: (
                         <div style={{ display: "flex", gap: "6px", alignItems: "center", justifyContent: "start" }}
                             onClick={async () => {
-                                await deleteUserMedia([data.key], user);
+                                await deleteUserMedia([data.key], user, data);
                                 const result = await getUserMedia(user.uid);
                                 setData(result);
                                 onMessage("Deleted " + data.title, "success");
