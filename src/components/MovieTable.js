@@ -35,7 +35,7 @@ const MovieTable = ({
                         </div> : null}
                 </div>
                 <div>
-                    {showMove ?
+                    {/* {showMove ?
                         <Button
                             style={{ marginRight: "10px" }}
                             type="primary"
@@ -44,8 +44,8 @@ const MovieTable = ({
                             icon={<SwapOutlined />}
                         >
                             Move to {moveKeyword}
-                        </Button> : null}
-                    {showRemove ?
+                        </Button> : null} */}
+                    {/* {showRemove ?
                         <Button
                             type="primary"
                             danger
@@ -54,7 +54,7 @@ const MovieTable = ({
                             icon={<DeleteOutlined />}
                         >
                             Remove
-                        </Button> : null}
+                        </Button> : null} */}
                     {showRefresh ?
                         <Button
                             type="primary"
@@ -73,7 +73,7 @@ const MovieTable = ({
                 columns={columns}
                 dataSource={data}
                 pagination={pagination}
-                rowSelection={rowSelection}
+                // rowSelection={rowSelection}
                 size={size}
             // tableLayout={"auto"}
             />

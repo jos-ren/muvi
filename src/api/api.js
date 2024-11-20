@@ -1,4 +1,4 @@
-import { getDocs, collection, getDoc, setDoc, addDoc, updateDoc, doc, where, query, writeBatch, FieldPath, collectionGroup, documentId, deleteField } from "firebase/firestore"
+import { getDocs, collection, getDoc, setDoc, addDoc, updateDoc, doc, where, query, writeBatch, deleteDoc, FieldPath, collectionGroup, documentId, deleteField, increment } from "firebase/firestore"
 import { db, auth } from "@/config/firebase.js"
 import { capitalizeFirstLetter } from "@/utils/utils"
 import { getMyTotalEpisodes, getAllCurrentTotalEpisodes } from "@/api/statistics.js"
@@ -27,12 +27,20 @@ export const createUserMedia = async (o, list_type, user_uid) => {
     if (!notAdded) {
         if (querySnapshot.docs.length > 0) {
             const docData = querySnapshot.docs[0].data();
-            if(docData.list_type === list_type) {
+            if (docData.list_type === list_type) {
                 return { message: "Already Added", type: "warning" }
             } else {
                 // if they want to switch list type
                 const dataToUpdate = { list_type: list_type, last_edited: new Date() };
                 await updateDoc(doc(subCollectionRef, querySnapshot.docs[0].id), dataToUpdate);
+                // update watch history
+                if (list_type === "seen") {
+                    if (o.media_type === "movie") {
+                        watchHistory(user_uid, o.media_type, o.id, o.name, null, null, null, null, null);
+                    } else {
+                        watchHistory(user_uid, o.media_type, o.id, o.name, 1, 1, 1, 1, null);
+                    }
+                }
                 return { message: "Moved to " + capitalizeFirstLetter(list_type), type: "success" };
             }
         }
@@ -79,6 +87,15 @@ export const createUserMedia = async (o, list_type, user_uid) => {
             details: details,
         };
 
+        // update watch history
+        if (list_type === "seen") {
+            if (obj.media_type === "movie") {
+                watchHistory(user_uid, o.media_type, o.id, title, null, null, null, null, details);
+            } else {
+                watchHistory(user_uid, o.media_type, o.id, title, 1, 1, 1, 1, details);
+            }
+        }
+
         // Add the main document to the 'MediaList' subcollection
         const mediaDocRef = await addDoc(subCollectionRef, obj);
 
@@ -86,7 +103,6 @@ export const createUserMedia = async (o, list_type, user_uid) => {
         const creditsSubcollectionRef = collection(mediaDocRef, 'Credits');
         await addDoc(creditsSubcollectionRef, creditsObj);
 
-        // console.log("added: ", o.title)
         return { message: "Added " + title + " to " + capitalizeFirstLetter(list_type), type: "success" };
     } catch (err) {
         console.error(err)
@@ -241,8 +257,39 @@ export const updateUser = async (user, update_type) => {
 }
 
 // to change rating, progress, etc
-export const updateUserMedia = async (mediaID, userID, updatedData) => {
+export const updateUserMedia = async (mediaID, userID, updatedData, mediaData = null) => {
     try {
+        // update watch history
+        if (mediaData !== null) {
+            if (mediaData.media_type !== "movie") {
+                let endSeason = updatedData.my_season ? updatedData.my_season : mediaData.my_season;
+                let endEpisode = updatedData.my_episode ? updatedData.my_episode : mediaData.my_episode;
+                let startSeason = mediaData.my_season;
+                let startEpisode = mediaData.my_episode;
+
+                // grab the date from lastupdated date YYYY-MM-DD
+                const timestamp = new Date(mediaData.last_edited.seconds * 1000 + mediaData.last_edited.nanoseconds / 1000000);
+                const formattedDate = `${timestamp.getFullYear()}-${String(timestamp.getMonth() + 1).padStart(2, '0')}-${String(timestamp.getDate()).padStart(2, '0')}`; // Format the date as YYYY-MM-DD
+                // grab the stats from firebase
+                const docRef = doc(db, 'Users', userID, 'WatchHistory', `${formattedDate}_${mediaData.tmdb_id}`);
+
+                getDoc(docRef).then(docSnapshot => {
+                    if (docSnapshot.exists()) {
+                        const data = docSnapshot.data();
+                        startSeason = data.startSeason;
+                        startEpisode = data.startEpisode;
+                    } else {
+                        startSeason = mediaData.my_season;
+                        startEpisode = mediaData.my_episode;
+                    }
+
+                    // Call watchHistory after processing the data
+                    watchHistory(userID, mediaData.media_type, mediaData.tmdb_id, mediaData.title, startSeason, endSeason, startEpisode, endEpisode, mediaData.details);
+                }).catch(error => {
+                    console.error("Error accessing document: ", error);
+                });
+            }
+        }
         await updateDoc(doc(db, 'Users', userID, 'MediaList', mediaID), updatedData)
     } catch (err) {
         console.error(err);
@@ -250,7 +297,7 @@ export const updateUserMedia = async (mediaID, userID, updatedData) => {
 }
 
 // to change list type
-export const moveItemList = async (location, userID, selected) => {
+export const moveItemList = async (location, userID, selected, data = null) => {
     const updatedData = {
         list_type: location,
         last_edited: new Date()
@@ -258,6 +305,16 @@ export const moveItemList = async (location, userID, selected) => {
     const batch = writeBatch(db);
 
     for (const docId of selected) {
+        // update watch history
+        if (location === "seen") {
+            if (data.media_type === "movie") {
+                watchHistory(userID, data.media_type, data.tmdb_id, data.title, null, null, null, null, null);
+            } else {
+                watchHistory(userID, data.media_type, data.tmdb_id, data.title, 1, 1, 1, 1, null);
+            }
+        } else if (location === "watchlist") {
+            deleteWatchHistory(userID, data.tmdb_id);
+        }
         const docRef = doc(db, 'Users', userID, 'MediaList', docId);
         batch.update(docRef, updatedData);
     }
@@ -444,10 +501,12 @@ export const updatePrincipalMembers = async (pmID, user_uid, updatedData) => {
 
 // ----- DELETE -----
 
-export const deleteUserMedia = async (selected, user) => {
+export const deleteUserMedia = async (selected, user, data = null) => {
     const batch = writeBatch(db);
 
     for (const docId of selected) {
+        // delete watch history
+        deleteWatchHistory(user.uid, data.tmdb_id);
         const docRef = doc(db, 'Users', user.uid, 'MediaList', docId);
         batch.delete(docRef);
     }
@@ -495,19 +554,7 @@ export const getBacklogData = (data) => {
         // if the show is currently airing
         if (element.details.next_episode_to_air !== null && new Date(element.details.next_episode_to_air.air_date) >= dateSevenDaysAgo) {
             most_recent_episode = getAllCurrentTotalEpisodes(element)
-            // console.log(my_current_episode, most_recent_episode, element.title, element)
         }
-
-        // if (element.title === "One Piece") {
-        //     most_recent_episode = element.details.next_episode_to_air.episode_number;
-        // }
-
-        // if (element.title === "Demon Slayer: Kimetsu no Yaiba" || element.title === "That Time I Got Reincarnated as a Slime" || element.title === "One Piece") {
-        //     console.log(my_current_episode, most_recent_episode, element)
-        // }
-
-
-        //one piece, demon slayer, konosuba
 
         if (my_current_episode < most_recent_episode) {
             let episode_difference = most_recent_episode - my_current_episode;
@@ -528,4 +575,116 @@ export const getBacklogData = (data) => {
         }
     });
     return unfinishedShows;
+}
+
+// watch history
+const watchHistory = async (userId, type, showId, showName, startSeason, endSeason, startEpisode, endEpisode, details) => {
+    let episodesWatched = 0;
+    if (type !== "movie") {
+        episodesWatched = getEpisodesWatched(details, startSeason, endSeason, startEpisode, endEpisode);
+    }
+
+    const date = new Date();
+    const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`; // Format the date as YYYY-MM-DD
+    const docRef = doc(db, 'Users', userId, 'WatchHistory', `${formattedDate}_${showId}`);
+
+    getDoc(docRef).then(docSnapshot => {
+        if (docSnapshot.exists()) {
+            if (type === "movie") {
+                // For movies, no updates are needed if already logged.
+                console.log("Movie already logged.");
+            } else if (type === "anime" || type === "tv") {
+                // For TV shows and anime, update season, start, and end episodes.
+                const updatedEndSeason = endSeason;
+                const updatedEndEpisode = endEpisode;
+
+                updateDoc(docRef, {
+                    // startSeason: updatedStartSeason,
+                    endSeason: updatedEndSeason,
+                    // startEpisode: updatedStartEpisode,
+                    endEpisode: updatedEndEpisode,
+                    episodesWatched
+                });
+                console.log("TV show/anime watch history updated.");
+            }
+        } else {
+            // Create a new document for movie or TV show.
+            if (type === "movie") {
+                setDoc(docRef, {
+                    date: formattedDate,
+                    type,
+                    showId,
+                    showName
+                });
+                console.log("Movie watch history logged.");
+            } else if (type === "anime" || type === "tv") {
+                setDoc(docRef, {
+                    date: formattedDate,
+                    type,
+                    showId,
+                    showName,
+                    startSeason,
+                    endSeason,
+                    startEpisode,
+                    endEpisode,
+                    episodesWatched
+                });
+                console.log("TV show/anime watch history logged.");
+            }
+        }
+    }).catch(error => {
+        console.error("Error accessing document: ", error);
+    });
+};
+
+
+const getEpisodesWatched = (details, startSeason, endSeason, startEpisode, endEpisode) => {
+    if (!details) {
+        return 1;
+    }
+
+    let accumulator = 0;
+    const seasons = details?.seasons;
+
+    if (!seasons) {
+        return accumulator;
+    }
+
+    for (let i = 0; i < seasons.length; i++) {
+        const season = seasons[i];
+        const seasonNumber = season.season_number;
+
+        if (seasonNumber < startSeason || seasonNumber > endSeason) {
+            continue;
+        }
+
+        if (seasonNumber === startSeason && seasonNumber === endSeason) {
+            // If the start and end season are the same, calculate the difference in episodes
+            accumulator += endEpisode - startEpisode + 1;
+        } else if (seasonNumber === startSeason) {
+            // If it's the start season, count episodes from startEpisode to the end of the season
+            accumulator += season.episode_count - startEpisode + 1;
+        } else if (seasonNumber === endSeason) {
+            // If it's the end season, count episodes from the beginning of the season to endEpisode
+            accumulator += endEpisode;
+        } else {
+            // If it's a season in between, count all episodes in the season
+            accumulator += season.episode_count;
+        }
+    }
+
+    console.log(accumulator, "ACCUMULATOR");
+    return accumulator;
+};
+
+const deleteWatchHistory = async (userId, showId) => {
+    const date = new Date();
+    const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`; // Format the date as YYYY-MM-DD
+    const docRef = doc(db, 'Users', userId, 'WatchHistory', `${formattedDate}_${showId}`);
+
+    try {
+        await deleteDoc(docRef);
+    } catch (error) {
+        console.error("Error deleting document: ", error);
+    }
 }

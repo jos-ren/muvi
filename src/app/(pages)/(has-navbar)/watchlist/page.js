@@ -144,7 +144,7 @@ const WatchlistPage = () => {
                         label: (
                             <div style={{ display: "flex", gap: "6px", alignItems: "center", justifyContent: "start" }}
                                 onClick={async () => {
-                                    await moveItemList("seen", user.uid, [data.key]);
+                                    await moveItemList("seen", user.uid, [data.key], data);
                                     const result = await getUserMedia(user.uid);
                                     setData(result);
                                     onMessage("Moved " + data.title + " to Seen", "success");
@@ -232,18 +232,18 @@ const WatchlistPage = () => {
             <MovieTable
                 pagination={{ position: ["bottomCenter"], showSizeChanger: true, }}
                 header={"Watchlist | " + data.filter((item) => item.list_type === "watchlist").length + " Items"}
-                onRemove={async () => {
-                    await deleteUserMedia(selected, user);
-                    const result = await getUserMedia(user.uid);
-                    setData(result);
-                    onMessage("Deleted " + selected.length + " Items", "success");
-                }}
-                onMove={async () => {
-                    await moveItemList("seen", user.uid, selected);
-                    const result = await getUserMedia(user.uid);
-                    setData(result);
-                    onMessage("Moved " + selected.length + " Items to Seen", "success");
-                }}
+                // onRemove={async () => {
+                //     await deleteUserMedia(selected, user);
+                //     const result = await getUserMedia(user.uid);
+                //     setData(result);
+                //     onMessage("Deleted " + selected.length + " Items", "success");
+                // }}
+                // onMove={async () => {
+                //     await moveItemList("seen", user.uid, selected, data);
+                //     const result = await getUserMedia(user.uid);
+                //     setData(result);
+                //     onMessage("Moved " + selected.length + " Items to Seen", "success");
+                // }}
                 disableButtons={disableButtons}
                 columns={watchlistColumns}
                 data={data.filter((item) => item.list_type === "watchlist")}
