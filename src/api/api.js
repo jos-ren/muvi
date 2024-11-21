@@ -688,3 +688,49 @@ const deleteWatchHistory = async (userId, showId) => {
         console.error("Error deleting document: ", error);
     }
 }
+
+export const getWatchHistory = async (userId) => {
+    const watchHistoryCollectionRef = collection(db, 'Users', userId, 'WatchHistory');
+    const watchHistorySnapshot = await getDocs(watchHistoryCollectionRef);
+
+    if (watchHistorySnapshot.empty) {
+        return [];
+    }
+
+    const watchHistory = watchHistorySnapshot.docs.map(doc => doc.data());
+    return watchHistory;
+}
+
+export const getWatchHistoryEarliestYear = async (userId) => {
+    const userRef = doc(db, 'Users', userId);
+    const userDoc = await getDoc(userRef);
+
+    if (!userDoc.exists()) {
+        console.error("User document does not exist.");
+        return new Date().getFullYear();
+    }
+
+    const userData = userDoc.data();
+
+    if (userData.earliestWatchYear !== undefined) {
+        return userData.earliestWatchYear;
+    }
+
+    const watchHistoryCollectionRef = collection(db, 'Users', userId, 'WatchHistory');
+    const watchHistorySnapshot = await getDocs(watchHistoryCollectionRef);
+
+    let earliestYear;
+
+    if (watchHistorySnapshot.empty) {
+        // Default to the current year if no watch history exists
+        earliestYear = new Date().getFullYear();
+    } else {
+        // Find the earliest year in the watch history
+        const watchHistory = watchHistorySnapshot.docs.map(doc => doc.data());
+        earliestYear = Math.min(...watchHistory.map(item => new Date(item.date).getFullYear()));
+    }
+
+    // Update the user document with the earliest year
+    await updateDoc(userRef, { earliestWatchYear: earliestYear });
+    return earliestYear;
+};
