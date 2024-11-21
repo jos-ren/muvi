@@ -7,7 +7,7 @@ import dynamic from 'next/dynamic';
 import { useGlobalContext } from '@/context/store.js';
 import { formatTime, numDatetoString } from "@/utils/utils";
 import { calculateStatistics } from '@/api/statistics';
-import { refreshMembers, getPrincipalMembers } from "@/api/api"
+import { refreshMembers, getPrincipalMembers, getWatchHistory } from "@/api/api"
 import { COLORS, GAP } from "@/utils/constants"
 
 import Box from "@/components/statistics/Box"
@@ -22,6 +22,7 @@ import Carousel from "@/components/statistics/Carousel"
 import BigNums from "@/components/statistics/BigNums"
 import AddMoreMovies from '@/components/statistics/AddMoreMovies'
 import Favorites from '@/components/statistics/Favorites'
+import WatchHistory from '@/components/statistics/WatchHistory';
 
 import { Button, message, Select, Progress, Popover, Tooltip, Statistic } from 'antd';
 import { ReloadOutlined, LikeOutlined, QuestionCircleOutlined, StarTwoTone, DownOutlined, StarFilled, ClockCircleFilled, HourglassFilled, ThunderboltFilled } from '@ant-design/icons'
@@ -81,6 +82,7 @@ const StatisticsPage = () => {
   const [messageApi, contextHolder] = message.useMessage();
   const [hover, setHover] = useState(false);
   const [noItems, setNoItems] = useState(false);
+  const [watchHistoryData, setWatchHistoryData] = useState([]);
 
   const handleChange = (value) => {
     setDropdown(value)
@@ -106,7 +108,40 @@ const StatisticsPage = () => {
       if (principalMembers.length !== 0) {
         setNoPMs(false);
       }
+
+      getWatchHistory(user.uid).then((res) => {
+        const formattedRes = processData(res);
+        setWatchHistoryData(formattedRes);
+      }).catch((err) => {
+        console.log(err);
+      })
     }
+  };
+
+  const processData = (data) => {
+    const dateCounts = {};
+  
+    data.forEach(item => {
+      const formattedDate = item.date.replace(/-/g, '/'); // Format the date as YYYY/MM/DD
+  
+      if (!dateCounts[formattedDate]) {
+        dateCounts[formattedDate] = 0;
+      }
+  
+      if (item.type === 'movie') {
+        dateCounts[formattedDate] += 1; // Each movie counts as one
+      } else if (item.type === 'anime' || item.type === 'tv') {
+        dateCounts[formattedDate] += item.episodesWatched; // Accumulate the count based on episodesWatched
+      }
+    });
+  
+    // Convert the dateCounts object into an array of objects
+    const result = Object.keys(dateCounts).map(date => ({
+      date,
+      count: dateCounts[date]
+    }));
+  
+    return result;
   };
 
   useEffect(() => {
@@ -185,6 +220,10 @@ const StatisticsPage = () => {
             <AddMoreMovies />
           </div>
         </> : <></>}
+        <Spacer />
+        <div style={{ display: "flex", width: "100%", gap: GAP }}>
+          <WatchHistory data={watchHistoryData} userId={user.uid} />
+        </div>
         <Spacer />
         <div style={{ display: "flex", width: "100%", gap: GAP }}>
           <Favorites title={"Most Watched"} data={statistics}></Favorites>

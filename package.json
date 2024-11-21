@@ -15,6 +15,7 @@
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
     "@mui/material": "^5.14.17",
+    "@uiw/react-heat-map": "^2.3.1",
     "antd": "^5.12.5",
     "apexcharts": "^3.44.0",
     "chart.js": "^4.4.0",
