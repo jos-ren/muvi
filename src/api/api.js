@@ -33,12 +33,14 @@ export const createUserMedia = async (o, list_type, user_uid) => {
                 // if they want to switch list type
                 const dataToUpdate = { list_type: list_type, last_edited: new Date() };
                 await updateDoc(doc(subCollectionRef, querySnapshot.docs[0].id), dataToUpdate);
+
+                console.log(o.details, "ERROR HERE PLEASE FIND", o)
                 // update watch history
                 if (list_type === "seen") {
                     if (o.media_type === "movie") {
-                        watchHistory(user_uid, o.media_type, o.id, o.name, null, null, null, null, null);
+                        watchHistory(user_uid, o.media_type, o.id, o.name, o.details.poster_path, null, null, null, null, null);
                     } else {
-                        watchHistory(user_uid, o.media_type, o.id, o.name, 1, 1, 1, 1, null);
+                        watchHistory(user_uid, o.media_type, o.id, o.name, o.details.poster_path, 1, 1, 1, 1, null);
                     }
                 }
                 return { message: "Moved to " + capitalizeFirstLetter(list_type), type: "success" };
@@ -90,9 +92,9 @@ export const createUserMedia = async (o, list_type, user_uid) => {
         // update watch history
         if (list_type === "seen") {
             if (obj.media_type === "movie") {
-                watchHistory(user_uid, o.media_type, o.id, title, null, null, null, null, details);
+                watchHistory(user_uid, o.media_type, o.id, title, details.poster_path, null, null, null, null, details);
             } else {
-                watchHistory(user_uid, o.media_type, o.id, title, 1, 1, 1, 1, details);
+                watchHistory(user_uid, o.media_type, o.id, title, details.poster_path, 1, 1, 1, 1, details);
             }
         }
 
@@ -272,7 +274,7 @@ export const updateUserMedia = async (mediaID, userID, updatedData, mediaData = 
                 // const formattedDate = `${timestamp.getFullYear()}-${String(timestamp.getMonth() + 1).padStart(2, '0')}-${String(timestamp.getDate()).padStart(2, '0')}`; // Format the date as YYYY-MM-DD
 
                 // Call watchHistory after processing the data
-                watchHistory(userID, mediaData.media_type, mediaData.tmdb_id, mediaData.title, startSeason, endSeason, startEpisode, endEpisode, mediaData.details);
+                watchHistory(userID, mediaData.media_type, mediaData.tmdb_id, mediaData.title, mediaData.details.poster_path, startSeason, endSeason, startEpisode, endEpisode, mediaData.details);
             }
         }
         await updateDoc(doc(db, 'Users', userID, 'MediaList', mediaID), updatedData)
@@ -293,9 +295,9 @@ export const moveItemList = async (location, userID, selected, data = null) => {
         // update watch history
         if (location === "seen") {
             if (data.media_type === "movie") {
-                watchHistory(userID, data.media_type, data.tmdb_id, data.title, null, null, null, null, null);
+                watchHistory(userID, data.media_type, data.tmdb_id, data.title, data.details.poster_path, null, null, null, null, null);
             } else {
-                watchHistory(userID, data.media_type, data.tmdb_id, data.title, 1, 1, 1, 1, null);
+                watchHistory(userID, data.media_type, data.tmdb_id, data.title, data.details.poster_path, 1, 1, 1, 1, null);
             }
         } else if (location === "watchlist") {
             deleteWatchHistory(userID, data.tmdb_id);
@@ -563,7 +565,7 @@ export const getBacklogData = (data) => {
 }
 
 // watch history
-const watchHistory = async (userId, type, showId, showName, startSeason, endSeason, startEpisode, endEpisode, details) => {
+const watchHistory = async (userId, type, showId, showName, thumbnail, startSeason, endSeason, startEpisode, endEpisode, details) => {
     let episodesWatched = 0;
     if (type !== "movie") {
         episodesWatched = getEpisodesWatched(details, startSeason, endSeason, startEpisode, endEpisode);
@@ -586,7 +588,7 @@ const watchHistory = async (userId, type, showId, showName, startSeason, endSeas
                     startSeason: startSeason,
                     endEpisode: endEpisode,
                     endSeason: endSeason,
-                    episodesWatched
+                    episodesWatched,
                 });
                 console.log("TV show/anime watch history updated.");
             }
@@ -597,7 +599,8 @@ const watchHistory = async (userId, type, showId, showName, startSeason, endSeas
                     date: formattedDate,
                     type,
                     showId,
-                    showName
+                    showName,
+                    thumbnail
                 });
                 console.log("Movie watch history logged.");
             } else if (type === "anime" || type === "tv") {
@@ -606,6 +609,7 @@ const watchHistory = async (userId, type, showId, showName, startSeason, endSeas
                     type,
                     showId,
                     showName,
+                    thumbnail,
                     startSeason,
                     endSeason,
                     startEpisode,
@@ -642,6 +646,10 @@ const getEpisodesWatched = (details, startSeason, endSeason, startEpisode, endEp
             continue;
         }
 
+        if (startSeason === 1 && startEpisode === 1) {
+            accumulator += 1;
+        }
+
         if (seasonNumber === startSeason && seasonNumber === endSeason) {
             // If the start and end season are the same, calculate the difference in episodes
             accumulator += endEpisode - startEpisode;
@@ -656,8 +664,6 @@ const getEpisodesWatched = (details, startSeason, endSeason, startEpisode, endEp
             accumulator += season.episode_count;
         }
     }
-
-    console.log(accumulator, "ACCUMULATOR");
     return accumulator;
 };
 

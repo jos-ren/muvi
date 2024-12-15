@@ -30,3 +30,5 @@ export const COLORS = {
     BROWN: '#8d6e63',
     GREY: '#808080',
 };
+
+export const TMDB_POSTER_URL = 'https://image.tmdb.org/t/p/original/';
