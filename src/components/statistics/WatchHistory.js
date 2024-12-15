@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { Button, Spin, Dropdown, Space, Tooltip, Menu } from 'antd';
 import { DownOutlined } from '@ant-design/icons';
 import { getWatchHistoryEarliestYear } from '@/api/api.js';
+import WatchHistoryToolTip from './WatchHistoryToolTip.js';
 
 const Title = styled.div`
     font-weight: 600;
@@ -109,7 +110,7 @@ const WatchHistory = ({ data, userId }) => {
                                 rectSize={12}
                                 rectRender={(props, data) => {
                                     return (
-                                        <Tooltip title={`Content Watched: ${data.count || 0}`}>
+                                        <Tooltip title={<WatchHistoryToolTip data={data} />}>
                                             <rect {...props} />
                                         </Tooltip>
                                     );

@@ -123,22 +123,44 @@ const StatisticsPage = () => {
   
     data.forEach(item => {
       const formattedDate = item.date.replace(/-/g, '/'); // Format the date as YYYY/MM/DD
+
+      if(item.episodesWatched === 0) {
+        return;
+      }
   
       if (!dateCounts[formattedDate]) {
-        dateCounts[formattedDate] = 0;
+        dateCounts[formattedDate] = {
+          count: 0,
+          shows: {}
+        };
       }
   
       if (item.type === 'movie') {
-        dateCounts[formattedDate] += 1; // Each movie counts as one
+        dateCounts[formattedDate].count += 1; // Each movie counts as one
       } else if (item.type === 'anime' || item.type === 'tv') {
-        dateCounts[formattedDate] += item.episodesWatched; // Accumulate the count based on episodesWatched
+        dateCounts[formattedDate].count += item.episodesWatched; // Accumulate the count based on episodesWatched
+      }
+  
+      if (!dateCounts[formattedDate].shows[item.showId]) {
+        dateCounts[formattedDate].shows[item.showId] = {
+          title: item.showName,
+          thumbnail: item.thumbnail,
+          count: 0
+        };
+      }
+  
+      if (item.type === 'movie') {
+        dateCounts[formattedDate].shows[item.showId].count += 1;
+      } else if (item.type === 'anime' || item.type === 'tv') {
+        dateCounts[formattedDate].shows[item.showId].count += item.episodesWatched;
       }
     });
   
     // Convert the dateCounts object into an array of objects
     const result = Object.keys(dateCounts).map(date => ({
       date,
-      count: dateCounts[date]
+      count: dateCounts[date].count,
+      details: Object.values(dateCounts[date].shows)
     }));
   
     return result;
