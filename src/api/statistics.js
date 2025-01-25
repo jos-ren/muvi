@@ -89,7 +89,11 @@ export const getAllCurrentTotalEpisodes = (data) => {
                     const today = new Date();
                     const next_episode_date = new Date(data.details.next_episode_to_air.air_date);
                     if (today < next_episode_date) {
-                        accumulator += data.details.last_episode_to_air.episode_number;
+                        if (data.details.last_episode_to_air === null) {
+                            accumulator += 0;
+                        } else {
+                            accumulator += data.details.last_episode_to_air.episode_number;
+                        }
                     } else {
                         accumulator += data.details.next_episode_to_air.episode_number;
                     }
