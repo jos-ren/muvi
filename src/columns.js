@@ -144,8 +144,13 @@ export const upcoming_release = {
     dataIndex: 'upcoming_release',
     defaultSortOrder: 'descend',
     sorter: (a, b) => new Date(b.upcoming_release) - new Date(a.upcoming_release),
-    render: (upcoming_release) => {
-        return <div>{dayjs(upcoming_release).format('ddd D MMM YYYY')}</div >
+    render: (upcoming_release, data) => {
+        // For anime, subtract a day from the TMDB date
+        const adjustedDate = data.is_anime 
+            ? dayjs(upcoming_release).subtract(1, 'day')
+            : dayjs(upcoming_release);
+            
+        return <div>{adjustedDate.format('ddd D MMM YYYY')}</div>;
     }
 }
 
