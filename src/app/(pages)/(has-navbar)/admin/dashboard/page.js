@@ -83,7 +83,7 @@ const AdminPage = () => {
         return <div>
             {contextHolder}
             <MovieTable
-                pagination={{ position: ["bottomCenter"], showSizeChanger: true, }}
+                pagination={{ placement: "bottomCenter", showSizeChanger: true, }}
                 header={"Users"}
                 columns={dashboardColumns}
                 data={usersData}

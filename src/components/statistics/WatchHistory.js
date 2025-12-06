@@ -105,7 +105,7 @@ const WatchHistory = ({ data, userId }) => {
                                 style={{ '--rhm-rect': '#ebedf0' }}
                                 panelColors={['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39']}
                                 startDate={startDate}
-                                legendRender={(props) => <rect {...props} y={props.y + 10} rx={range} />}
+                                legendRender={({ key, ...props }) => <rect key={key} {...props} y={props.y + 10} rx={range} />}
                                 rectProps={{ rx: range }}
                                 rectSize={12}
                                 rectRender={(props, data) => {

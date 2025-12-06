@@ -71,7 +71,7 @@ const SettingsPage = () => {
                 // showRefresh
                 // onRefresh={handleRefreshClick}
                 hasTopMargin={false}
-                pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
+                pagination={{ placement: "bottomCenter", showSizeChanger: true }}
                 header={
                     <div style={{ display: "flex", alignItems: "center" }}>
                         <div>Hidden Items</div>
