@@ -117,10 +117,12 @@ const SeenPage = () => {
         ),
         onFilter: (value, record) =>
             record[dataIndex].toString().toLowerCase().includes(value.toLowerCase()),
-        onFilterDropdownOpenChange: (visible) => {
-            if (visible) {
-                setTimeout(() => searchInput.current?.select(), 100);
-            }
+        filterDropdownProps: {
+            onOpenChange: (visible) => {
+                if (visible) {
+                    setTimeout(() => searchInput.current?.select(), 100);
+                }
+            },
         },
         render: (text) =>
             searchedColumn === dataIndex ? (
@@ -491,7 +493,7 @@ const SeenPage = () => {
                     setModalReview={setModalReview}
                 />
                 <MovieTable
-                    pagination={{ position: ["bottomCenter"], showSizeChanger: true, }}
+                    pagination={{ placement: "bottomCenter", showSizeChanger: true, }}
                     header={"Seen | " + data.filter((item) => item.list_type === "seen").length + " Items"}
                     // onRemove={async () => {
                     //     await deleteUserMedia(selected, user);

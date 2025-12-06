@@ -93,10 +93,12 @@ const UpcomingPage = () => {
         ),
         onFilter: (value, record) =>
             record[dataIndex].toString().toLowerCase().includes(value.toLowerCase()),
-        onFilterDropdownOpenChange: (visible) => {
-            if (visible) {
-                setTimeout(() => searchInput.current?.select(), 100);
-            }
+        filterDropdownProps: {
+            onOpenChange: (visible) => {
+                if (visible) {
+                    setTimeout(() => searchInput.current?.select(), 100);
+                }
+            },
         },
         render: (text) =>
             searchedColumn === dataIndex ? (
@@ -280,7 +282,7 @@ const UpcomingPage = () => {
             <MovieTable
                 showRefresh
                 onRefresh={handleRefreshClick}
-                pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
+                pagination={{ placement: "bottomCenter", showSizeChanger: true }}
                 header={
                     <div style={{ display: "flex", alignItems: "center" }}>
                         <div>Your Upcoming</div>
@@ -295,7 +297,7 @@ const UpcomingPage = () => {
                 rowSelection={false}
             />
             <MovieTable
-                pagination={{ position: ["bottomCenter"], showSizeChanger: true }}
+                pagination={{ placement: "bottomCenter", showSizeChanger: true }}
                 header={
                     <div style={{ display: "flex", alignItems: "center" }}>
                         <div>Episode Backlog</div>

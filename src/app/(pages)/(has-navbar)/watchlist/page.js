@@ -85,10 +85,12 @@ const WatchlistPage = () => {
         ),
         onFilter: (value, record) =>
             record[dataIndex].toString().toLowerCase().includes(value.toLowerCase()),
-        onFilterDropdownOpenChange: (visible) => {
-            if (visible) {
-                setTimeout(() => searchInput.current?.select(), 100);
-            }
+        filterDropdownProps: {
+            onOpenChange: (visible) => {
+                if (visible) {
+                    setTimeout(() => searchInput.current?.select(), 100);
+                }
+            },
         },
         render: (text) =>
             searchedColumn === dataIndex ? (
@@ -230,7 +232,7 @@ const WatchlistPage = () => {
         return <div>
             {contextHolder}
             <MovieTable
-                pagination={{ position: ["bottomCenter"], showSizeChanger: true, }}
+                pagination={{ placement: "bottomCenter", showSizeChanger: true, }}
                 header={"Watchlist | " + data.filter((item) => item.list_type === "watchlist").length + " Items"}
                 // onRemove={async () => {
                 //     await deleteUserMedia(selected, user);

@@ -1,6 +1,6 @@
 "use client";
 import '../../globals.css';
-import { useState, useEffect } from "react";
+import { useState, useEffect, forwardRef } from "react";
 import Image from "next/image";
 import { tabs } from "../../../data.js";
 import { auth } from "../../../config/firebase.js";
@@ -14,6 +14,15 @@ import { Dropdown, Button } from 'antd';
 import { useGlobalContext } from '@/context/store.js';
 import { useTheme } from '@/context/ThemeContext';
 import { FaAngleDown } from "react-icons/fa";
+
+const DropdownTrigger = forwardRef(function DropdownTrigger({ user, ...props }, ref) {
+  return (
+    <div ref={ref} {...props} style={{ cursor: "pointer", display: "flex", alignItems: "center" }}>
+      <Image unoptimized height={30} width={30} quality="100" src={user ? user.photoURL : "default_avatar.jpg"} alt={"profile_pic"} style={{ borderRadius: "50%", marginRight: "10px" }} />
+      <FaAngleDown />
+    </div>
+  );
+});
 
 export default function ContentRootLayout({ children }) {
   const router = useRouter()
@@ -84,12 +93,8 @@ export default function ContentRootLayout({ children }) {
           {/* <Image unoptimized height={30} width={30} quality="100" src={user ? user.photoURL : "default_avatar.jpg"} alt={"profile_pic"} style={{ borderRadius: "50%", marginRight: "10px" }} />
           <Button onClick={logOut}>Logout</Button> */}
 
-          <Dropdown arrow menu={{ items }} trigger={['click']} placement="bottomRight" overlayClassName="nav-dropdown">
-            <div style={{ cursor: "pointer", display: "flex", alignItems: "center" }}>
-              <Image unoptimized height={30} width={30} quality="100" src={user ? user.photoURL : "default_avatar.jpg"} alt={"profile_pic"} style={{ borderRadius: "50%", marginRight: "10px" }} />
-              {/* <div style={{ marginRight: "10px" }}>{user ? user.displayName : ""}</div> */}
-              <FaAngleDown />
-            </div>
+          <Dropdown arrow menu={{ items }} trigger={['click']} placement="bottomRight" classNames={{ root: "nav-dropdown" }}>
+            <DropdownTrigger user={user} />
           </Dropdown>
         </div>
       </div>
