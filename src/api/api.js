@@ -691,6 +691,120 @@ export const getWatchHistory = async (userId) => {
     return watchHistory;
 }
 
+// ----- EXPORT / IMPORT -----
+
+// Recursively serializes Firestore Timestamps ({seconds, nanoseconds}) to ISO strings
+// so the data can be safely JSON.stringify'd
+function serializeDoc(data) {
+    if (data === null || data === undefined) return data;
+    if (typeof data !== 'object') return data;
+    if (Array.isArray(data)) return data.map(serializeDoc);
+    if ('seconds' in data && 'nanoseconds' in data && Object.keys(data).length === 2) {
+        return new Date(data.seconds * 1000 + data.nanoseconds / 1e6).toISOString();
+    }
+    const result = {};
+    for (const [key, value] of Object.entries(data)) {
+        result[key] = serializeDoc(value);
+    }
+    return result;
+}
+
+// Exports MediaList and WatchHistory for a user as a plain JS object ready for JSON.stringify
+export const exportUserData = async (uid) => {
+    const mediaListRef = collection(db, 'Users', uid, 'MediaList');
+    const watchHistoryRef = collection(db, 'Users', uid, 'WatchHistory');
+
+    const [mediaSnap, historySnap] = await Promise.all([
+        getDocs(mediaListRef),
+        getDocs(watchHistoryRef),
+    ]);
+
+    const mediaList = mediaSnap.docs.map(d => ({
+        docId: d.id,
+        ...serializeDoc(d.data()),
+    }));
+
+    const watchHistory = historySnap.docs.map(d => ({
+        docId: d.id,
+        ...serializeDoc(d.data()),
+    }));
+
+    return {
+        exportedAt: new Date().toISOString(),
+        version: '1',
+        mediaList,
+        watchHistory,
+    };
+};
+
+// Compares imported JSON against existing Firestore records and returns what would be added
+// vs. skipped — without writing anything. Call this first to show the user a preview.
+export const previewImport = async (uid, parsedJson) => {
+    const { mediaList = [], watchHistory = [] } = parsedJson;
+
+    const mediaListRef = collection(db, 'Users', uid, 'MediaList');
+    const watchHistoryRef = collection(db, 'Users', uid, 'WatchHistory');
+
+    const [mediaSnap, historySnap] = await Promise.all([
+        getDocs(mediaListRef),
+        getDocs(watchHistoryRef),
+    ]);
+
+    const existingTmdbIds = new Set(mediaSnap.docs.map(d => d.data().tmdb_id));
+    const existingHistoryIds = new Set(historySnap.docs.map(d => d.id));
+
+    const mediaListToAdd = mediaList.filter(item => !existingTmdbIds.has(item.tmdb_id));
+    const watchHistoryToAdd = watchHistory.filter(item => !existingHistoryIds.has(item.docId));
+
+    return {
+        mediaListToAdd,
+        mediaListSkipCount: mediaList.length - mediaListToAdd.length,
+        watchHistoryToAdd,
+        watchHistorySkipCount: watchHistory.length - watchHistoryToAdd.length,
+    };
+};
+
+// Writes the pre-filtered arrays returned by previewImport into Firestore.
+// Uses addDoc for MediaList (new auto-generated IDs) and setDoc for WatchHistory
+// (preserving original doc IDs as natural keys). Writes in chunks of 500.
+// Never deletes or overwrites existing documents.
+export const importUserData = async (uid, { mediaListToAdd, watchHistoryToAdd }) => {
+    const chunkSize = 500;
+
+    // Write MediaList items
+    for (let i = 0; i < mediaListToAdd.length; i += chunkSize) {
+        const chunk = mediaListToAdd.slice(i, i + chunkSize);
+        const batch = writeBatch(db);
+        for (const item of chunk) {
+            const { docId, date_added, last_edited, ...rest } = item;
+            const newDocRef = doc(collection(db, 'Users', uid, 'MediaList'));
+            batch.set(newDocRef, {
+                ...rest,
+                date_added: date_added ? new Date(date_added) : new Date(),
+                last_edited: last_edited ? new Date(last_edited) : new Date(),
+            });
+        }
+        await batch.commit();
+    }
+
+    // Write WatchHistory items using their original doc IDs
+    for (let i = 0; i < watchHistoryToAdd.length; i += chunkSize) {
+        const chunk = watchHistoryToAdd.slice(i, i + chunkSize);
+        const batch = writeBatch(db);
+        for (const item of chunk) {
+            const { docId, ...rest } = item;
+            const historyDocRef = doc(db, 'Users', uid, 'WatchHistory', docId);
+            batch.set(historyDocRef, rest);
+        }
+        await batch.commit();
+    }
+
+    return {
+        mediaListAdded: mediaListToAdd.length,
+        watchHistoryAdded: watchHistoryToAdd.length,
+    };
+};
+
 export const getWatchHistoryEarliestYear = async (userId) => {
     const userRef = doc(db, 'Users', userId);
     const userDoc = await getDoc(userRef);
